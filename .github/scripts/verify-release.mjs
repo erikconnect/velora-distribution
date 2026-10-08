@@ -36,7 +36,7 @@ export async function verifyRelease(env = process.env, { cwd = process.cwd(), fe
   git('merge-base', '--is-ancestor', commit, 'origin/main');
   if (!env.GH_TOKEN) throw new Error('GitHub token is required to verify release protection.');
   async function api(path) {
-    const response = await fetchImpl(`https://api.github.com/repos/erikconnect/velora-distribution/${path}`, {
+    const response = await fetchImpl(`https://api.github.com/repos/erikconnect/velora-distribution${path ? `/${path}` : ''}`, {
       headers: { Authorization: `Bearer ${env.GH_TOKEN}`, Accept: 'application/vnd.github+json', 'X-GitHub-Api-Version': '2022-11-28' },
     });
     if (!response.ok) throw new Error(`Release protection could not be verified: ${path} (${response.status}).`);
