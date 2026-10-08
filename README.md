@@ -6,14 +6,14 @@ Declarative motion for modern HTML and CSS interfaces, with **zero animation run
 
 ## Release status
 
-The initial operational release is awaiting its protected publication approval. The `0.0.0-stage` npm version is a reservation placeholder, **not a usable CSS release**. Check the npm version before installing; the commands below target the planned `1.0.0` release.
+The operational package version in this repository is `1.0.1`. Check the [npm versions](https://www.npmjs.com/package/@veloracss.io/css?activeTab=versions) for publication availability. The `0.0.0-stage` placeholder is **not a usable CSS release**; the bootstrap `1.0.0` remains staged and is not the release targeted here.
 
 ## Install
 
-Once `1.0.0` is published:
+For the operational release (after registry publication):
 
 ```sh
-npm install @veloracss.io/css@1.0.0
+npm install @veloracss.io/css@1.0.1
 ```
 
 Use a bundler that resolves package CSS imports:

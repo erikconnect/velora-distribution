@@ -1,6 +1,6 @@
 {
   "name": "@veloracss.io/css",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Declarative CSS motion engine (host-agnostic) with optional Velora theme skin",
   "license": "ISC",
   "unpkg": "./dist/motion-core.css",
