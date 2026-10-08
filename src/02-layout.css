@@ -1,0 +1,376 @@
+@layer velora.layout {
+    /*
+     * Primitivas de layout — container queries, scroll-snap, cenas para motion.
+     * Composição: combine classes (ex.: vl-container + vl-section + vl-stack).
+     * Timelines: view-timeline-name / scroll-timeline no elemento animado; em ancestrais use
+     * timeline-scope: --nome (CSS) quando precisar de referência cruzada — ver MDN.
+     * @container usa larguras em rem (alinhadas a --vl-cq-* em tokens) — evita var() no query
+     * para compatibilidade com minificadores CSS (ex.: Vite/lightningcss).
+     */
+
+    /* --- Layout mode by attribute ---------------------------------------
+       Contract:
+       - data-layout="boxed"      -> container max width padrão
+       - data-layout="full-width" -> ocupa largura total mantendo gutters
+       Use no elemento de seção/header/footer/página que encapsula .vl-container.
+    --------------------------------------------------------------------- */
+    [data-layout="boxed"] {
+        --vl-layout-container-max: var(--vl-container-max);
+    }
+
+    [data-layout="full-width"] {
+        --vl-layout-container-max: none;
+    }
+
+    /* --- Container principal (viewport-like width) --- */
+    .vl-container {
+        container-type: inline-size;
+        container-name: velora;
+        width: 100%;
+        max-width: var(--vl-layout-container-max, var(--vl-container-max));
+        margin-inline: auto;
+        padding-left: max(var(--vl-container-gutter), env(safe-area-inset-left, 0px));
+        padding-right: max(var(--vl-container-gutter), env(safe-area-inset-right, 0px));
+    }
+
+    .vl-container--narrow {
+        max-width: var(--vl-container-max-narrow);
+    }
+
+    .vl-container--wide {
+        max-width: var(--vl-container-max-wide);
+    }
+
+    .vl-container--flush {
+        padding-inline: 0;
+    }
+
+    /**
+     * Micro-container para grelhas/cartões aninhados (queries independentes do pai).
+     * Use @container vl-nest (…) nas folhas de estilo do produto.
+     */
+    .vl-container--nest {
+        container-type: inline-size;
+        container-name: vl-nest;
+        width: 100%;
+    }
+
+    /* --- Scene containers (structural only — look helpers live in scene-recipes.css) */
+    [vl-scene] {
+        width: 100%;
+        position: relative;
+        isolation: isolate;
+        container-type: inline-size;
+        container-name: vl-scene;
+    }
+
+    /* --- Blocos verticais --- */
+    .vl-stack {
+        display: flex;
+        flex-direction: column;
+        gap: var(--vl-space-md);
+        min-width: 0;
+    }
+
+    .vl-stack--sm {
+        gap: var(--vl-space-sm);
+    }
+
+    .vl-stack--lg {
+        gap: var(--vl-space-lg);
+    }
+
+    .vl-stack--xl {
+        gap: var(--vl-space-xl);
+    }
+
+    /**
+     * Linha com wrap — alinhar com justify-* / align-* no próprio elemento ou estilo inline.
+     */
+    .vl-stack--row {
+        flex-direction: row;
+        flex-wrap: wrap;
+        align-items: flex-start;
+    }
+
+    /**
+     * Cluster: grupo de chips/links/tags com espaçamento fluido (sem “card”).
+     */
+    .vl-cluster {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--vl-space-sm);
+        align-items: center;
+        min-width: 0;
+    }
+
+    /* --- Flex minimal --- */
+    .vl-flex {
+        display: flex;
+        min-width: 0;
+    }
+
+    .vl-flex--center {
+        align-items: center;
+        justify-content: center;
+    }
+
+    .vl-flex--between {
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .vl-flex--wrap {
+        flex-wrap: wrap;
+    }
+
+    /**
+     * Filhos repartem espaço em igualdade (útil com barra + conteúdo).
+     * Use no mesmo elemento que .vl-flex.
+     */
+    .vl-flex--grow {
+        display: flex;
+        min-width: 0;
+    }
+
+    .vl-flex--grow > * {
+        flex: 1 1 0%;
+        min-width: 0;
+    }
+
+    /* --- Grelha responsiva ao container --- */
+    .vl-grid {
+        display: grid;
+        gap: var(--vl-space-md);
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    @container velora (min-width: 36rem) {
+        .vl-grid:not(.vl-grid--auto) {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+    }
+
+    /**
+     * Bento fluido — use com .vl-grid; min ~17.5rem por célula (sobrepõe o breakpoint de 2 colunas).
+     */
+    .vl-grid--auto {
+        grid-template-columns: repeat(auto-fit, minmax(min(100%, 17.5rem), 1fr));
+    }
+
+    .vl-grid--3 {
+        display: grid;
+        gap: var(--vl-space-md);
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    @container velora (min-width: 36rem) {
+        .vl-grid--3 {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+    }
+
+    @container velora (min-width: 56rem) {
+        .vl-grid--3 {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+    }
+
+    /**
+     * Grelha interna ao .vl-container--nest (cartões dentro de painel).
+     */
+    .vl-grid--nest {
+        display: grid;
+        gap: var(--vl-space-md);
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    @container vl-nest (min-width: 36rem) {
+        .vl-grid--nest {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+    }
+
+    @container vl-nest (min-width: 48rem) {
+        .vl-grid--nest {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+    }
+
+    /**
+     * Duas colunas assimétricas (hero / texto + mídia). Ajuste proporções via custom properties no elemento.
+     */
+    .vl-split {
+        display: grid;
+        gap: var(--vl-space-lg);
+        grid-template-columns: minmax(0, 1fr);
+        align-items: start;
+    }
+
+    @container velora (min-width: 48rem) {
+        .vl-split {
+            /* Ex.: style="--vl-split-a: 1.1fr; --vl-split-b: 0.9fr" para afinar colunas */
+            grid-template-columns: minmax(0, var(--vl-split-a, 1fr)) minmax(0, var(--vl-split-b, 1.15fr));
+            align-items: center;
+        }
+    }
+
+    /* --- Secções --- */
+    .vl-section {
+        padding-block: var(--vl-space-xl);
+    }
+
+    .vl-section--tight {
+        padding-block: var(--vl-space-lg);
+    }
+
+    .vl-section--loose {
+        padding-block: var(--vl-space-2xl);
+    }
+
+    /**
+     * Cena full-viewport — base para heros e scroll-linked motion (sticky, parallax leve).
+     */
+    .vl-section--viewport {
+        min-height: 100dvh;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        padding-block: var(--vl-space-xl);
+    }
+
+    /**
+     * Largura de leitura — artigos / Q&A sem impor tipografia.
+     */
+    .vl-measure {
+        max-width: var(--vl-measure-prose);
+    }
+
+    .vl-measure--wide {
+        max-width: min(100%, 48rem);
+    }
+
+    /* --- Contexto de empilhamento (blend, sombras, filhos com transform) --- */
+    .vl-isolate {
+        isolation: isolate;
+    }
+
+    /**
+     * Raiz para filhos com transform 3D (alinhado ao preset vl-3d-entry em motion).
+     */
+    .vl-perspective {
+        perspective: 1200px;
+        transform-style: preserve-3d;
+    }
+
+    /* --- Scroll horizontal (listas, marquees sem JS) --- */
+    .vl-scroll-x {
+        display: flex;
+        gap: var(--vl-space-md);
+        overflow-x: auto;
+        overflow-y: hidden;
+        scroll-snap-type: x mandatory;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: thin;
+        overscroll-behavior-x: contain;
+    }
+
+    .vl-scroll-x > * {
+        flex: 0 0 auto;
+        scroll-snap-align: start;
+    }
+
+    .vl-scroll-x--center > * {
+        scroll-snap-align: center;
+    }
+
+    /* --- Scroll vertical com snap (secções full-screen) --- */
+    .vl-scroll-snap-y {
+        overflow-y: auto;
+        scroll-snap-type: y proximity;
+        overscroll-behavior-y: contain;
+    }
+
+    .vl-scroll-snap-y > * {
+        scroll-snap-align: start;
+    }
+
+    .vl-scroll-snap-y--mandatory {
+        scroll-snap-type: y mandatory;
+    }
+
+    /* --- Mídia --- */
+    .vl-aspect-video {
+        aspect-ratio: 16 / 9;
+    }
+
+    .vl-aspect-square {
+        aspect-ratio: 1;
+    }
+
+    .vl-fit-cover {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    /**
+     * Full-bleed dentro de um container limitado — fundo edge-to-edge, conteúdo mantém margem.
+     */
+    .vl-bleed {
+        width: 100vw;
+        margin-inline: calc(50% - 50vw);
+    }
+
+    /* --- Camadas z (empilhar overlays sem números mágicos) --- */
+    .vl-z-base {
+        z-index: var(--vl-z-base);
+    }
+
+    .vl-z-sticky {
+        z-index: var(--vl-z-sticky);
+    }
+
+    .vl-z-dropdown {
+        z-index: var(--vl-z-dropdown);
+    }
+
+    /* --- Fixos e sticky — barras, CTAs, colunas laterais --- */
+    .vl-fixed-top {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        z-index: var(--vl-z-sticky);
+        padding-top: env(safe-area-inset-top, 0px);
+    }
+
+    .vl-fixed-bottom {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        z-index: var(--vl-z-sticky);
+        padding-bottom: env(safe-area-inset-bottom, 0px);
+    }
+
+    /**
+     * Sticky genérico — ajuste offset com --vl-sticky-offset (ex.: altura de header fixo).
+     */
+    .vl-sticky-top {
+        position: sticky;
+        top: var(--vl-sticky-offset, 0px);
+        z-index: var(--vl-z-base);
+    }
+
+    /**
+     * Coluna que acompanha o scroll (docs / produto).
+     */
+    .vl-sticky-aside {
+        position: sticky;
+        top: var(--vl-sticky-offset, var(--vl-space-lg));
+        align-self: start;
+        z-index: var(--vl-z-base);
+    }
+}

@@ -1,0 +1,228 @@
+/* Home v3 experiment: Declare Intent — scroll-tied 3D arrival and sequenced steps. */
+@property --v3-intent-settle {
+  syntax: "<number>";
+  inherits: true;
+  initial-value: 0;
+}
+
+@keyframes v3-intent-step-arrive {
+  from {
+    opacity: 0;
+    transform: translate3d(0, var(--vl-distance-y, 2.75rem), 0);
+    --v3-intent-settle: 0;
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+    --v3-intent-settle: 1;
+  }
+}
+
+@layer velora.overrides {
+  .v3-intent {
+    min-height: 145svh;
+  }
+  .v3-intent .v3-copy h2 {
+    font-size: clamp(2.25rem, 4.8vw, 4.75rem);
+    line-height: 1.02;
+  }
+  .v3-intent .v3-copy p.v3-hint {
+    max-width: 46rem;
+    margin-block-start: var(--vl-space-4, 1rem);
+    color: var(--vl-text-secondary);
+    font: 500 .95rem/1.55 var(--vl-font-family);
+  }
+  .v3-intent-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr);
+    gap: var(--vl-space-6, 1.5rem);
+    align-items: center;
+    margin-block-start: var(--vl-space-4, 1rem);
+  }
+  .v3-intent-layout .v3-copy { max-width: none; }
+  .v3-intent-object {
+    --vl-enter-duration: 900ms;
+    --vl-rotate-x: 48deg;
+    --vl-depth-z-from: -12rem;
+    --vl-perspective: 920px;
+    --vl-distance-y: 3.5rem;
+    grid-column: 2;
+    grid-row: 1;
+    position: relative;
+    isolation: isolate;
+    display: grid;
+    place-content: center;
+    gap: var(--vl-space-3, .75rem);
+    min-height: min(48svh, 26rem);
+    padding: clamp(1.4rem, 3vw, 2.4rem);
+    transform-style: preserve-3d;
+    border: var(--vl-skin-border-width, 1px) solid var(--vl-border-subtle);
+    border-radius: var(--vl-radius-lg, 1rem);
+    background:
+      radial-gradient(circle at 50% 28%, color-mix(in oklch, var(--vl-color-primary) 22%, transparent), transparent 46%),
+      var(--vl-bg-surface);
+    color: var(--vl-text-primary);
+    text-align: center;
+  }
+  .v3-intent-object::before {
+    content: "";
+    position: absolute;
+    inset: 22% 12% auto;
+    height: 48%;
+    border: var(--vl-skin-border-width, 1px) solid var(--vl-border-subtle);
+    border-radius: inherit;
+    background: color-mix(in oklch, var(--vl-color-primary) 8%, transparent);
+    transform: rotateX(78deg) translateZ(-2.4rem);
+    pointer-events: none;
+  }
+  .v3-intent-object:focus-visible {
+    outline: 2px solid var(--vl-text-primary);
+    outline-offset: 4px;
+  }
+  .v3-intent-object__meta,
+  .v3-intent-object small {
+    position: relative;
+    z-index: 1;
+    font: 650 .68rem/1.4 var(--vl-font-family-mono, monospace);
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: var(--vl-text-secondary);
+  }
+  .v3-intent-object .vl-v3-logo { width:clamp(9rem,20vw,19rem); }
+  .v3-intent-object strong {
+    position: relative;
+    z-index: 1;
+    font-family: var(--vl-font-family-display, var(--vl-font-family));
+    font-size: clamp(3.4rem, 9vw, 7.25rem);
+    line-height: .85;
+    letter-spacing: -.08em;
+  }
+  .v3-intent-layout [vl-enter] {
+    animation-play-state: running;
+  }
+  .v3-intent-object[vl-timeline="view"] {
+    animation-range: entry 0% contain 35%;
+  }
+  .v3-intent-steps {
+    grid-column: 1 / -1;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--vl-space-3, .75rem);
+  }
+  .v3-intent-steps > li {
+    --vl-enter-name: v3-intent-step-arrive;
+    --vl-distance-y: 2.75rem;
+    display: grid;
+    gap: var(--vl-space-3, .75rem);
+    min-height: 12rem;
+    padding: var(--vl-space-5, 1.25rem);
+    border: var(--vl-skin-border-width, 1px) solid color-mix(in oklch, var(--vl-color-primary) calc(var(--v3-intent-settle) * 48%), var(--vl-border-subtle));
+    border-radius: var(--vl-radius-md, .8rem);
+    background:
+      linear-gradient(180deg, color-mix(in oklch, var(--vl-color-primary) calc(var(--v3-intent-settle) * 16%), transparent), transparent 46%),
+      var(--vl-bg-surface);
+    color: var(--vl-text-primary);
+    box-shadow: 0 0 0 calc(var(--v3-intent-settle) * 1px) color-mix(in oklch, var(--vl-color-primary) 32%, transparent);
+  }
+  .v3-intent-steps > li:nth-child(1) { animation-range: entry 0% cover 38%; }
+  .v3-intent-steps > li:nth-child(2) { animation-range: entry 12% cover 50%; }
+  .v3-intent-steps > li:nth-child(3) { animation-range: entry 24% cover 62%; }
+  .v3-intent-steps > li > span {
+    display: grid;
+    place-items: center;
+    width: 2.25rem;
+    aspect-ratio: 1;
+    border: var(--vl-skin-border-width, 1px) solid color-mix(in oklch, var(--vl-color-primary) calc(var(--v3-intent-settle) * 100%), var(--vl-border-subtle));
+    border-radius: 999px;
+    background: color-mix(in oklch, var(--vl-color-primary) calc(var(--v3-intent-settle) * 100%), transparent);
+    color: color-mix(in oklch, var(--vl-bg-inset) calc(var(--v3-intent-settle) * 100%), var(--vl-color-primary));
+    font: 700 .75rem var(--vl-font-family-mono, monospace);
+  }
+  .v3-intent-steps strong {
+    display: block;
+    font: 650 1.05rem/1.2 var(--vl-font-family);
+  }
+  .v3-intent-steps code {
+    display: block;
+    margin-block: var(--vl-space-2, .5rem) var(--vl-space-3, .75rem);
+    overflow-wrap: anywhere;
+    color: var(--vl-color-primary);
+    font: 600 .75rem/1.5 var(--vl-font-family-mono, monospace);
+  }
+  .v3-intent-steps p {
+    margin: 0;
+    color: var(--vl-text-secondary);
+    font-size: .88rem;
+    line-height: 1.55;
+  }
+  .v3-intent .v3-code-handoff {
+    display: grid;
+    gap: var(--vl-space-3, .75rem);
+    margin-block-start: var(--vl-space-8, 2rem);
+  }
+  .v3-intent .v3-code-handoff__examples {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--vl-space-4, 1rem);
+  }
+  .v3-intent .v3-code-handoff figure {
+    margin: 0;
+    min-width: 0;
+  }
+  .v3-intent .v3-code-handoff figcaption {
+    margin-block-end: var(--vl-space-2, .5rem);
+    font: 650 .68rem var(--vl-font-family-mono, monospace);
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: var(--vl-color-primary);
+  }
+  .v3-intent .v3-code-handoff > span {
+    font: 650 .68rem var(--vl-font-family-mono, monospace);
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: var(--vl-text-secondary);
+  }
+  .v3-intent .v3-code-handoff pre {
+    margin: 0;
+    padding: var(--vl-space-4, 1rem);
+    overflow: auto;
+    border: var(--vl-skin-border-width, 1px) solid var(--vl-border-subtle);
+    border-radius: var(--vl-radius-md, .8rem);
+    background: var(--vl-bg-inset);
+    color: var(--vl-text-primary);
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    font-size: .8rem;
+    line-height: 1.65;
+  }
+  .v3-intent .v3-code-handoff a {
+    color: var(--vl-text-primary);
+    font-size: .9rem;
+    text-underline-offset: .3em;
+  }
+  @media (max-width: 52rem) {
+    .v3-intent { min-height: 0; }
+    .v3-intent-layout { grid-template-columns: 1fr; }
+    .v3-intent-object { grid-column: auto; grid-row: auto; min-height: 18rem; }
+    .v3-intent-object strong { font-size: clamp(2.6rem, 14vw, 4.5rem); }
+    .v3-intent-steps { grid-template-columns: 1fr; }
+    .v3-intent-steps > li { min-height: 0; }
+    .v3-intent .v3-code-handoff__examples { grid-template-columns: 1fr; }
+    .v3-intent-steps > li:nth-child(1) { animation-range: entry 0% cover 40%; }
+    .v3-intent-steps > li:nth-child(2) { animation-range: entry 12% cover 52%; }
+    .v3-intent-steps > li:nth-child(3) { animation-range: entry 24% cover 64%; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .v3-intent-object,
+    .v3-intent-steps > li {
+      animation: none;
+      transform: none;
+      opacity: 1;
+      --v3-intent-settle: 1;
+    }
+    .v3-intent-object::before { transform: none; }
+  }
+}

@@ -1,0 +1,335 @@
+@layer velora.tokens {
+    /*
+     * Visual / brand tokens — Velora skin (opt-in via @velora/css/theme or full).
+     * Not required for motion-core / host-agnostic scenes.
+     */
+    :root {
+        --vl-hue-neutral: 110;
+        --vl-hue-accent: 128;
+        --vl-chroma-surface: 0.02;
+
+        --vl-brand-stone: #c8c9b0;
+        --vl-brand-olive: #a9b08b;
+        --vl-brand-moss: #7f8668;
+        --vl-brand-deep: #5c604c;
+
+        --vl-color-primary: var(--vl-brand-moss);
+        --vl-color-primary-soft: color-mix(in oklch, var(--vl-color-primary) 18%, transparent);
+        --vl-color-secondary: var(--vl-brand-olive);
+        --vl-color-accent: var(--vl-brand-deep);
+        --vl-color-success: #6f8661;
+        --vl-color-warning: #c1ab72;
+        --vl-color-danger: #8a5f50;
+
+        --vl-bg-main: #e3e3cd;
+        --vl-bg-surface: #f3f2e6;
+        --vl-bg-surface-elevated: #ecebd9;
+        --vl-bg-inset: #d7d8c0;
+        --vl-bg-overlay: oklch(96% 0.01 var(--vl-hue-neutral) / 0.8);
+
+        --vl-border-subtle: #bfc1aa;
+        --vl-border-strong: #a9b08b;
+        --vl-border-focus: color-mix(in oklch, var(--vl-color-primary) 55%, transparent);
+
+        --vl-text-primary: #0a0a0a;
+        --vl-text-secondary: #232321;
+        --vl-text-muted: #6f705f;
+        --vl-text-inverse: #f3f2e6;
+
+        --vl-font-family:
+            "Manrope", "Plus Jakarta Sans", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+            Roboto, sans-serif;
+        --vl-font-family-display:
+            "Space Grotesk", "Outfit", "Plus Jakarta Sans", system-ui, sans-serif;
+        --vl-font-family-mono:
+            "JetBrains Mono", "SF Mono", ui-monospace, "Cascadia Code", monospace;
+        --vl-font-family-serif:
+            "Cormorant Garamond", "Playfair Display", "DM Serif Display", Georgia, "Times New Roman", serif;
+
+        --vl-font-size-base: 16px;
+        --vl-font-size-xs: 0.75rem;
+        --vl-font-size-sm: 0.875rem;
+        --vl-font-size-md: 1rem;
+        --vl-font-size-lg: 1.125rem;
+        --vl-font-size-xl: 1.25rem;
+        --vl-font-size-2xl: 1.5rem;
+        --vl-font-size-3xl: 2rem;
+        --vl-font-size-4xl: clamp(2.25rem, 5vw, 3.5rem);
+
+        --vl-font-weight-normal: 400;
+        --vl-font-weight-medium: 500;
+        --vl-font-weight-semibold: 600;
+        --vl-font-weight-bold: 700;
+
+        --vl-leading-tight: 1.2;
+        --vl-leading-snug: 1.35;
+        --vl-leading-normal: 1.5;
+        --vl-leading-relaxed: 1.65;
+
+        --vl-tracking-tight: -0.02em;
+        --vl-tracking-normal: 0;
+        --vl-tracking-wide: 0.04em;
+        --vl-tracking-display: 0.06em;
+
+        --vl-scrollbar-width: 10px;
+        --vl-scrollbar-track: #d7d8c0;
+        --vl-scrollbar-thumb: #a9b08b;
+        --vl-scrollbar-thumb-hover: #7f8668;
+
+        --vl-space-2xs: 0.125rem;
+        --vl-space-xs: 0.25rem;
+        --vl-space-sm: 0.5rem;
+        --vl-space-md: 1rem;
+        --vl-space-lg: 2rem;
+        --vl-space-xl: 4rem;
+        --vl-space-2xl: 6rem;
+        --vl-space-3xl: 8rem;
+
+        --vl-radius-sm: 0.375rem;
+        --vl-radius-md: 0.5rem;
+        --vl-radius-lg: 0.75rem;
+        --vl-radius-xl: 1rem;
+        --vl-radius-2xl: 1.5rem;
+        --vl-radius-full: 999px;
+
+        --vl-container-max: 72rem;
+        --vl-container-max-narrow: 42rem;
+        --vl-container-max-wide: 90rem;
+        --vl-container-gutter: var(--vl-space-md);
+        --vl-measure-prose: 65ch;
+        --vl-cq-sm: 36rem;
+        --vl-cq-md: 48rem;
+        --vl-cq-lg: 56rem;
+        --vl-cq-xl: 72rem;
+
+        --vl-shadow-sm: 0 1px 2px oklch(22% 0.02 var(--vl-hue-neutral) / 0.06);
+        --vl-shadow-md:
+            0 4px 6px -1px oklch(22% 0.02 var(--vl-hue-neutral) / 0.08),
+            0 2px 4px -2px oklch(22% 0.02 var(--vl-hue-neutral) / 0.06);
+        --vl-shadow-lg:
+            0 10px 15px -3px oklch(22% 0.02 var(--vl-hue-neutral) / 0.1),
+            0 4px 6px -4px oklch(22% 0.02 var(--vl-hue-neutral) / 0.08);
+        --vl-shadow-glow:
+            0 0 0 1px color-mix(in oklch, var(--vl-color-primary) 25%, transparent),
+            0 12px 40px -12px color-mix(in oklch, var(--vl-color-primary) 35%, transparent);
+        --vl-shadow-dramatic:
+            0 25px 50px -12px oklch(0% 0 0 / 0.25),
+            0 12px 24px -8px oklch(0% 0 0 / 0.15);
+        --vl-shadow-inner: inset 0 2px 4px 0 oklch(0% 0 0 / 0.06);
+        --vl-shadow-float:
+            0 20px 60px -15px color-mix(in oklch, var(--vl-color-primary) 20%, oklch(0% 0 0 / 0.15)),
+            0 8px 20px -5px oklch(0% 0 0 / 0.1);
+
+        --vl-backdrop-blur: 12px;
+        --vl-glass-bg: color-mix(in oklch, var(--vl-bg-surface) 85%, transparent);
+
+        --vl-gradient-brand: linear-gradient(
+            135deg,
+            #c8c9b0 0%,
+            #a9b08b 42%,
+            #7f8668 76%,
+            #5c604c 100%
+        );
+        --vl-gradient-canvas-beam: linear-gradient(
+            135deg,
+            #f3f2e6 0%,
+            #e3e3cd 38%,
+            #c8c9b0 72%,
+            #a9b08b 100%
+        );
+        --vl-gradient-olive-drift: linear-gradient(
+            135deg,
+            #e3e3cd 0%,
+            #c8c9b0 35%,
+            #a9b08b 70%,
+            #7f8668 100%
+        );
+        --vl-gradient-deep-motion: linear-gradient(
+            135deg,
+            #c8c9b0 0%,
+            #a9b08b 30%,
+            #5c604c 70%,
+            #232321 100%
+        );
+        --vl-gradient-surface: linear-gradient(
+            180deg,
+            color-mix(in oklch, var(--vl-bg-surface) 96%, white),
+            color-mix(in oklch, var(--vl-bg-main) 94%, transparent)
+        );
+        --vl-gradient-aurora: linear-gradient(
+            135deg,
+            oklch(55% 0.2 275),
+            oklch(58% 0.22 320),
+            oklch(62% 0.14 155),
+            oklch(55% 0.2 275)
+        );
+        --vl-gradient-sunset: linear-gradient(
+            135deg,
+            oklch(62% 0.22 350),
+            oklch(72% 0.18 50),
+            oklch(78% 0.15 85)
+        );
+        --vl-gradient-ocean: linear-gradient(
+            135deg,
+            oklch(45% 0.18 240),
+            oklch(55% 0.2 275),
+            oklch(58% 0.16 200)
+        );
+        --vl-gradient-neutral: linear-gradient(
+            135deg,
+            oklch(28% 0.02 var(--vl-hue-neutral)),
+            oklch(22% 0.02 var(--vl-hue-neutral))
+        );
+
+        --vl-focus-ring-width: 2px;
+        --vl-focus-ring-offset: 2px;
+        --vl-focus-ring-color: color-mix(in oklch, var(--vl-color-primary) 65%, transparent);
+
+        --vl-logo-filter: brightness(0);
+        --vl-logo-opacity: 0.9;
+
+        --vl-noise-opacity: 0.035;
+
+        color-scheme: light;
+    }
+
+    @media (prefers-color-scheme: dark) {
+        :root:not([data-theme]) {
+            --vl-bg-main: #0d0f0c;
+            --vl-bg-surface: #171b16;
+            --vl-bg-surface-elevated: #1c211b;
+            --vl-bg-surface-bright: #272e25;
+            --vl-bg-inset: #111410;
+            --vl-bg-overlay: oklch(8% 0.015 var(--vl-hue-neutral) / 0.82);
+
+            --vl-border-subtle: #434a41;
+            --vl-border-strong: #71776e;
+
+            --vl-text-primary: #e1e7dc;
+            --vl-text-secondary: #a7ada2;
+            --vl-text-muted: #71776e;
+            --vl-text-inverse: #0a0a0a;
+
+            --vl-shadow-sm: 0 1px 2px oklch(0% 0 0 / 0.06);
+            --vl-shadow-md:
+                0 4px 6px -1px oklch(0% 0 0 / 0.08),
+                0 2px 4px -2px oklch(0% 0 0 / 0.06);
+            --vl-shadow-lg:
+                0 10px 15px -3px oklch(0% 0 0 / 0.1),
+                0 4px 6px -4px oklch(0% 0 0 / 0.08);
+            --vl-shadow-glow:
+                0 0 0 1px color-mix(in oklch, var(--vl-color-primary) 25%, transparent),
+                0 12px 40px -12px color-mix(in oklch, var(--vl-color-primary) 35%, transparent);
+            --vl-shadow-dramatic:
+                0 25px 50px -12px oklch(0% 0 0 / 0.25),
+                0 12px 24px -8px oklch(0% 0 0 / 0.15);
+
+            --vl-scrollbar-track: #171b16;
+            --vl-scrollbar-thumb: #5c604c;
+            --vl-scrollbar-thumb-hover: #7f8668;
+
+            --vl-glass-bg: color-mix(in oklch, var(--vl-bg-surface) 72%, transparent);
+
+            --vl-logo-filter: brightness(0) invert(1);
+            --vl-logo-opacity: 0.88;
+
+            color-scheme: dark;
+        }
+    }
+
+    :root[data-theme="light"] {
+        --vl-bg-main: #e3e3cd;
+        --vl-bg-surface: #f3f2e6;
+        --vl-bg-surface-elevated: #ecebd9;
+        --vl-bg-inset: #d7d8c0;
+        --vl-bg-overlay: oklch(96% 0.01 var(--vl-hue-neutral) / 0.8);
+
+        --vl-border-subtle: #bfc1aa;
+        --vl-border-strong: #a9b08b;
+
+        --vl-text-primary: #0a0a0a;
+        --vl-text-secondary: #232321;
+        --vl-text-muted: #6f705f;
+        --vl-text-inverse: #f3f2e6;
+
+        --vl-shadow-sm: 0 1px 2px oklch(22% 0.02 var(--vl-hue-neutral) / 0.06);
+        --vl-shadow-md:
+            0 4px 6px -1px oklch(22% 0.02 var(--vl-hue-neutral) / 0.08),
+            0 2px 4px -2px oklch(22% 0.02 var(--vl-hue-neutral) / 0.06);
+        --vl-shadow-lg:
+            0 10px 15px -3px oklch(22% 0.02 var(--vl-hue-neutral) / 0.1),
+            0 4px 6px -4px oklch(22% 0.02 var(--vl-hue-neutral) / 0.08);
+        --vl-shadow-glow:
+            0 0 0 1px color-mix(in oklch, var(--vl-color-primary) 18%, transparent),
+            0 12px 36px -14px color-mix(in oklch, var(--vl-color-primary) 28%, transparent);
+        --vl-shadow-dramatic:
+            0 25px 50px -12px oklch(22% 0.02 var(--vl-hue-neutral) / 0.15),
+            0 12px 24px -8px oklch(22% 0.02 var(--vl-hue-neutral) / 0.1);
+
+        --vl-scrollbar-track: #d7d8c0;
+        --vl-scrollbar-thumb: #a9b08b;
+        --vl-scrollbar-thumb-hover: #7f8668;
+
+        --vl-glass-bg: color-mix(in oklch, var(--vl-bg-surface) 85%, transparent);
+
+        --vl-logo-filter: brightness(0);
+        --vl-logo-opacity: 0.85;
+
+        color-scheme: light;
+    }
+
+    :root[data-theme="dark"] {
+        --vl-bg-main: #0d0f0c;
+        --vl-bg-surface: #171b16;
+        --vl-bg-surface-elevated: #1c211b;
+        --vl-bg-surface-bright: #272e25;
+        --vl-bg-inset: #111410;
+        --vl-bg-overlay: oklch(8% 0.015 var(--vl-hue-neutral) / 0.82);
+
+        --vl-border-subtle: #434a41;
+        --vl-border-strong: #71776e;
+
+        --vl-text-primary: #e1e7dc;
+        --vl-text-secondary: #a7ada2;
+        --vl-text-muted: #71776e;
+        --vl-text-inverse: #0d0f0c;
+
+        --vl-shadow-sm: 0 1px 2px oklch(0% 0 0 / 0.06);
+        --vl-shadow-md:
+            0 4px 6px -1px oklch(0% 0 0 / 0.08),
+            0 2px 4px -2px oklch(0% 0 0 / 0.06);
+        --vl-shadow-lg:
+            0 10px 15px -3px oklch(0% 0 0 / 0.1),
+            0 4px 6px -4px oklch(0% 0 0 / 0.08);
+        --vl-shadow-glow:
+            0 0 0 1px color-mix(in oklch, var(--vl-color-primary) 25%, transparent),
+            0 12px 40px -12px color-mix(in oklch, var(--vl-color-primary) 35%, transparent);
+
+        --vl-scrollbar-track: #171b16;
+        --vl-scrollbar-thumb: #5c604c;
+        --vl-scrollbar-thumb-hover: #7f8668;
+
+        --vl-glass-bg: color-mix(in oklch, var(--vl-bg-surface) 72%, transparent);
+
+        --vl-logo-filter: brightness(0) invert(1);
+        --vl-logo-opacity: 0.88;
+
+        color-scheme: dark;
+    }
+
+    :root[data-layout="compact"] {
+        --vl-font-size-base: 15px;
+        --vl-space-md: 0.8125rem;
+        --vl-space-lg: 1.5rem;
+        --vl-space-xl: 2.5rem;
+        --vl-container-gutter: var(--vl-space-sm);
+    }
+
+    :root[data-layout="presentation"] {
+        --vl-font-size-base: 17px;
+        --vl-space-md: 1.125rem;
+        --vl-space-lg: 2.25rem;
+        --vl-space-xl: 5rem;
+        --vl-leading-normal: 1.6;
+    }
+}

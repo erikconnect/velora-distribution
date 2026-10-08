@@ -1,0 +1,25 @@
+/* Host-owned appearance/layout only. No animation, timeline, transition or fallback rules. */
+@layer velora.components {
+  :root { --proof-bg:var(--vl-bg-main,#121816); --proof-fg:var(--vl-text-primary,#eff2df); --proof-accent:var(--vl-color-primary,#c1e698); --proof-gap:clamp(1rem,4vw,2.5rem); }
+  * { box-sizing:border-box; }
+  html { background:var(--proof-bg); color:var(--proof-fg); font:16px var(--vl-font-family,system-ui,sans-serif); }
+  body { margin:0; }
+  :is(button,summary,a) { color:inherit; }
+  button,details { padding:var(--proof-gap); border:1px solid currentColor; border-radius:var(--vl-radius-lg,1rem); background:transparent; font:inherit; }
+  button { cursor:pointer; display:flex; align-items:center; gap:1rem; }
+  :focus-visible { outline:3px solid var(--proof-accent); outline-offset:5px; }
+  a { text-underline-offset:.3em; }
+  h1,h2 { font-family:var(--vl-font-family-display,inherit); margin:.2em 0; font-size:clamp(2rem,8vw,5rem); line-height:.95; letter-spacing:-.05em; }
+  h2 { font-size:clamp(1.5rem,5vw,3rem); }
+  p { line-height:1.5; }
+  span { color:var(--proof-accent); }
+  .proof-center { min-height:100svh; display:grid; align-content:center; gap:var(--proof-gap); padding:var(--proof-gap); }
+  .proof-card { padding:var(--proof-gap); border:1px solid currentColor; border-radius:var(--vl-radius-lg,1rem); background:color-mix(in srgb,var(--proof-bg) 92%,var(--proof-fg)); }
+  .proof-gap { min-height:115svh; padding:var(--proof-gap); display:grid; place-items:center; }
+  #gate { padding:var(--proof-gap); }
+  .proof-mark { display:inline-block; font-size:2rem; }
+  .proof-stage { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); align-content:center; gap:var(--proof-gap); padding:var(--proof-gap); }
+  .proof-stage header,.proof-stage > p { grid-column:1/-1; }
+  .proof-end { padding:var(--proof-gap); min-height:30svh; }
+  @media (max-width:40rem) { .proof-stage { grid-template-columns:1fr; gap:1rem; } .proof-stage h1 { font-size:clamp(2rem,10vw,3rem); } .proof-stage .proof-card { padding:1rem; } }
+}

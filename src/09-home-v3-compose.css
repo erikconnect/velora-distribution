@@ -1,0 +1,221 @@
+/* Home v3 experiment: Compose Channels — Latinoware-style viewport gate, then channels. */
+@layer velora.overrides {
+  .v3-compose .v3-copy h2 {
+    font-size: clamp(2.25rem, 4.8vw, 4.75rem);
+    line-height: 1.02;
+  }
+  .v3-compose .v3-copy p.v3-hint {
+    max-width: 46rem;
+    margin-block-start: var(--vl-space-4, 1rem);
+    color: var(--vl-text-secondary);
+    font: 500 .95rem/1.55 var(--vl-font-family);
+  }
+
+  /* Same gate as Latinoware: plateau while intersecting, reset on exit so enter replays. */
+  @keyframes v3-compose-in-view-gate {
+    0% { --vl-in-view-state: 0; }
+    2% { --vl-in-view-state: 1; }
+    98% { --vl-in-view-state: 1; }
+    100% { --vl-in-view-state: 0; }
+  }
+  .v3-compose [vl-in-view] {
+    animation-name: v3-compose-in-view-gate;
+    animation-duration: 1ms;
+    animation-fill-mode: both;
+    animation-timeline: view();
+    animation-range: entry exit;
+    container-name: vl-in-view v3-compose-in-view;
+  }
+  @supports (animation-timeline: view()) {
+    @media (prefers-reduced-motion: no-preference) {
+    @container v3-compose-in-view style(--vl-in-view-state: 0) {
+      .v3-compose [vl-in-view] :is([vl-enter], [vl-exit], [vl-loop], [vl-loop-effect], [vl-hover], [vl-state]),
+      .v3-compose [vl-in-view] [vl-effect]:not([vl-scroll]):not([vl-timeline="view"]):not([vl-timeline="scroll"]) {
+        opacity: 0;
+        animation-name: none;
+      }
+    }
+    }
+  }
+
+  .v3-compose-set {
+    list-style: none;
+    margin: var(--vl-space-8, 2rem) 0 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--vl-space-4, 1rem);
+  }
+  .v3-compose-set > li {
+    display: grid;
+    min-height: 0;
+  }
+  .v3-compose-card {
+    display: grid;
+    grid-template-rows: auto 1fr auto;
+    gap: var(--vl-space-4, 1rem);
+    min-height: 18rem;
+    padding: var(--vl-space-5, 1.25rem);
+    border: var(--vl-skin-border-width, 1px) solid var(--vl-border-subtle);
+    border-radius: var(--vl-radius-lg, 1rem);
+    background: var(--vl-bg-surface);
+    color: var(--vl-text-primary);
+  }
+  .v3-compose-card > span:first-child {
+    display: grid;
+    place-items: center;
+    width: 2.25rem;
+    aspect-ratio: 1;
+    border: var(--vl-skin-border-width, 1px) solid var(--vl-border-subtle);
+    border-radius: 999px;
+    color: var(--vl-color-primary);
+    font: 700 .75rem var(--vl-font-family-mono, monospace);
+  }
+  .v3-compose-set strong {
+    display: block;
+    font: 650 1.1rem/1.2 var(--vl-font-family);
+  }
+  .v3-compose-set code,
+  .v3-compose-set small {
+    display: block;
+    margin-block: var(--vl-space-2, .5rem) var(--vl-space-3, .75rem);
+    overflow-wrap: anywhere;
+    color: var(--vl-color-primary);
+    font: 600 .75rem/1.5 var(--vl-font-family-mono, monospace);
+  }
+  .v3-compose-set p {
+    margin: 0;
+    color: var(--vl-text-secondary);
+    font-size: .88rem;
+    line-height: 1.55;
+  }
+  .v3-compose-probe {
+    min-height: 6.5rem;
+    overflow: clip;
+    border: var(--vl-skin-border-width, 1px) solid var(--vl-border-subtle);
+    border-radius: var(--vl-radius-md, .8rem);
+    background: var(--vl-bg-inset);
+  }
+  .v3-compose-probe--scroll img {
+    display: block;
+    width: 100%;
+    height: 9rem;
+    object-fit: cover;
+    filter: var(--vl-skin-media-filter, none);
+  }
+  .v3-compose-probe--loop {
+    display: grid;
+    place-items: center;
+  }
+  .v3-compose-probe--loop .vl-v3-logo {
+    width: 7.5rem;
+    color: var(--vl-text-primary);
+  }
+  .v3-compose-probe--hover {
+    display: grid;
+    place-items: center;
+    width: 100%;
+    color: var(--vl-text-primary);
+    font: 650 .8rem var(--vl-font-family-mono, monospace);
+    cursor: pointer;
+  }
+  .v3-compose-probe--hover:focus-visible {
+    outline: 2px solid var(--vl-text-primary);
+    outline-offset: 3px;
+    transform: translateY(-4px);
+  }
+  .v3-composed-object[vl-in-view] {
+    position: relative;
+    view-timeline-name: --v3-compose-object;
+    view-timeline-axis: block;
+  }
+  .v3-composed-object [vl-scroll] {
+    animation-play-state: running;
+  }
+  .v3-composed-object__copy[vl-enter] {
+    --vl-enter-duration: 1.6s;
+    --vl-enter-ease: var(--vl-ease-cinematic);
+    --vl-motion-delay: 240ms;
+  }
+  .v3-composed-object__media [vl-scroll="parallax"] {
+    --vl-parallax-from: -5.5%;
+    --vl-parallax-to: 5.5%;
+    --vl-range: entry 0% exit 100%;
+    --vl-scroll-timeline: --v3-compose-object;
+    --vl-scroll-range: entry 0% exit 100%;
+    display: block;
+    width: 100%;
+    height: 118%;
+    object-fit: cover;
+    animation-timeline: --v3-compose-object;
+    animation-range: entry 0% exit 100%;
+    animation-timing-function: var(--vl-ease-in-out-smooth);
+  }
+  .v3-composed-object__loop {
+    position: absolute;
+    z-index: 2;
+    right: var(--vl-space-6, 1.5rem);
+    top: var(--vl-space-6, 1.5rem);
+    width: min(28%, 10rem);
+    color: var(--vl-text-primary);
+    --vl-loop-duration: 10s;
+  }
+  .v3-compose .v3-code-handoff {
+    display: grid;
+    gap: var(--vl-space-3, .75rem);
+    margin-block-start: var(--vl-space-8, 2rem);
+  }
+  .v3-compose .v3-code-handoff__examples {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--vl-space-4, 1rem);
+  }
+  .v3-compose .v3-code-handoff figure { margin: 0; min-width: 0; }
+  .v3-compose .v3-code-handoff figcaption {
+    margin-block-end: var(--vl-space-2, .5rem);
+    font: 650 .68rem var(--vl-font-family-mono, monospace);
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: var(--vl-color-primary);
+  }
+  .v3-compose .v3-code-handoff > span {
+    font: 650 .68rem var(--vl-font-family-mono, monospace);
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: var(--vl-text-secondary);
+  }
+  .v3-compose .v3-code-handoff pre {
+    margin: 0;
+    padding: var(--vl-space-4, 1rem);
+    overflow: auto;
+    border: var(--vl-skin-border-width, 1px) solid var(--vl-border-subtle);
+    border-radius: var(--vl-radius-md, .8rem);
+    background: var(--vl-bg-inset);
+    color: var(--vl-text-primary);
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    font-size: .8rem;
+    line-height: 1.65;
+  }
+  .v3-compose .v3-code-handoff a {
+    color: var(--vl-text-primary);
+    font-size: .9rem;
+    text-underline-offset: .3em;
+  }
+  @media (max-width: 52rem) {
+    .v3-compose-set { grid-template-columns: 1fr; }
+    .v3-compose-card { min-height: 0; }
+    .v3-compose .v3-code-handoff__examples { grid-template-columns: 1fr; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .v3-compose [vl-in-view] {
+      animation: none;
+    }
+    .v3-compose [vl-in-view] :is([vl-enter], [vl-exit], [vl-loop], [vl-loop-effect], [vl-hover], [vl-state], [vl-effect]),
+    .v3-composed-object__copy {
+      animation: none;
+      transform: none;
+      opacity: 1;
+    }
+  }
+}

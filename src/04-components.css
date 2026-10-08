@@ -1,0 +1,1436 @@
+@layer velora.components {
+    /*
+     * Componentes orientados a marketing / landing — não são “cards genéricos de UI kit”.
+     * Combinação típica: kicker + headline + CTA + prova social; tudo responsivo e com tokens.
+     */
+
+    /* -------------------------------------------------------------------------
+       Eyebrow / kicker — linha de abertura exclusiva
+       ------------------------------------------------------------------------- */
+    .vl-kicker {
+        display: inline-flex;
+        align-items: center;
+        gap: var(--vl-space-sm);
+        font-family: var(--vl-font-family-display);
+        font-size: var(--vl-font-size-xs);
+        font-weight: var(--vl-font-weight-semibold);
+        letter-spacing: var(--vl-tracking-display);
+        text-transform: uppercase;
+        color: var(--vl-color-primary);
+    }
+
+    .vl-kicker::before {
+        content: "";
+        width: 2rem;
+        height: 1px;
+        background: linear-gradient(
+            90deg,
+            transparent,
+            color-mix(in oklch, var(--vl-color-primary) 80%, transparent)
+        );
+    }
+
+    .vl-kicker--pulse {
+        position: relative;
+        padding-inline: var(--vl-space-sm);
+        border-radius: var(--vl-radius-full);
+        background: color-mix(in oklch, var(--vl-color-primary) 14%, transparent);
+        border: 1px solid color-mix(in oklch, var(--vl-color-primary) 35%, transparent);
+    }
+
+    .vl-kicker--pulse::before {
+        display: none;
+    }
+
+    @media (prefers-reduced-motion: no-preference) {
+        .vl-kicker--pulse {
+            animation: vl-kicker-glow 4s var(--vl-ease-in-out-smooth) infinite;
+        }
+    }
+
+    @keyframes vl-kicker-glow {
+        0%,
+        100% {
+            box-shadow: 0 0 0 0 color-mix(in oklch, var(--vl-color-primary) 0%, transparent);
+        }
+
+        50% {
+            box-shadow: 0 0 1.25rem color-mix(in oklch, var(--vl-color-primary) 28%, transparent);
+        }
+    }
+
+    /* -------------------------------------------------------------------------
+       CTAs — primário com “shine” e alvo táctil mínimo (mobilidade)
+       ------------------------------------------------------------------------- */
+    .vl-cta {
+        position: relative;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: var(--vl-space-sm);
+        min-height: 2.75rem;
+        min-width: 2.75rem;
+        padding: var(--vl-space-sm) var(--vl-space-xl);
+        border: none;
+        border-radius: var(--vl-radius-full);
+        cursor: pointer;
+        font-family: inherit;
+        font-size: var(--vl-font-size-sm);
+        font-weight: var(--vl-font-weight-semibold);
+        letter-spacing: var(--vl-tracking-wide);
+        text-decoration: none;
+        /* Texto sempre legível sobre gradiente (independe de --vl-text-inverse por tema) */
+        color: oklch(99% 0.01 var(--vl-hue-neutral));
+        background: linear-gradient(
+            125deg,
+            var(--vl-color-primary),
+            color-mix(in oklch, var(--vl-color-accent) 70%, var(--vl-color-primary))
+        );
+        box-shadow:
+            var(--vl-shadow-md),
+            0 0 0 1px color-mix(in oklch, var(--vl-color-primary) 40%, transparent);
+        overflow: hidden;
+        isolation: isolate;
+        transition:
+            transform var(--vl-transition-fast),
+            box-shadow var(--vl-transition-normal);
+    }
+
+    .vl-cta::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(
+            105deg,
+            transparent 35%,
+            oklch(100% 0 0 / 0.22) 50%,
+            transparent 65%
+        );
+        transform: translateX(-130%) skewX(-12deg);
+        transition: transform 0.65s var(--vl-ease-cinematic);
+        pointer-events: none;
+    }
+
+    .vl-cta:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--vl-shadow-glow);
+    }
+
+    .vl-cta:hover::after {
+        transform: translateX(130%) skewX(-12deg);
+    }
+
+    .vl-cta:active {
+        transform: translateY(0);
+    }
+
+    .vl-cta:focus-visible {
+        outline: var(--vl-focus-ring-width) solid var(--vl-focus-ring-color);
+        outline-offset: var(--vl-focus-ring-offset);
+    }
+
+    /**
+     * Secundário: contorno luminoso — destaca em fundos escuros sem parecer botão de sistema.
+     */
+    .vl-cta--ghost {
+        color: var(--vl-text-primary);
+        background: color-mix(in oklch, var(--vl-bg-surface) 55%, transparent);
+        -webkit-backdrop-filter: blur(var(--vl-backdrop-blur));
+        backdrop-filter: blur(var(--vl-backdrop-blur));
+        box-shadow: none;
+        border: 1px solid color-mix(in oklch, var(--vl-color-primary) 45%, transparent);
+    }
+
+    .vl-cta--ghost::after {
+        opacity: 0.35;
+    }
+
+    /* -------------------------------------------------------------------------
+       Cartões — base cinematográfica + variantes exclusivas
+       ------------------------------------------------------------------------- */
+    .vl-card {
+        position: relative;
+        overflow: hidden;
+        border-radius: var(--vl-radius-xl);
+        padding: var(--vl-space-lg);
+        background: var(--vl-bg-surface);
+        border: 1px solid color-mix(in oklch, var(--vl-text-primary) 10%, transparent);
+        box-shadow: var(--vl-shadow-md);
+        transition:
+            transform var(--vl-transition-normal),
+            box-shadow var(--vl-transition-normal),
+            border-color var(--vl-transition-normal);
+    }
+
+    .vl-card::before {
+        content: "";
+        position: absolute;
+        inset: -45%;
+        background: radial-gradient(
+            circle at 50% 0%,
+            color-mix(in oklch, var(--vl-color-primary) 38%, transparent),
+            transparent 58%
+        );
+        opacity: 0;
+        transition: opacity var(--vl-transition-slow);
+        pointer-events: none;
+    }
+
+    .vl-card:hover {
+        transform: translateY(-6px);
+        box-shadow: var(--vl-shadow-glow);
+        border-color: color-mix(in oklch, var(--vl-color-primary) 42%, transparent);
+    }
+
+    .vl-card:hover::before {
+        opacity: 1;
+    }
+
+    .vl-card:focus-within {
+        border-color: color-mix(in oklch, var(--vl-color-primary) 50%, transparent);
+        box-shadow: var(--vl-shadow-lg), 0 0 0 1px var(--vl-border-focus);
+    }
+
+    /**
+     * Vidro + noise sutil (marketing “premium stack”).
+     */
+    .vl-card--glass {
+        background: var(--vl-glass-bg);
+        -webkit-backdrop-filter: blur(var(--vl-backdrop-blur));
+        backdrop-filter: blur(var(--vl-backdrop-blur));
+        border-color: color-mix(in oklch, var(--vl-text-primary) 8%, transparent);
+    }
+
+    /**
+     * Borda com gradiente animado — “aurora”; desliga com prefers-reduced-motion.
+     */
+    .vl-card--aurora {
+        border: 1px solid transparent;
+        background:
+            linear-gradient(var(--vl-bg-surface), var(--vl-bg-surface)) padding-box,
+            linear-gradient(
+                    var(--vl-aurora-angle, 120deg),
+                    color-mix(in oklch, var(--vl-color-primary) 65%, transparent),
+                    color-mix(in oklch, var(--vl-color-secondary) 55%, transparent),
+                    color-mix(in oklch, var(--vl-color-accent) 50%, transparent),
+                    color-mix(in oklch, var(--vl-color-primary) 65%, transparent)
+                )
+                border-box;
+    }
+
+    @media (prefers-reduced-motion: no-preference) {
+        .vl-card--aurora {
+            animation: vl-aurora-shift 10s var(--vl-ease-in-out-smooth) infinite;
+        }
+    }
+
+    @keyframes vl-aurora-shift {
+        0%,
+        100% {
+            filter: hue-rotate(0deg);
+        }
+
+        50% {
+            filter: hue-rotate(18deg);
+        }
+    }
+
+    .vl-card__title {
+        position: relative;
+        font-family: var(--vl-font-family-display);
+        font-size: var(--vl-font-size-xl);
+        font-weight: var(--vl-font-weight-semibold);
+        letter-spacing: var(--vl-tracking-tight);
+        margin-bottom: var(--vl-space-sm);
+        color: var(--vl-text-primary);
+    }
+
+    .vl-card__body {
+        position: relative;
+        color: var(--vl-text-secondary);
+        font-size: var(--vl-font-size-sm);
+        line-height: var(--vl-leading-relaxed);
+    }
+
+    /* -------------------------------------------------------------------------
+       Métricas e prova social
+       ------------------------------------------------------------------------- */
+    .vl-stat {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: var(--vl-space-2xs);
+        min-width: 0;
+    }
+
+    .vl-stat__value {
+        font-family: var(--vl-font-family-display);
+        font-size: var(--vl-font-size-3xl);
+        font-weight: var(--vl-font-weight-bold);
+        line-height: var(--vl-leading-tight);
+        letter-spacing: var(--vl-tracking-tight);
+        background: var(--vl-gradient-brand);
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+    }
+
+    .vl-stat__label {
+        font-size: var(--vl-font-size-sm);
+        color: var(--vl-text-muted);
+        max-width: 14ch;
+    }
+
+    .vl-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: var(--vl-space-2xs);
+        padding: var(--vl-space-2xs) var(--vl-space-sm);
+        border-radius: var(--vl-radius-full);
+        font-size: var(--vl-font-size-xs);
+        font-weight: var(--vl-font-weight-medium);
+        letter-spacing: var(--vl-tracking-wide);
+        text-transform: uppercase;
+        color: var(--vl-text-secondary);
+        border: 1px solid color-mix(in oklch, var(--vl-text-primary) 12%, transparent);
+        background: color-mix(in oklch, var(--vl-bg-surface-elevated) 88%, transparent);
+    }
+
+    .vl-badge--accent {
+        color: var(--vl-color-primary);
+        border-color: color-mix(in oklch, var(--vl-color-primary) 40%, transparent);
+        background: color-mix(in oklch, var(--vl-color-primary) 12%, transparent);
+    }
+
+    /* -------------------------------------------------------------------------
+       Testemunho / quote — bloco editorial, não “card de blog”
+       ------------------------------------------------------------------------- */
+    .vl-quote {
+        position: relative;
+        margin: 0;
+        padding: var(--vl-space-lg) var(--vl-space-lg) var(--vl-space-lg) var(--vl-space-xl);
+        font-size: var(--vl-font-size-lg);
+        line-height: var(--vl-leading-relaxed);
+        font-style: italic;
+        color: var(--vl-text-secondary);
+    }
+
+    .vl-quote::before {
+        content: "";
+        position: absolute;
+        left: 0;
+        top: var(--vl-space-md);
+        bottom: var(--vl-space-md);
+        width: 3px;
+        border-radius: var(--vl-radius-full);
+        background: var(--vl-gradient-brand);
+    }
+
+    .vl-quote cite {
+        display: block;
+        margin-top: var(--vl-space-md);
+        font-size: var(--vl-font-size-sm);
+        font-style: normal;
+        font-weight: var(--vl-font-weight-semibold);
+        color: var(--vl-text-primary);
+    }
+
+    /* -------------------------------------------------------------------------
+       Marquee — faixa de logos / tech (HTML: repetir conteúdo dentro do track)
+       ------------------------------------------------------------------------- */
+    .vl-marquee {
+        position: relative;
+        overflow: hidden;
+        -webkit-mask-image: linear-gradient(
+            90deg,
+            transparent,
+            black 10%,
+            black 90%,
+            transparent
+        );
+        mask-image: linear-gradient(
+            90deg,
+            transparent,
+            black 10%,
+            black 90%,
+            transparent
+        );
+    }
+
+    .vl-marquee__track {
+        display: flex;
+        width: max-content;
+        gap: var(--vl-space-xl);
+        align-items: center;
+    }
+
+    @media (prefers-reduced-motion: no-preference) {
+        .vl-marquee__track {
+            animation: vl-marquee-scroll 32s linear infinite;
+        }
+    }
+
+    @keyframes vl-marquee-scroll {
+        to {
+            transform: translate3d(-50%, 0, 0);
+        }
+    }
+
+    .vl-marquee__item {
+        flex: 0 0 auto;
+        font-size: var(--vl-font-size-sm);
+        font-weight: var(--vl-font-weight-semibold);
+        letter-spacing: var(--vl-tracking-wide);
+        text-transform: uppercase;
+        color: var(--vl-text-muted);
+        white-space: nowrap;
+        opacity: 0.85;
+    }
+
+    /* -------------------------------------------------------------------------
+       Acordeão — chrome visual; open/close is vl-state="expand" in motion-core
+       ------------------------------------------------------------------------- */
+    /* Open/close motion is owned by vl-state="expand" in motion-core. */
+    .vl-accordion {
+        border-radius: var(--vl-radius-lg);
+        border: 1px solid color-mix(in oklch, var(--vl-text-primary) 10%, transparent);
+        background: var(--vl-bg-surface);
+        overflow: hidden;
+        transition: border-color var(--vl-transition-normal), box-shadow var(--vl-transition-normal);
+    }
+
+    .vl-accordion:hover {
+        border-color: color-mix(in oklch, var(--vl-color-primary) 25%, transparent);
+    }
+
+    .vl-accordion[open] {
+        border-color: color-mix(in oklch, var(--vl-color-primary) 38%, transparent);
+        box-shadow: var(--vl-shadow-sm);
+    }
+
+    .vl-accordion summary {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: var(--vl-space-md);
+        cursor: pointer;
+        list-style: none;
+        padding: var(--vl-space-md) var(--vl-space-lg);
+        font-family: var(--vl-font-family-display);
+        font-weight: var(--vl-font-weight-semibold);
+        font-size: var(--vl-font-size-md);
+        color: var(--vl-text-primary);
+    }
+
+    .vl-accordion summary::-webkit-details-marker {
+        display: none;
+    }
+
+    .vl-accordion summary::after {
+        content: "";
+        flex-shrink: 0;
+        width: 0.55rem;
+        height: 0.55rem;
+        border-right: 2px solid currentColor;
+        border-bottom: 2px solid currentColor;
+        transform: rotate(45deg);
+        transition: transform var(--vl-duration-normal) var(--vl-ease-cinematic);
+        opacity: 0.75;
+    }
+
+    .vl-accordion[open] summary::after {
+        transform: rotate(-135deg);
+    }
+
+    .vl-accordion__content {
+        padding: 0 var(--vl-space-lg) var(--vl-space-lg);
+        color: var(--vl-text-secondary);
+        font-size: var(--vl-font-size-sm);
+        line-height: var(--vl-leading-relaxed);
+    }
+
+    /**
+     * Acordeão com miniatura no sumário + painel com imagem (editorial / FAQs ricos).
+     */
+    .vl-accordion--media summary {
+        align-items: center;
+    }
+
+    .vl-accordion__summary-main {
+        flex: 1;
+        min-width: 0;
+        text-align: start;
+    }
+
+    .vl-accordion__thumb {
+        flex-shrink: 0;
+        width: 3.25rem;
+        height: 3.25rem;
+        border-radius: var(--vl-radius-md);
+        overflow: hidden;
+        border: 1px solid color-mix(in oklch, var(--vl-text-primary) 12%, transparent);
+        box-shadow: var(--vl-shadow-sm);
+        background: var(--vl-bg-inset);
+    }
+
+    .vl-accordion__thumb img {
+        display: block;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .vl-accordion__content--split {
+        display: grid;
+        gap: var(--vl-space-lg);
+    }
+
+    @media (min-width: 48rem) {
+        .vl-accordion__content--split {
+            grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr);
+            align-items: start;
+        }
+    }
+
+    .vl-accordion__figure {
+        margin: 0;
+        border-radius: var(--vl-radius-lg);
+        overflow: hidden;
+        border: 1px solid color-mix(in oklch, var(--vl-text-primary) 10%, transparent);
+        background: var(--vl-bg-inset);
+    }
+
+    .vl-accordion__figure img {
+        display: block;
+        width: 100%;
+        height: auto;
+        object-fit: cover;
+    }
+
+    /* -------------------------------------------------------------------------
+       Divisor de secção — ritmo visual entre blocos
+       ------------------------------------------------------------------------- */
+    .vl-section-rule {
+        height: 1px;
+        width: 100%;
+        border: none;
+        margin: 0;
+        background: linear-gradient(
+            90deg,
+            transparent,
+            color-mix(in oklch, var(--vl-color-primary) 45%, transparent),
+            transparent
+        );
+        opacity: 0.65;
+    }
+
+    /* -------------------------------------------------------------------------
+       Tipografia de sistema — cabeçalho de secção + código + links de corpo
+       ------------------------------------------------------------------------- */
+    .vl-section-header {
+        display: flex;
+        flex-direction: column;
+        gap: var(--vl-space-sm);
+        margin-bottom: var(--vl-space-xl);
+        max-width: 42rem;
+    }
+
+    .vl-section-header__title {
+        font-family: var(--vl-font-family-display);
+        font-size: var(--vl-font-size-3xl);
+        font-weight: var(--vl-font-weight-bold);
+        letter-spacing: var(--vl-tracking-tight);
+        line-height: var(--vl-leading-tight);
+        color: var(--vl-text-primary);
+    }
+
+    .vl-section-header__desc {
+        margin: 0;
+        color: var(--vl-text-secondary);
+        font-size: var(--vl-font-size-md);
+        line-height: var(--vl-leading-relaxed);
+    }
+
+    .vl-code {
+        font-family: var(--vl-font-family-mono);
+        font-size: 0.9em;
+        padding: 0.12em 0.45em;
+        border-radius: var(--vl-radius-sm);
+        background: var(--vl-bg-inset);
+        border: 1px solid color-mix(in oklch, var(--vl-text-primary) 10%, transparent);
+        color: var(--vl-text-primary);
+    }
+
+    .vl-link {
+        color: var(--vl-color-primary);
+        font-weight: var(--vl-font-weight-semibold);
+        text-decoration: none;
+        border-bottom: 1px solid color-mix(in oklch, var(--vl-color-primary) 45%, transparent);
+        transition:
+            color var(--vl-transition-fast),
+            border-color var(--vl-transition-fast);
+    }
+
+    .vl-link:hover {
+        color: color-mix(in oklch, var(--vl-color-primary) 88%, var(--vl-text-primary));
+        border-bottom-color: var(--vl-color-primary);
+    }
+
+    .vl-link:focus-visible {
+        outline: var(--vl-focus-ring-width) solid var(--vl-focus-ring-color);
+        outline-offset: var(--vl-focus-ring-offset);
+        border-bottom-color: transparent;
+    }
+
+    /* Fallback: keep plain anchors on brand color when utility class isn't applied. */
+    a:not([class]) {
+        color: var(--vl-color-primary);
+    }
+
+    a:not([class]):visited {
+        color: color-mix(in oklch, var(--vl-color-primary) 82%, var(--vl-text-primary));
+    }
+
+    /* -------------------------------------------------------------------------
+       Flip 3D — checkbox + label (sem JS) ou variante só hover
+       ------------------------------------------------------------------------- */
+    .vl-flip {
+        position: relative;
+        perspective: 1200px;
+    }
+
+    .vl-flip__check {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border: 0;
+        opacity: 0;
+    }
+
+    .vl-flip__check:focus-visible ~ .vl-flip__inner {
+        outline: var(--vl-focus-ring-width) solid var(--vl-focus-ring-color);
+        outline-offset: var(--vl-focus-ring-offset);
+        border-radius: var(--vl-radius-xl);
+    }
+
+    .vl-flip__inner {
+        position: relative;
+        min-height: 11rem;
+        transform-style: preserve-3d;
+        transition: transform 0.8s var(--vl-ease-cinematic);
+    }
+
+    .vl-flip__face {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        backface-visibility: hidden;
+        border-radius: var(--vl-radius-xl);
+        padding: var(--vl-space-lg);
+        border: 1px solid color-mix(in oklch, var(--vl-text-primary) 12%, transparent);
+        background: var(--vl-bg-surface);
+        box-shadow: var(--vl-shadow-md);
+    }
+
+    .vl-flip__face--back {
+        transform: rotateY(180deg);
+        background: var(--vl-bg-surface-elevated);
+        border-color: color-mix(in oklch, var(--vl-color-primary) 28%, transparent);
+    }
+
+    .vl-flip__check:checked ~ .vl-flip__inner,
+    .vl-flip--hover:hover .vl-flip__inner {
+        transform: rotateY(180deg);
+    }
+
+    .vl-flip__actions {
+        margin-top: var(--vl-space-md);
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--vl-space-sm);
+        align-items: center;
+    }
+
+    .vl-flip__label {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 2.75rem;
+        padding: var(--vl-space-sm) var(--vl-space-lg);
+        border-radius: var(--vl-radius-full);
+        cursor: pointer;
+        font-size: var(--vl-font-size-sm);
+        font-weight: var(--vl-font-weight-semibold);
+        color: var(--vl-text-primary);
+        border: 1px solid color-mix(in oklch, var(--vl-color-primary) 40%, transparent);
+        background: color-mix(in oklch, var(--vl-color-primary) 10%, transparent);
+        transition:
+            background-color var(--vl-transition-fast),
+            border-color var(--vl-transition-fast);
+    }
+
+    .vl-flip__label:hover {
+        border-color: color-mix(in oklch, var(--vl-color-primary) 60%, transparent);
+        background: color-mix(in oklch, var(--vl-color-primary) 18%, transparent);
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .vl-flip__inner {
+            transition-duration: 0.2s;
+        }
+    }
+
+    /* -------------------------------------------------------------------------
+       Slider / range — input nativo estilizado (accent + track)
+       ------------------------------------------------------------------------- */
+    .vl-range {
+        display: block;
+        width: 100%;
+        max-width: 28rem;
+        height: 1.25rem;
+        margin: 0;
+        accent-color: var(--vl-color-primary);
+        cursor: pointer;
+        background: transparent;
+    }
+
+    /* Fallback: avoid browser-default (often purple) range accent for unclassed inputs. */
+    input[type="range"]:not([class]) {
+        accent-color: var(--vl-color-primary);
+    }
+
+    .vl-range:focus-visible {
+        outline: var(--vl-focus-ring-width) solid var(--vl-focus-ring-color);
+        outline-offset: var(--vl-focus-ring-offset);
+    }
+
+    .vl-range::-webkit-slider-runnable-track {
+        height: 0.45rem;
+        border-radius: var(--vl-radius-full);
+        background: linear-gradient(
+            90deg,
+            color-mix(in oklch, var(--vl-color-primary) 35%, transparent),
+            color-mix(in oklch, var(--vl-bg-inset) 90%, transparent)
+        );
+    }
+
+    .vl-range::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 1.1rem;
+        height: 1.1rem;
+        margin-top: -0.35rem;
+        border-radius: var(--vl-radius-full);
+        background: var(--vl-color-primary);
+        box-shadow: var(--vl-shadow-sm);
+        border: 2px solid color-mix(in oklch, var(--vl-text-inverse) 25%, transparent);
+    }
+
+    .vl-range::-moz-range-track {
+        height: 0.45rem;
+        border-radius: var(--vl-radius-full);
+        background: linear-gradient(
+            90deg,
+            color-mix(in oklch, var(--vl-color-primary) 35%, transparent),
+            color-mix(in oklch, var(--vl-bg-inset) 90%, transparent)
+        );
+    }
+
+    .vl-range::-moz-range-thumb {
+        width: 1.1rem;
+        height: 1.1rem;
+        border-radius: var(--vl-radius-full);
+        background: var(--vl-color-primary);
+        border: 2px solid color-mix(in oklch, var(--vl-text-inverse) 25%, transparent);
+        box-shadow: var(--vl-shadow-sm);
+    }
+
+    .vl-range-wrap {
+        display: flex;
+        flex-direction: column;
+        gap: var(--vl-space-sm);
+        max-width: 28rem;
+    }
+
+    .vl-range-wrap__label {
+        font-size: var(--vl-font-size-sm);
+        font-weight: var(--vl-font-weight-medium);
+        color: var(--vl-text-secondary);
+    }
+
+    /* -------------------------------------------------------------------------
+       Carrossel — 3 slides, sem JS: radios + labels (setas e dots), overflow hidden
+       Estrutura: 3× .vl-carousel__state (radio) → .vl-carousel__viewport → strip → slides
+       IDs únicos nos inputs para for="" dos labels. Várias instâncias: repetir o bloco com name/id distintos.
+       ------------------------------------------------------------------------- */
+    .vl-carousel {
+        position: relative;
+        border-radius: var(--vl-radius-xl);
+        border: 1px solid color-mix(in oklch, var(--vl-text-primary) 10%, transparent);
+        background: var(--vl-bg-inset);
+        padding: var(--vl-space-md);
+        padding-inline: calc(var(--vl-space-md) + 2.5rem);
+    }
+
+    .vl-carousel__state {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border: 0;
+        opacity: 0;
+        pointer-events: none;
+    }
+
+    .vl-carousel__viewport {
+        overflow: hidden;
+        border-radius: var(--vl-radius-lg);
+        width: 100%;
+    }
+
+    .vl-carousel__strip {
+        display: flex;
+        flex-direction: row;
+        width: 300%;
+        transform: translateX(0);
+        transition: transform 0.55s var(--vl-ease-cinematic);
+        will-change: transform;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .vl-carousel__strip {
+            transition-duration: 0.15s;
+        }
+    }
+
+    .vl-carousel__slide {
+        box-sizing: border-box;
+        flex: 0 0 33.333333%;
+        width: 33.333333%;
+        padding: var(--vl-space-lg);
+        border-radius: var(--vl-radius-lg);
+        background: var(--vl-bg-surface);
+        border: 1px solid color-mix(in oklch, var(--vl-text-primary) 8%, transparent);
+        box-shadow: var(--vl-shadow-sm);
+    }
+
+    .vl-carousel:has(.vl-carousel__state:nth-of-type(1):checked) .vl-carousel__strip {
+        transform: translateX(0);
+    }
+
+    .vl-carousel:has(.vl-carousel__state:nth-of-type(2):checked) .vl-carousel__strip {
+        transform: translateX(-33.333333%);
+    }
+
+    .vl-carousel:has(.vl-carousel__state:nth-of-type(3):checked) .vl-carousel__strip {
+        transform: translateX(-66.666666%);
+    }
+
+    .vl-carousel__arrows {
+        position: absolute;
+        left: 0;
+        right: 0;
+        top: 50%;
+        transform: translateY(-50%);
+        height: 2.5rem;
+        pointer-events: none;
+        z-index: 2;
+    }
+
+    .vl-carousel__arrow--prev {
+        position: absolute;
+        left: var(--vl-space-sm);
+        top: 0;
+    }
+
+    .vl-carousel__arrow--next {
+        position: absolute;
+        right: var(--vl-space-sm);
+        top: 0;
+    }
+
+    .vl-carousel__arrow {
+        pointer-events: auto;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        width: 2.5rem;
+        height: 2.5rem;
+        margin: 0;
+        border-radius: var(--vl-radius-full);
+        border: 1px solid color-mix(in oklch, var(--vl-text-primary) 14%, transparent);
+        background: color-mix(in oklch, var(--vl-bg-surface) 88%, transparent);
+        -webkit-backdrop-filter: blur(8px);
+        backdrop-filter: blur(8px);
+        color: var(--vl-text-primary);
+        font-size: 1.35rem;
+        line-height: 1;
+        cursor: pointer;
+        transition:
+            background-color var(--vl-transition-fast),
+            border-color var(--vl-transition-fast),
+            transform var(--vl-transition-fast);
+    }
+
+    .vl-carousel__arrow:hover {
+        border-color: color-mix(in oklch, var(--vl-color-primary) 45%, transparent);
+        background: color-mix(in oklch, var(--vl-color-primary) 14%, transparent);
+        color: var(--vl-color-primary);
+    }
+
+    .vl-carousel__arrow:focus-visible {
+        outline: var(--vl-focus-ring-width) solid var(--vl-focus-ring-color);
+        outline-offset: var(--vl-focus-ring-offset);
+    }
+
+    .vl-carousel:has(.vl-carousel__state:nth-of-type(1):checked) .vl-carousel__arrow--next.vl-carousel__when-slide-0 {
+        display: inline-flex;
+    }
+
+    .vl-carousel:has(.vl-carousel__state:nth-of-type(2):checked) .vl-carousel__arrow--prev.vl-carousel__when-slide-1,
+    .vl-carousel:has(.vl-carousel__state:nth-of-type(2):checked) .vl-carousel__arrow--next.vl-carousel__when-slide-1 {
+        display: inline-flex;
+    }
+
+    .vl-carousel:has(.vl-carousel__state:nth-of-type(3):checked) .vl-carousel__arrow--prev.vl-carousel__when-slide-2 {
+        display: inline-flex;
+    }
+
+    .vl-slider-dots {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        align-items: center;
+        gap: var(--vl-space-sm);
+        padding: var(--vl-space-md) 0 0;
+    }
+
+    .vl-slider-dots__dot {
+        display: inline-flex;
+        width: 0.5rem;
+        height: 0.5rem;
+        padding: 0;
+        border-radius: var(--vl-radius-full);
+        border: 1px solid color-mix(in oklch, var(--vl-text-primary) 12%, transparent);
+        background: color-mix(in oklch, var(--vl-text-muted) 70%, transparent);
+        cursor: pointer;
+        transition:
+            transform var(--vl-transition-fast),
+            background-color var(--vl-transition-fast),
+            border-color var(--vl-transition-fast);
+    }
+
+    .vl-slider-dots__dot:hover {
+        transform: scale(1.2);
+        border-color: color-mix(in oklch, var(--vl-color-primary) 40%, transparent);
+        background: color-mix(in oklch, var(--vl-color-primary) 25%, transparent);
+    }
+
+    .vl-carousel:has(.vl-carousel__state:nth-of-type(1):checked) .vl-slider-dots label:nth-child(1),
+    .vl-carousel:has(.vl-carousel__state:nth-of-type(2):checked) .vl-slider-dots label:nth-child(2),
+    .vl-carousel:has(.vl-carousel__state:nth-of-type(3):checked) .vl-slider-dots label:nth-child(3) {
+        background: var(--vl-color-primary);
+        border-color: color-mix(in oklch, var(--vl-color-primary) 50%, transparent);
+        transform: scale(1.35);
+    }
+
+    /* -------------------------------------------------------------------------
+       Galeria — grelha densa / mosaico (span opcional em .vl-gallery__item)
+       ------------------------------------------------------------------------- */
+    .vl-gallery {
+        display: grid;
+        gap: var(--vl-space-md);
+        grid-template-columns: repeat(auto-fill, minmax(10rem, 1fr));
+    }
+
+    .vl-gallery--mosaic {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        grid-auto-rows: 108px;
+    }
+
+    @media (max-width: 47.99rem) {
+        .vl-gallery--mosaic {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            grid-auto-rows: 96px;
+        }
+    }
+
+    .vl-gallery__item {
+        position: relative;
+        margin: 0;
+        min-height: 0;
+        border-radius: var(--vl-radius-xl);
+        overflow: hidden;
+        background: var(--vl-bg-inset);
+        isolation: isolate;
+    }
+
+    .vl-gallery__item--wide {
+        grid-column: span 2;
+    }
+
+    .vl-gallery__item--tall {
+        grid-row: span 2;
+    }
+
+    .vl-gallery__item img {
+        display: block;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transform: scale(1);
+        transition: transform 0.85s var(--vl-ease-cinematic);
+    }
+
+    .vl-gallery__item:hover img,
+    .vl-gallery__item:focus-within img {
+        transform: scale(1.045);
+    }
+
+    .vl-gallery__caption {
+        position: absolute;
+        inset: auto 0 0 0;
+        z-index: 1;
+        margin: 0;
+        padding: var(--vl-space-sm) var(--vl-space-md);
+        font-size: var(--vl-font-size-xs);
+        font-weight: var(--vl-font-weight-medium);
+        color: oklch(98% 0.01 var(--vl-hue-neutral));
+        background: linear-gradient(transparent, oklch(12% 0.04 var(--vl-hue-neutral) / 0.88));
+        line-height: var(--vl-leading-snug);
+    }
+
+    /* -------------------------------------------------------------------------
+       Banner full-bleed — hero com scrim, mesh opcional e Ken Burns suave
+       ------------------------------------------------------------------------- */
+    @keyframes vl-banner-ken {
+        from {
+            transform: scale(1.04);
+        }
+
+        to {
+            transform: scale(1.1);
+        }
+    }
+
+    @keyframes vl-banner-shimmer {
+        0%,
+        100% {
+            opacity: 0.2;
+            transform: translateX(-18%) skewX(-12deg);
+        }
+
+        50% {
+            opacity: 0.45;
+            transform: translateX(18%) skewX(-12deg);
+        }
+    }
+
+    @keyframes vl-banner-mesh-drift {
+        from {
+            transform: translate(-1.5%, -1%) scale(1);
+        }
+
+        to {
+            transform: translate(1.5%, 1.5%) scale(1.04);
+        }
+    }
+
+    .vl-banner {
+        position: relative;
+        display: grid;
+        place-items: center;
+        min-height: min(88dvh, 820px);
+        width: 100vw;
+        max-width: 100vw;
+        margin-inline: calc(50% - 50vw);
+        overflow: hidden;
+        isolation: isolate;
+    }
+
+    .vl-banner__media {
+        position: absolute;
+        inset: 0;
+        z-index: 0;
+    }
+
+    .vl-banner__media img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+    }
+
+    .vl-banner--ken .vl-banner__media img {
+        animation: vl-banner-ken 22s var(--vl-ease-in-out-smooth) infinite alternate;
+        will-change: transform;
+    }
+
+    .vl-banner__scrim {
+        position: absolute;
+        inset: 0;
+        z-index: 1;
+        pointer-events: none;
+        background:
+            linear-gradient(
+                185deg,
+                oklch(18% 0.04 var(--vl-hue-neutral) / 0.35) 0%,
+                oklch(10% 0.05 var(--vl-hue-neutral) / 0.82) 100%
+            ),
+            radial-gradient(
+                ellipse 90% 65% at 50% 100%,
+                color-mix(in oklch, var(--vl-color-primary) 38%, transparent),
+                transparent 72%
+            );
+    }
+
+    .vl-banner--mesh::before {
+        content: "";
+        position: absolute;
+        inset: -15%;
+        z-index: 2;
+        pointer-events: none;
+        background:
+            radial-gradient(
+                circle at 22% 28%,
+                color-mix(in oklch, var(--vl-color-primary) 42%, transparent),
+                transparent 48%
+            ),
+            radial-gradient(
+                circle at 82% 22%,
+                color-mix(in oklch, var(--vl-color-secondary) 38%, transparent),
+                transparent 46%
+            ),
+            radial-gradient(circle at 50% 88%, oklch(45% 0.12 var(--vl-hue-accent) / 0.25), transparent 55%);
+        mix-blend-mode: plus-lighter;
+        opacity: 0.55;
+        animation: vl-banner-mesh-drift 20s var(--vl-ease-in-out-smooth) infinite alternate;
+    }
+
+    .vl-banner__glow {
+        position: absolute;
+        inset: 0;
+        z-index: 2;
+        pointer-events: none;
+        background: linear-gradient(
+            108deg,
+            transparent 38%,
+            oklch(98% 0.02 var(--vl-hue-neutral) / 0.14) 50%,
+            transparent 62%
+        );
+        animation: vl-banner-shimmer 16s var(--vl-ease-in-out-smooth) infinite;
+    }
+
+    .vl-banner__content {
+        position: relative;
+        z-index: 3;
+        width: 100%;
+        max-width: var(--vl-container-max);
+        margin-inline: auto;
+        padding-inline: max(var(--vl-container-gutter), env(safe-area-inset-left, 0px));
+        padding-block: var(--vl-space-2xl);
+        text-align: center;
+    }
+
+    .vl-banner__content .vl-kicker {
+        justify-content: center;
+        color: color-mix(in oklch, var(--vl-text-primary) 92%, transparent);
+    }
+
+    .vl-banner__title {
+        margin: var(--vl-space-sm) 0 var(--vl-space-md);
+        font-family: var(--vl-font-family-display);
+        font-size: var(--vl-font-size-4xl);
+        font-weight: var(--vl-font-weight-bold);
+        letter-spacing: var(--vl-tracking-tight);
+        line-height: var(--vl-leading-tight);
+        color: var(--vl-text-primary);
+        text-wrap: balance;
+    }
+
+    .vl-banner__lead {
+        margin: 0 auto var(--vl-space-lg);
+        max-width: 38rem;
+        font-size: var(--vl-font-size-lg);
+        line-height: var(--vl-leading-relaxed);
+        color: color-mix(in oklch, var(--vl-text-secondary) 92%, transparent);
+    }
+
+    /**
+     * Carrossel “cinema” — full-bleed, slides com foto + faixa de texto.
+     */
+    .vl-carousel--banner {
+        width: 100vw;
+        max-width: 100vw;
+        margin-inline: calc(50% - 50vw);
+        border-radius: 0;
+        border: none;
+        background: transparent;
+        padding-block: var(--vl-space-md);
+        padding-inline: calc(2.75rem + var(--vl-space-xs));
+    }
+
+    .vl-carousel--banner .vl-carousel__viewport {
+        min-height: min(54vh, 540px);
+        border-radius: var(--vl-radius-2xl);
+        box-shadow:
+            0 1.25rem 3.5rem oklch(8% 0.05 var(--vl-hue-neutral) / 0.42),
+            0 0 0 1px color-mix(in oklch, var(--vl-text-primary) 9%, transparent);
+    }
+
+    .vl-carousel--banner .vl-carousel__slide {
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-end;
+        min-height: min(54vh, 540px);
+        padding: 0;
+        overflow: hidden;
+        border: none;
+        background: var(--vl-bg-inset);
+        box-shadow: none;
+    }
+
+    .vl-carousel--banner .vl-carousel__slide > img {
+        position: absolute;
+        inset: 0;
+        z-index: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .vl-carousel__slide-overlay {
+        position: relative;
+        z-index: 1;
+        width: 100%;
+        padding: var(--vl-space-xl);
+        background: linear-gradient(transparent 0%, oklch(10% 0.05 var(--vl-hue-neutral) / 0.2) 35%, oklch(8% 0.05 var(--vl-hue-neutral) / 0.92) 100%);
+        color: var(--vl-text-primary);
+    }
+
+    .vl-carousel__slide-overlay .vl-card__title {
+        color: inherit;
+        text-shadow: 0 1px 1.5rem oklch(5% 0.03 var(--vl-hue-neutral) / 0.85);
+    }
+
+    .vl-carousel__slide-overlay .vl-card__body {
+        color: color-mix(in oklch, var(--vl-text-secondary) 95%, transparent);
+        margin-bottom: 0;
+    }
+
+    /* -------------------------------------------------------------------------
+       Mídia — imagens com ratio, zoom, brilho, vinheta, duotone leve (só CSS)
+       ------------------------------------------------------------------------- */
+    .vl-media {
+        position: relative;
+        display: block;
+        overflow: hidden;
+        border-radius: var(--vl-radius-xl);
+        background: var(--vl-bg-inset);
+        isolation: isolate;
+    }
+
+    .vl-media > img {
+        display: block;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .vl-media--16-9 {
+        aspect-ratio: 16 / 9;
+    }
+
+    .vl-media--square {
+        aspect-ratio: 1;
+    }
+
+    .vl-media--3-4 {
+        aspect-ratio: 3 / 4;
+    }
+
+    .vl-media__caption {
+        margin: 0;
+        margin-top: var(--vl-space-sm);
+        font-size: var(--vl-font-size-sm);
+        color: var(--vl-text-muted);
+        line-height: var(--vl-leading-snug);
+    }
+
+    /**
+     * Zoom interno no hover — ótimo para cards e grelhas.
+     */
+    .vl-media--zoom > img {
+        transform: scale(1);
+        transition: transform 0.75s var(--vl-ease-cinematic);
+    }
+
+    .vl-media--zoom:hover > img,
+    .vl-media--zoom:focus-within > img {
+        transform: scale(1.07);
+    }
+
+    /**
+     * Sobe levemente e aumenta sombra (marketing / hero tiles).
+     */
+    .vl-media--lift {
+        transition:
+            transform var(--vl-transition-normal),
+            box-shadow var(--vl-transition-normal);
+    }
+
+    .vl-media--lift:hover,
+    .vl-media--lift:focus-within {
+        transform: translateY(-6px);
+        box-shadow: var(--vl-shadow-glow);
+    }
+
+    /**
+     * Brilho diagonal (sweep) no hover. Não combinar com .vl-media--tint (ambos usam ::after).
+     */
+    .vl-media--shine::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(
+            115deg,
+            transparent 42%,
+            oklch(100% 0 0 / 0.14) 48%,
+            transparent 54%
+        );
+        transform: translateX(-120%) skewX(-12deg);
+        transition: transform 0.75s var(--vl-ease-cinematic);
+        pointer-events: none;
+    }
+
+    .vl-media--shine:hover::after,
+    .vl-media--shine:focus-within::after {
+        transform: translateX(120%) skewX(-12deg);
+    }
+
+    /**
+     * Vinheta + legenda sobreposta (conteúdo em slot absoluto opcional).
+     */
+    .vl-media--vignette::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        z-index: 1;
+        background: radial-gradient(
+            ellipse 85% 75% at 50% 55%,
+            transparent 30%,
+            oklch(15% 0.04 var(--vl-hue-neutral) / 0.55) 100%
+        );
+        pointer-events: none;
+    }
+
+    /**
+     * Tonalidade da marca por cima da foto (multiply).
+     */
+    .vl-media--tint::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        z-index: 1;
+        background: linear-gradient(
+            145deg,
+            color-mix(in oklch, var(--vl-color-primary) 42%, transparent),
+            transparent 55%,
+            color-mix(in oklch, var(--vl-color-secondary) 28%, transparent)
+        );
+        mix-blend-mode: multiply;
+        opacity: 0.75;
+        pointer-events: none;
+        transition: opacity var(--vl-transition-normal);
+    }
+
+    .vl-media--tint:hover::after,
+    .vl-media--tint:focus-within::after {
+        opacity: 0.45;
+    }
+
+    /**
+     * Borda luminosa no hover (usa --vl-color-primary).
+     */
+    .vl-media--ring {
+        outline: 1px solid color-mix(in oklch, var(--vl-text-primary) 10%, transparent);
+        transition:
+            outline-color var(--vl-transition-normal),
+            box-shadow var(--vl-transition-normal);
+    }
+
+    .vl-media--ring:hover,
+    .vl-media--ring:focus-within {
+        outline-color: color-mix(in oklch, var(--vl-color-primary) 45%, transparent);
+        box-shadow: 0 0 0 1px color-mix(in oklch, var(--vl-color-primary) 25%, transparent);
+    }
+
+    /**
+     * Conteúdo sobre a imagem (título / CTA). Colocar como filho após <img>.
+     */
+    .vl-media__overlay {
+        position: absolute;
+        inset: 0;
+        z-index: 2;
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-end;
+        padding: var(--vl-space-lg);
+        background: linear-gradient(transparent 20%, oklch(12% 0.04 var(--vl-hue-neutral) / 0.75) 100%);
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .vl-media--zoom > img {
+            transition: none;
+        }
+
+        .vl-media--zoom:hover > img,
+        .vl-media--zoom:focus-within > img {
+            transform: none;
+        }
+
+        .vl-media--lift:hover,
+        .vl-media--lift:focus-within {
+            transform: none;
+        }
+
+        .vl-media--shine::after {
+            display: none;
+        }
+
+        .vl-gallery__item img {
+            transition: none;
+        }
+
+        .vl-gallery__item:hover img,
+        .vl-gallery__item:focus-within img {
+            transform: none;
+        }
+
+        .vl-banner--ken .vl-banner__media img {
+            animation: none;
+            transform: none;
+        }
+
+        .vl-banner--mesh::before {
+            animation: none;
+        }
+
+        .vl-banner__glow {
+            animation: none;
+            opacity: 0.25;
+        }
+    }
+}

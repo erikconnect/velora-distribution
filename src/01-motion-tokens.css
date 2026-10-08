@@ -1,0 +1,88 @@
+@layer velora.tokens {
+    /*
+     * Motion engine knobs — host-agnostic.
+     * Safe to import with motion-core without Velora brand/visual tokens.
+     */
+    :root {
+        --vl-ease-cinematic: cubic-bezier(0.2, 0.8, 0.2, 1);
+        --vl-ease-out-soft: cubic-bezier(0.16, 1, 0.3, 1);
+        --vl-ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+        --vl-ease-in-out-smooth: cubic-bezier(0.45, 0, 0.55, 1);
+        --vl-ease-fluid: cubic-bezier(0.25, 0.8, 0.25, 1);
+        --vl-ease-impact: cubic-bezier(0.0, 0.0, 0.2, 1);
+        --vl-ease-silk: cubic-bezier(0.4, 0.0, 0.2, 1);
+        --vl-ease-elastic: cubic-bezier(0.68, -0.55, 0.265, 1.55);
+        --vl-ease-smooth-out: cubic-bezier(0, 0.55, 0.45, 1);
+        /* A natural, hand-tuned decay expressed with the native linear() syntax. */
+        --vl-ease-natural: linear(
+            0,
+            0.012 1.1%,
+            0.052 2.4%,
+            0.18 5%,
+            0.41 9.2%,
+            0.68 15%,
+            0.86 22%,
+            0.95 31%,
+            0.99 45%,
+            1
+        );
+
+        --vl-duration-instant: 80ms;
+        --vl-duration-fast: 150ms;
+        --vl-duration-normal: 300ms;
+        --vl-duration-slow: 500ms;
+        --vl-duration-slower: 800ms;
+
+        --vl-stagger-step: 45ms;
+        --vl-beats: 8;
+        --vl-beat: 120ms;
+
+        --vl-motion-duration: var(--vl-duration-normal);
+        --vl-motion-distance: 1.25rem;
+        /*
+         * P4 distance parameters (authoring aliases).
+         * Prefer --vl-distance-x / --vl-distance-y in new markup.
+         * --vl-motion-distance remains the legacy bridge written by vl-depth
+         * and vl-motion profiles. Keyframes resolve:
+         *   var(--vl-distance-y, var(--vl-motion-distance, …))
+         *   var(--vl-distance-x, var(--vl-motion-distance, …))
+         * These aliases stay unset on :root so preset-specific defaults
+         * (e.g. glide-in 3rem) are preserved until an author opts in.
+         */
+        --vl-motion-ease: var(--vl-ease-cinematic);
+
+        --vl-state-duration: var(--vl-duration-normal);
+        --vl-state-distance: 0.75rem;
+        --vl-state-ease: var(--vl-ease-natural, var(--vl-ease-cinematic));
+        --vl-state-exit-scale: 0.975;
+        --vl-path: none;
+        --vl-path-distance: 100%;
+        --vl-path-rotate: auto;
+
+        --vl-motion-mode: standard;
+        --vl-motion-preference: auto;
+        --vl-motion-speed-scale: 1;
+        --vl-motion-intensity: 1;
+        --vl-motion-depth: 1;
+        --vl-motion-blur: 0px;
+        /*
+         * P4 soft-enter / 3d-enter parameters (optional overrides):
+         *   --vl-blur-from / --vl-scale-from
+         *   --vl-perspective / --vl-rotate-x / --vl-depth-z-from
+         */
+        --vl-motion-mode-ease: var(--vl-ease-cinematic);
+
+        --vl-vt-root-duration: 0.55s;
+        --vl-vt-shared-duration: 0.58s;
+
+        --vl-transition-fast: var(--vl-duration-fast) var(--vl-ease-out-soft);
+        --vl-transition-normal: var(--vl-duration-normal) var(--vl-ease-cinematic);
+        --vl-transition-slow: var(--vl-duration-slow) var(--vl-ease-cinematic);
+
+        --vl-z-base: 0;
+        --vl-z-dropdown: 100;
+        --vl-z-sticky: 200;
+        --vl-z-modal: 500;
+        --vl-z-toast: 800;
+    }
+}

@@ -1,0 +1,82 @@
+@layer velora.reset {
+    :root {
+        interpolate-size: allow-keywords;
+    }
+
+    html {
+        height: 100%;
+        scrollbar-gutter: stable;
+        scrollbar-width: thin;
+        scrollbar-color: var(--vl-scrollbar-thumb) var(--vl-scrollbar-track);
+        -webkit-text-size-adjust: 100%;
+        text-size-adjust: 100%;
+    }
+
+    html::-webkit-scrollbar {
+        width: var(--vl-scrollbar-width);
+        height: var(--vl-scrollbar-width);
+    }
+
+    html::-webkit-scrollbar-track {
+        background: var(--vl-scrollbar-track);
+    }
+
+    html::-webkit-scrollbar-thumb {
+        background: var(--vl-scrollbar-thumb);
+        border-radius: 999px;
+    }
+
+    html::-webkit-scrollbar-thumb:hover {
+        background: var(--vl-scrollbar-thumb-hover);
+    }
+
+    *,
+    *::before,
+    *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+    }
+
+    body {
+        min-height: 100dvh;
+        min-height: 100vh;
+        overflow-x: clip;
+        font-family: var(--vl-font-family);
+        font-size: var(--vl-font-size-base);
+        background-color: var(--vl-bg-main);
+        color: var(--vl-text-primary);
+        line-height: 1.5;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        -webkit-tap-highlight-color: transparent;
+    }
+
+    @supports not (overflow: clip) {
+        body {
+            overflow-x: hidden;
+        }
+    }
+
+    img,
+    picture,
+    video,
+    canvas {
+        max-width: 100%;
+        height: auto;
+        display: block;
+    }
+
+    button,
+    input,
+    textarea,
+    select {
+        font: inherit;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        html {
+            scroll-behavior: auto;
+        }
+    }
+}

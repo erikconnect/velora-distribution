@@ -1,0 +1,178 @@
+@layer velora.motion {
+    /*
+     * Velora — Conditional Motion Engine (v1)
+     * =========================================================================
+     * Zero JavaScript. A single declarative attribute — vl-motion — selects a
+     * motion *mode* that centrally re-scales the shared engine knobs defined in
+     * 01-tokens.css. Existing presets already consume those knobs
+     * (--vl-motion-duration, --vl-motion-distance, --vl-motion-ease, ...), so
+     * one attribute adapts timing, travel, depth, blur and easing across the
+     * whole subtree without scattering hardcoded values into every selector.
+     *
+     * Public grammar:
+     *   vl-motion="standard"    Balanced, default cinematic feel.
+     *   vl-motion="subtle"      Quieter, faster, shorter travel.
+     *   vl-motion="cinematic"   Grander, slower, deeper, with entrance blur.
+     *   vl-motion="still"       Author-driven reduced motion — resting state, no movement.
+     *
+     * Progressive enhancement:
+     *   - BASELINE (works everywhere): plain [vl-motion="…"] attribute selectors
+     *     assign the engine knobs. No CSS if() required.
+     *   - ENHANCEMENT (@supports if()): a single [vl-motion] rule re-derives the
+     *     same knobs with CSS if() using media(), style() and supports() so the
+     *     mode additionally adapts to prefers-reduced-motion, pointer type and
+     *     scroll-timeline availability. If if() is unsupported the whole block is
+     *     ignored and the baseline values above remain in effect.
+     *
+     * Accessibility: prefers-reduced-motion is honored here (knobs collapse) and
+     * globally in 03-motion.css (animations are fully disabled).
+     */
+
+    /* =========================================================================
+       BASELINE — mode → engine knobs (no if() required)
+       ========================================================================= */
+    [vl-motion="standard"] {
+        --vl-motion-mode: standard;
+        --vl-motion-speed-scale: 1;
+        --vl-motion-intensity: 1;
+        --vl-motion-depth: 1;
+        --vl-motion-blur: 0px;
+        --vl-motion-mode-ease: var(--vl-ease-cinematic);
+        --vl-motion-distance: calc(1.25rem * var(--vl-motion-intensity));
+    }
+
+    [vl-motion="subtle"] {
+        --vl-motion-mode: subtle;
+        --vl-motion-speed-scale: 0.62;
+        --vl-motion-intensity: 0.45;
+        --vl-motion-depth: 0.4;
+        --vl-motion-blur: 0px;
+        --vl-motion-mode-ease: var(--vl-ease-out-soft);
+        --vl-motion-distance: calc(1.25rem * var(--vl-motion-intensity));
+    }
+
+    [vl-motion="cinematic"] {
+        --vl-motion-mode: cinematic;
+        --vl-motion-speed-scale: 1.5;
+        --vl-motion-intensity: 1.6;
+        --vl-motion-depth: 1.8;
+        --vl-motion-blur: 6px;
+        --vl-motion-mode-ease: var(--vl-ease-cinematic);
+        --vl-motion-distance: calc(1.25rem * var(--vl-motion-intensity));
+    }
+
+    [vl-motion="still"] {
+        --vl-motion-mode: still;
+        --vl-motion-speed-scale: 1;
+        --vl-motion-intensity: 0;
+        --vl-motion-depth: 0;
+        --vl-motion-blur: 0px;
+        --vl-motion-mode-ease: var(--vl-ease-out-soft);
+        --vl-motion-distance: 0rem;
+    }
+
+    /*
+     * "still" presents the composed resting state with no movement, regardless of
+     * the OS reduced-motion setting. The descendant combinator raises specificity
+     * above the (0,1,0) per-preset animation rules so nested effects settle without
+     * a runtime. Content stays visible (fill state) — only motion is removed.
+     */
+    [vl-motion="still"],
+    [vl-motion="still"] :is([vl-effect], [vl-enter], [vl-exit], [vl-scroll], [vl-loop], [vl-loop-effect]),
+    [vl-motion="still"] :is([vl-children="stagger"], [vl-children="cascade"], [vl-children="sequence"], [vl-children="orchestrate"]) > * {
+        animation: none;
+        transition-duration: var(--vl-duration-instant);
+        opacity: 1;
+        transform: none;
+        filter: none;
+    }
+
+    /* =========================================================================
+       DEPTH ADAPTATION — scroll / parallax presets scale by --vl-motion-depth
+       Kept central: the depth multiplier flows into the existing parallax and
+       depth-drift custom properties rather than being redefined per page.
+       ========================================================================= */
+    [vl-motion] :is([vl-scroll~="parallax"], [vl-effect~="parallax"]) {
+        --vl-parallax-from: calc(-12% * var(--vl-motion-depth, 1));
+        --vl-parallax-to: calc(12% * var(--vl-motion-depth, 1));
+    }
+
+    [vl-motion] :is([vl-scroll~="depth-drift"], [vl-effect~="depth-drift"]) {
+        --vl-depth-from: calc(6% * var(--vl-motion-depth, 1));
+        --vl-depth-to: calc(-6% * var(--vl-motion-depth, 1));
+    }
+
+    /* =========================================================================
+       BASELINE device refinement — soften heavy depth on touch/coarse pointers
+       ========================================================================= */
+    @media (pointer: coarse) {
+        [vl-motion="cinematic"] {
+            --vl-motion-depth: 1.15;
+        }
+    }
+
+    /* =========================================================================
+       ACCESSIBILITY — reduced motion collapses the engine knobs (baseline)
+       Global 03-motion.css additionally disables animations outright; here we
+       neutralize travel/depth/blur so even transition-based motion stays calm.
+       ========================================================================= */
+    @media (prefers-reduced-motion: reduce) {
+        [vl-motion] {
+            --vl-motion-preference: reduce;
+            --vl-motion-speed-scale: 1;
+            --vl-motion-intensity: 0;
+            --vl-motion-depth: 0;
+            --vl-motion-blur: 0px;
+            --vl-motion-distance: 0rem;
+        }
+    }
+
+    /* =========================================================================
+       PROGRESSIVE ENHANCEMENT — CSS if() (Baseline 2025+)
+       Everything above is the guaranteed fallback. When if() is supported, one
+       rule re-derives the knobs, folding in live media()/style()/supports()
+       conditions. Same or later cascade position than the baseline attribute
+       selectors, so this wins where available and is dropped where it is not.
+       ========================================================================= */
+    @supports (width: if(style(--vl-probe: 1): 1px; else: 2px)) {
+        [vl-motion] {
+            /* Duration multiplier: mode via style(), untouched under reduced motion. */
+            --vl-motion-speed-scale: if(
+                media(prefers-reduced-motion: reduce): 1;
+                style(--vl-motion-mode: cinematic): 1.5;
+                style(--vl-motion-mode: subtle): 0.62;
+                else: 1
+            );
+
+            /* Travel: reduced motion → 0; cinematic eases off on coarse pointers. */
+            --vl-motion-intensity: if(
+                media(prefers-reduced-motion: reduce): 0;
+                style(--vl-motion-mode: still): 0;
+                style(--vl-motion-mode: cinematic): if(media(pointer: coarse): 1.2; else: 1.6);
+                style(--vl-motion-mode: subtle): 0.45;
+                else: 1
+            );
+
+            /* Depth: only when scroll-driven timelines exist, else flat (0). */
+            --vl-motion-depth: if(
+                media(prefers-reduced-motion: reduce): 0;
+                supports(animation-timeline: view()): if(
+                    style(--vl-motion-mode: cinematic): if(media(pointer: coarse): 1.15; else: 1.8);
+                    style(--vl-motion-mode: subtle): 0.4;
+                    style(--vl-motion-mode: still): 0;
+                    else: 1
+                );
+                else: 0
+            );
+
+            /* Entrance blur: cinematic only, never under reduced motion. */
+            --vl-motion-blur: if(
+                media(prefers-reduced-motion: reduce): 0px;
+                style(--vl-motion-mode: cinematic): 6px;
+                else: 0px
+            );
+
+            --vl-motion-distance: calc(1.25rem * var(--vl-motion-intensity));
+        }
+    }
+}

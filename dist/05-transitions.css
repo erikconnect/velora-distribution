@@ -1,0 +1,452 @@
+@layer velora.transitions {
+    /*
+     * View Transitions (MPA) — estilização de ::view-transition-*.
+     * navigation: auto está em velora.css (fora de @layer).
+     *
+     * Presets no <html>: vl-page-transition="velora" | "wipe" | "glide" | "iris" | "cinema" | "snap"
+     * Omisso ou valor desconhecido → "velora" (assinatura padrão).
+     */
+
+    html {
+        view-transition-name: root;
+    }
+
+    /* -------------------------------------------------------------------------
+       Shared elements — nomes estáveis para morphing entre páginas
+       (não usar em nós com background-clip: text sem wrapper)
+       ------------------------------------------------------------------------- */
+    .vl-vt-shared-hero {
+        display: block;
+        width: 100%;
+        view-transition-name: hero-title;
+    }
+
+    .vl-vt-shared-media {
+        display: block;
+        width: 100%;
+        height: auto;
+        view-transition-name: hero-media;
+    }
+
+    .vl-vt-shared-nav {
+        view-transition-name: site-nav;
+    }
+
+    .vl-vt-shared-brand {
+        view-transition-name: site-brand;
+    }
+
+    .vl-vt-shared-card {
+        view-transition-name: shared-card;
+    }
+
+    /* -------------------------------------------------------------------------
+       Keyframes — raiz (documento inteiro)
+       ------------------------------------------------------------------------- */
+    @keyframes vl-vt-velora-old {
+        from {
+            opacity: 1;
+            filter: blur(0);
+            transform: scale(1) translate3d(0, 0, 0);
+        }
+
+        to {
+            opacity: 0;
+            filter: blur(6px);
+            transform: scale(0.96) translate3d(0, 1.5%, 0);
+        }
+    }
+
+    @keyframes vl-vt-velora-new {
+        from {
+            opacity: 0;
+            filter: blur(8px);
+            transform: scale(1.04) translate3d(0, -2%, 0);
+        }
+
+        to {
+            opacity: 1;
+            filter: blur(0);
+            transform: scale(1) translate3d(0, 0, 0);
+        }
+    }
+
+    @keyframes vl-vt-wipe-old {
+        from {
+            clip-path: inset(0 0 0 0);
+        }
+
+        to {
+            clip-path: inset(0 0 100% 0);
+        }
+    }
+
+    @keyframes vl-vt-wipe-new {
+        from {
+            clip-path: inset(100% 0 0 0);
+        }
+
+        to {
+            clip-path: inset(0 0 0 0);
+        }
+    }
+
+    @keyframes vl-vt-glide-old {
+        from {
+            opacity: 1;
+            transform: translate3d(0, 0, 0);
+        }
+
+        to {
+            opacity: 0.35;
+            transform: translate3d(-8%, 0, 0);
+        }
+    }
+
+    @keyframes vl-vt-glide-new {
+        from {
+            opacity: 0.4;
+            transform: translate3d(8%, 0, 0);
+        }
+
+        to {
+            opacity: 1;
+            transform: translate3d(0, 0, 0);
+        }
+    }
+
+    @keyframes vl-vt-iris-old {
+        from {
+            clip-path: circle(150% at 50% 45%);
+        }
+
+        to {
+            clip-path: circle(0% at 50% 45%);
+        }
+    }
+
+    @keyframes vl-vt-iris-new {
+        from {
+            clip-path: circle(0% at 50% 45%);
+        }
+
+        to {
+            clip-path: circle(150% at 50% 45%);
+        }
+    }
+
+    @keyframes vl-vt-cinema-old {
+        from {
+            opacity: 1;
+            filter: blur(0) brightness(1);
+            transform: scale(1);
+            clip-path: inset(0 0 0 0);
+        }
+
+        to {
+            opacity: 0;
+            filter: blur(12px) brightness(1.15);
+            transform: scale(0.92);
+            clip-path: inset(6% 4% 6% 4%);
+        }
+    }
+
+    @keyframes vl-vt-cinema-new {
+        from {
+            opacity: 0;
+            filter: blur(14px) brightness(0.85);
+            transform: scale(1.08);
+            clip-path: inset(8% 6% 8% 6%);
+        }
+
+        to {
+            opacity: 1;
+            filter: blur(0) brightness(1);
+            transform: scale(1);
+            clip-path: inset(0 0 0 0);
+        }
+    }
+
+    @keyframes vl-vt-snap-old {
+        from {
+            opacity: 1;
+            transform: translate3d(0, 0, 0) rotate(0deg);
+        }
+
+        to {
+            opacity: 0;
+            transform: translate3d(0, 0.75rem, 0) rotate(-0.5deg);
+        }
+    }
+
+    @keyframes vl-vt-snap-new {
+        from {
+            opacity: 0;
+            transform: translate3d(0, -1.25rem, 0) rotate(0.6deg);
+        }
+
+        to {
+            opacity: 1;
+            transform: translate3d(0, 0, 0) rotate(0deg);
+        }
+    }
+
+    /* Keyframes — grupos partilhados (títulos, mídia) */
+    @keyframes vl-vt-hero-old {
+        from {
+            opacity: 1;
+            transform: translate3d(0, 0, 0) scale(1);
+        }
+
+        to {
+            opacity: 0;
+            transform: translate3d(0, 12px, 0) scale(0.94);
+        }
+    }
+
+    @keyframes vl-vt-hero-new {
+        from {
+            opacity: 0;
+            transform: translate3d(0, -18px, 0) scale(1.06);
+        }
+
+        to {
+            opacity: 1;
+            transform: translate3d(0, 0, 0) scale(1);
+        }
+    }
+
+    @keyframes vl-vt-media-cross {
+        from {
+            opacity: 0.85;
+            filter: saturate(0.85);
+            transform: scale(1.03);
+        }
+
+        to {
+            opacity: 1;
+            filter: saturate(1);
+            transform: scale(1);
+        }
+    }
+
+    @keyframes vl-vt-nav-glide {
+        from {
+            opacity: 0.7;
+            transform: translate3d(0, -6px, 0);
+        }
+
+        to {
+            opacity: 1;
+            transform: translate3d(0, 0, 0);
+        }
+    }
+
+    /* -------------------------------------------------------------------------
+       Preset default: Velora (blur assimétrico + escala)
+       ------------------------------------------------------------------------- */
+    ::view-transition-old(root),
+    ::view-transition-new(root) {
+        animation-duration: var(--vl-vt-root-duration, 0.55s);
+        animation-timing-function: var(--vl-ease-cinematic);
+        animation-fill-mode: both;
+    }
+
+    ::view-transition-old(root) {
+        animation-name: vl-vt-velora-old;
+    }
+
+    ::view-transition-new(root) {
+        animation-name: vl-vt-velora-new;
+    }
+
+    /* -------------------------------------------------------------------------
+       Presets alternativos (html[vl-page-transition="…"])
+       ------------------------------------------------------------------------- */
+    :root[vl-page-transition="wipe"]::view-transition-old(root) {
+        animation-name: vl-vt-wipe-old;
+        animation-duration: var(--vl-vt-root-duration, 0.5s);
+        animation-timing-function: var(--vl-ease-in-out-smooth);
+        filter: none;
+    }
+
+    :root[vl-page-transition="wipe"]::view-transition-new(root) {
+        animation-name: vl-vt-wipe-new;
+        animation-duration: var(--vl-vt-root-duration, 0.55s);
+        animation-timing-function: var(--vl-ease-in-out-smooth);
+        filter: none;
+    }
+
+    :root[vl-page-transition="glide"]::view-transition-old(root) {
+        animation-name: vl-vt-glide-old;
+        animation-duration: var(--vl-vt-root-duration, 0.48s);
+        filter: none;
+    }
+
+    :root[vl-page-transition="glide"]::view-transition-new(root) {
+        animation-name: vl-vt-glide-new;
+        animation-duration: var(--vl-vt-root-duration, 0.52s);
+        filter: none;
+    }
+
+    :root[vl-page-transition="iris"]::view-transition-old(root) {
+        animation-name: vl-vt-iris-old;
+        animation-duration: var(--vl-vt-root-duration, 0.55s);
+        animation-timing-function: var(--vl-ease-cinematic);
+        filter: none;
+    }
+
+    :root[vl-page-transition="iris"]::view-transition-new(root) {
+        animation-name: vl-vt-iris-new;
+        animation-duration: var(--vl-vt-root-duration, 0.6s);
+        animation-timing-function: var(--vl-ease-out-soft);
+        filter: none;
+    }
+
+    :root[vl-page-transition="cinema"]::view-transition-old(root) {
+        animation-name: vl-vt-cinema-old;
+        animation-duration: var(--vl-vt-root-duration, 0.85s);
+        animation-timing-function: var(--vl-ease-cinematic);
+    }
+
+    :root[vl-page-transition="cinema"]::view-transition-new(root) {
+        animation-name: vl-vt-cinema-new;
+        animation-duration: var(--vl-vt-root-duration, 0.9s);
+        animation-timing-function: var(--vl-ease-out-soft);
+    }
+
+    :root[vl-page-transition="snap"]::view-transition-old(root) {
+        animation-name: vl-vt-snap-old;
+        animation-duration: var(--vl-vt-root-duration, 0.35s);
+        animation-timing-function: var(--vl-ease-spring);
+        filter: none;
+    }
+
+    :root[vl-page-transition="snap"]::view-transition-new(root) {
+        animation-name: vl-vt-snap-new;
+        animation-duration: var(--vl-vt-root-duration, 0.4s);
+        animation-timing-function: var(--vl-ease-spring);
+        filter: none;
+    }
+
+    /* -------------------------------------------------------------------------
+       Grupos partilhados — ritmo distinto da raiz
+       ------------------------------------------------------------------------- */
+    ::view-transition-old(hero-title),
+    ::view-transition-new(hero-title) {
+        animation-duration: var(--vl-vt-shared-duration, 0.58s);
+        animation-timing-function: var(--vl-ease-cinematic);
+        animation-fill-mode: both;
+    }
+
+    ::view-transition-old(hero-title) {
+        animation-name: vl-vt-hero-old;
+    }
+
+    ::view-transition-new(hero-title) {
+        animation-name: vl-vt-hero-new;
+    }
+
+    ::view-transition-old(hero-media),
+    ::view-transition-new(hero-media) {
+        animation-duration: var(--vl-vt-shared-duration, 0.65s);
+        animation-timing-function: var(--vl-ease-out-soft);
+        animation-fill-mode: both;
+    }
+
+    ::view-transition-old(hero-media) {
+        animation-name: vl-vt-media-cross;
+        animation-direction: reverse;
+    }
+
+    ::view-transition-new(hero-media) {
+        animation-name: vl-vt-media-cross;
+    }
+
+    ::view-transition-old(site-nav),
+    ::view-transition-new(site-nav) {
+        animation-duration: var(--vl-vt-shared-duration, 0.45s);
+        animation-timing-function: var(--vl-ease-out-soft);
+        animation-fill-mode: both;
+    }
+
+    ::view-transition-old(site-nav) {
+        animation-name: vl-vt-nav-glide;
+        animation-direction: reverse;
+    }
+
+    ::view-transition-new(site-nav) {
+        animation-name: vl-vt-nav-glide;
+    }
+
+    ::view-transition-old(site-brand),
+    ::view-transition-new(site-brand) {
+        animation-duration: var(--vl-vt-shared-duration, 0.42s);
+        animation-timing-function: var(--vl-ease-spring);
+        animation-fill-mode: both;
+    }
+
+    ::view-transition-old(site-brand) {
+        animation-name: vl-vt-snap-old;
+    }
+
+    ::view-transition-new(site-brand) {
+        animation-name: vl-vt-snap-new;
+    }
+
+    ::view-transition-old(shared-card),
+    ::view-transition-new(shared-card) {
+        animation-duration: var(--vl-vt-shared-duration, 0.52s);
+        animation-timing-function: var(--vl-ease-cinematic);
+        animation-fill-mode: both;
+    }
+
+    ::view-transition-old(shared-card) {
+        animation-name: vl-vt-glide-old;
+        filter: none;
+    }
+
+    ::view-transition-new(shared-card) {
+        animation-name: vl-vt-glide-new;
+        filter: none;
+    }
+
+    /* Preset wipe: título partilhado acompanha cortina */
+    :root[vl-page-transition="wipe"]::view-transition-old(hero-title) {
+        animation-name: vl-vt-wipe-old;
+    }
+
+    :root[vl-page-transition="wipe"]::view-transition-new(hero-title) {
+        animation-name: vl-vt-wipe-new;
+    }
+
+    :root[vl-page-transition="iris"]::view-transition-old(hero-media) {
+        animation-name: vl-vt-iris-old;
+    }
+
+    :root[vl-page-transition="iris"]::view-transition-new(hero-media) {
+        animation-name: vl-vt-iris-new;
+    }
+
+    /* -------------------------------------------------------------------------
+       Acessibilidade
+       ------------------------------------------------------------------------- */
+    @media (prefers-reduced-motion: reduce) {
+        ::view-transition-old(root),
+        ::view-transition-new(root),
+        ::view-transition-old(hero-title),
+        ::view-transition-new(hero-title),
+        ::view-transition-old(hero-media),
+        ::view-transition-new(hero-media),
+        ::view-transition-old(site-nav),
+        ::view-transition-new(site-nav),
+        ::view-transition-old(site-brand),
+        ::view-transition-new(site-brand),
+        ::view-transition-old(shared-card),
+        ::view-transition-new(shared-card) {
+            animation-duration: 0.12s !important;
+            animation-timing-function: linear !important;
+            filter: none !important;
+        }
+    }
+}

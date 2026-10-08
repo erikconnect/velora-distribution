@@ -1,0 +1,476 @@
+@layer velora.utilities {
+    /*
+     * Utilitários com foco em motion, composição GPU e scroll-driven CSS.
+     * Combinar com 03-motion / layout; muitas classes assumem custom properties (--vl-*).
+     */
+
+    /* --- A11y --- */
+    .vl-sr-only {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border: 0;
+    }
+
+    /* --- Texto gradiente — ângulo: --vl-text-grad-angle (ex.: 120deg) --- */
+    .vl-text-gradient {
+        background: linear-gradient(
+            var(--vl-text-grad-angle, 90deg),
+            var(--vl-color-primary),
+            var(--vl-color-secondary)
+        );
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+    }
+
+    .vl-text-gradient--accent {
+        background: var(--vl-gradient-brand);
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+    }
+
+    /* -------------------------------------------------------------------------
+       Duração / easing / fill — para animation e transition declarativas
+       ------------------------------------------------------------------------- */
+    .vl-duration-instant {
+        animation-duration: var(--vl-duration-instant);
+        transition-duration: var(--vl-duration-instant);
+    }
+
+    .vl-duration-fast {
+        animation-duration: var(--vl-duration-fast);
+        transition-duration: var(--vl-duration-fast);
+    }
+
+    .vl-duration-normal {
+        animation-duration: var(--vl-duration-normal);
+        transition-duration: var(--vl-duration-normal);
+    }
+
+    .vl-duration-slow {
+        animation-duration: var(--vl-duration-slow);
+        transition-duration: var(--vl-duration-slow);
+    }
+
+    .vl-duration-slower {
+        animation-duration: var(--vl-duration-slower);
+        transition-duration: var(--vl-duration-slower);
+    }
+
+    .vl-ease-cinematic {
+        animation-timing-function: var(--vl-ease-cinematic);
+        transition-timing-function: var(--vl-ease-cinematic);
+    }
+
+    .vl-ease-out-soft {
+        animation-timing-function: var(--vl-ease-out-soft);
+        transition-timing-function: var(--vl-ease-out-soft);
+    }
+
+    .vl-ease-spring {
+        animation-timing-function: var(--vl-ease-spring);
+        transition-timing-function: var(--vl-ease-spring);
+    }
+
+    .vl-ease-linear {
+        animation-timing-function: linear;
+        transition-timing-function: linear;
+    }
+
+    /**
+     * Obrigatório em muitas animações ligadas a scroll (progresso = tempo linear).
+     */
+    .vl-ease-scroll {
+        animation-timing-function: linear;
+    }
+
+    .vl-fill-both {
+        animation-fill-mode: both;
+    }
+
+    .vl-fill-forwards {
+        animation-fill-mode: forwards;
+    }
+
+    .vl-fill-backwards {
+        animation-fill-mode: backwards;
+    }
+
+    .vl-anim-paused {
+        animation-play-state: paused;
+    }
+
+    .vl-anim-running {
+        animation-play-state: running;
+    }
+
+    /* -------------------------------------------------------------------------
+       Atraso em escada (stagger) — use nos filhos ou no próprio elemento
+       ------------------------------------------------------------------------- */
+    .vl-anim-delay-0 {
+        animation-delay: 0ms;
+        transition-delay: 0ms;
+    }
+
+    .vl-anim-delay-1 {
+        animation-delay: calc(1 * var(--vl-stagger-step));
+        transition-delay: calc(1 * var(--vl-stagger-step));
+    }
+
+    .vl-anim-delay-2 {
+        animation-delay: calc(2 * var(--vl-stagger-step));
+        transition-delay: calc(2 * var(--vl-stagger-step));
+    }
+
+    .vl-anim-delay-3 {
+        animation-delay: calc(3 * var(--vl-stagger-step));
+        transition-delay: calc(3 * var(--vl-stagger-step));
+    }
+
+    .vl-anim-delay-4 {
+        animation-delay: calc(4 * var(--vl-stagger-step));
+        transition-delay: calc(4 * var(--vl-stagger-step));
+    }
+
+    .vl-anim-delay-5 {
+        animation-delay: calc(5 * var(--vl-stagger-step));
+        transition-delay: calc(5 * var(--vl-stagger-step));
+    }
+
+    .vl-anim-delay-6 {
+        animation-delay: calc(6 * var(--vl-stagger-step));
+        transition-delay: calc(6 * var(--vl-stagger-step));
+    }
+
+    .vl-anim-delay-7 {
+        animation-delay: calc(7 * var(--vl-stagger-step));
+        transition-delay: calc(7 * var(--vl-stagger-step));
+    }
+
+    .vl-anim-delay-8 {
+        animation-delay: calc(8 * var(--vl-stagger-step));
+        transition-delay: calc(8 * var(--vl-stagger-step));
+    }
+
+    /**
+     * Atraso arbitrário: style="--vl-anim-delay: 0.2s" no elemento.
+     */
+    .vl-anim-delay-custom {
+        animation-delay: var(--vl-anim-delay, 0ms);
+        transition-delay: var(--vl-anim-delay, 0ms);
+    }
+
+    /* -------------------------------------------------------------------------
+       Composição GPU / 3D — base para keyframes e scroll-driven
+       ------------------------------------------------------------------------- */
+    .vl-gpu {
+        transform: translate3d(0, 0, 0);
+    }
+
+    .vl-preserve-3d {
+        transform-style: preserve-3d;
+    }
+
+    .vl-backface-hidden {
+        backface-visibility: hidden;
+    }
+
+    .vl-origin-center {
+        transform-origin: center center;
+    }
+
+    .vl-origin-top {
+        transform-origin: center top;
+    }
+
+    .vl-origin-bottom {
+        transform-origin: center bottom;
+    }
+
+    .vl-origin-left {
+        transform-origin: left center;
+    }
+
+    .vl-origin-right {
+        transform-origin: right center;
+    }
+
+    .vl-perspective-m {
+        perspective: 1000px;
+    }
+
+    .vl-perspective-l {
+        perspective: 1400px;
+    }
+
+    /* -------------------------------------------------------------------------
+       Filtros — entradas cinematográficas e estados “hero”
+       ------------------------------------------------------------------------- */
+    .vl-blur-xs {
+        filter: blur(4px);
+    }
+
+    .vl-blur-sm {
+        filter: blur(8px);
+    }
+
+    .vl-blur-md {
+        filter: blur(16px);
+    }
+
+    .vl-blur-none {
+        filter: blur(0);
+    }
+
+    .vl-brightness-90 {
+        filter: brightness(0.9);
+    }
+
+    .vl-brightness-110 {
+        filter: brightness(1.1);
+    }
+
+    .vl-saturate-120 {
+        filter: saturate(1.2);
+    }
+
+    .vl-drop-glow {
+        filter: drop-shadow(
+            0 0 0.5rem color-mix(in oklch, var(--vl-color-primary) 45%, transparent)
+        );
+    }
+
+    /* -------------------------------------------------------------------------
+       Máscaras e clip — reveals sem JS (--vl-mask-fade * opcionais)
+       ------------------------------------------------------------------------- */
+    .vl-mask-fade-x {
+        -webkit-mask-image: linear-gradient(
+            90deg,
+            transparent,
+            black var(--vl-mask-fade, 12%),
+            black calc(100% - var(--vl-mask-fade, 12%)),
+            transparent
+        );
+        mask-image: linear-gradient(
+            90deg,
+            transparent,
+            black var(--vl-mask-fade, 12%),
+            black calc(100% - var(--vl-mask-fade, 12%)),
+            transparent
+        );
+    }
+
+    .vl-mask-fade-y {
+        -webkit-mask-image: linear-gradient(
+            180deg,
+            transparent,
+            black var(--vl-mask-fade, 12%),
+            black calc(100% - var(--vl-mask-fade, 12%)),
+            transparent
+        );
+        mask-image: linear-gradient(
+            180deg,
+            transparent,
+            black var(--vl-mask-fade, 12%),
+            black calc(100% - var(--vl-mask-fade, 12%)),
+            transparent
+        );
+    }
+
+    .vl-clip-full {
+        clip-path: inset(0 0 0 0);
+    }
+
+    .vl-clip-hidden-bottom {
+        clip-path: inset(100% 0 0 0);
+    }
+
+    .vl-clip-hidden-top {
+        clip-path: inset(0 0 100% 0);
+    }
+
+    /* -------------------------------------------------------------------------
+       Blend / empilhamento criativo (hero + gradiente + foto)
+       ------------------------------------------------------------------------- */
+    .vl-blend-multiply {
+        mix-blend-mode: multiply;
+    }
+
+    .vl-blend-screen {
+        mix-blend-mode: screen;
+    }
+
+    .vl-blend-plus-lighter {
+        mix-blend-mode: plus-lighter;
+    }
+
+    .vl-blend-overlay {
+        mix-blend-mode: overlay;
+    }
+
+    /* -------------------------------------------------------------------------
+       Transições declarativas (hover / estado) com tokens
+       ------------------------------------------------------------------------- */
+    .vl-transition-none {
+        transition: none;
+    }
+
+    .vl-transition-opacity {
+        transition: opacity var(--vl-transition-normal);
+    }
+
+    .vl-transition-transform {
+        transition: transform var(--vl-transition-normal);
+    }
+
+    .vl-transition-filter {
+        transition: filter var(--vl-transition-normal);
+    }
+
+    .vl-transition-colors {
+        transition:
+            color var(--vl-transition-fast),
+            background-color var(--vl-transition-fast),
+            border-color var(--vl-transition-fast);
+    }
+
+    .vl-transition-shadow {
+        transition: box-shadow var(--vl-transition-normal);
+    }
+
+    .vl-transition-discrete {
+        transition-behavior: allow-discrete;
+    }
+
+    .vl-transition-all-smooth {
+        transition:
+            transform var(--vl-transition-normal),
+            opacity var(--vl-transition-normal),
+            filter var(--vl-transition-normal),
+            box-shadow var(--vl-transition-normal);
+    }
+
+    /* -------------------------------------------------------------------------
+       Pointer / scroll / toque — camadas decorativas e carrosseis
+       ------------------------------------------------------------------------- */
+    .vl-pe-none {
+        pointer-events: none;
+    }
+
+    .vl-pe-auto {
+        pointer-events: auto;
+    }
+
+    .vl-touch-pan-y {
+        touch-action: pan-y;
+    }
+
+    .vl-touch-pan-x {
+        touch-action: pan-x;
+    }
+
+    .vl-touch-none {
+        touch-action: none;
+    }
+
+    .vl-overscroll-contain {
+        overscroll-behavior: contain;
+    }
+
+    .vl-overscroll-none {
+        overscroll-behavior: none;
+    }
+
+    /**
+     * Ancoragem com header fixo: ajuste --vl-scroll-margin no elemento alvo.
+     */
+    .vl-scroll-target {
+        scroll-margin-top: var(--vl-scroll-margin, var(--vl-space-xl));
+    }
+
+    /* -------------------------------------------------------------------------
+       will-change pontual (remover quando animação terminar em produtos pesados)
+       ------------------------------------------------------------------------- */
+    .vl-will-change-transform {
+        will-change: transform;
+    }
+
+    .vl-will-change-opacity {
+        will-change: opacity;
+    }
+
+    .vl-will-change-filter {
+        will-change: filter;
+    }
+
+    .vl-will-change-auto {
+        will-change: auto;
+    }
+
+    /* -------------------------------------------------------------------------
+       Vidro / brilho rápido
+       ------------------------------------------------------------------------- */
+    .vl-frost {
+        background: var(--vl-glass-bg);
+        -webkit-backdrop-filter: blur(var(--vl-backdrop-blur));
+        backdrop-filter: blur(var(--vl-backdrop-blur));
+    }
+
+    .vl-ring-brand {
+        box-shadow: 0 0 0 1px color-mix(in oklch, var(--vl-color-primary) 35%, transparent);
+    }
+
+    .vl-glow-brand {
+        box-shadow: var(--vl-shadow-glow);
+    }
+
+    /* -------------------------------------------------------------------------
+       Animações decorativas leves (pausar com prefers-reduced-motion)
+       ------------------------------------------------------------------------- */
+    @keyframes vl-util-spin-slow {
+        to {
+            transform: rotate(360deg);
+        }
+    }
+
+    @keyframes vl-util-pulse-opacity {
+        0%,
+        100% {
+            opacity: 0.65;
+        }
+
+        50% {
+            opacity: 1;
+        }
+    }
+
+    .vl-animate-spin-slow {
+        animation: vl-util-spin-slow 28s linear infinite;
+    }
+
+    .vl-animate-pulse-soft {
+        animation: vl-util-pulse-opacity 3s var(--vl-ease-in-out-smooth) infinite;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .vl-animate-spin-slow,
+        .vl-animate-pulse-soft {
+            animation: none;
+        }
+    }
+
+    /* -------------------------------------------------------------------------
+       Content visibility — listas longas com animações (melhor orçamento de frame)
+       ------------------------------------------------------------------------- */
+    .vl-content-auto {
+        content-visibility: auto;
+        contain-intrinsic-size: auto 400px;
+    }
+}

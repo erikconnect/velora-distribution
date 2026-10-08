@@ -1,0 +1,386 @@
+/**
+ * Velora scene recipes — look + layout for named vl-scene presets.
+ * Part of the Velora skin (theme), not required for host-agnostic motion.
+ * Choreography (animation names / timelines) stays compatible via these selectors.
+ */
+@layer velora.layout {
+    /* Scene look helpers (moved from core layout) */
+    [vl-scene] {
+        --vl-scene-gap: clamp(var(--vl-space-md, 1rem), 2.4vw, var(--vl-space-xl, 4rem));
+        --vl-scene-pad-inline: clamp(var(--vl-space-md, 1rem), 4vw, var(--vl-space-2xl, 6rem));
+        --vl-scene-pad-block: clamp(var(--vl-space-xl, 4rem), 9vw, var(--vl-space-3xl, 8rem));
+        --vl-scene-max: 100%;
+        --vl-scene-pane-a: 1fr;
+        --vl-scene-pane-b: 1fr;
+        --vl-scene-cluster-min: 16rem;
+    }
+
+    [vl-scene][data-vl-scene-density="compact"] {
+        --vl-scene-gap: clamp(var(--vl-space-sm, 0.5rem), 1.8vw, var(--vl-space-lg, 2rem));
+        --vl-scene-pad-inline: clamp(var(--vl-space-sm, 0.5rem), 2.5vw, var(--vl-space-lg, 2rem));
+        --vl-scene-pad-block: clamp(var(--vl-space-lg, 2rem), 5vw, var(--vl-space-xl, 4rem));
+        --vl-scene-cluster-min: 12rem;
+    }
+
+    [vl-scene][data-vl-scene-density="editorial"] {
+        --vl-scene-gap: clamp(var(--vl-space-lg, 2rem), 3vw, var(--vl-space-2xl, 6rem));
+        --vl-scene-pad-inline: clamp(var(--vl-space-md, 1rem), 4.5vw, var(--vl-space-2xl, 6rem));
+    }
+
+    [vl-scene][data-vl-scene-density="immersive"] {
+        --vl-scene-gap: clamp(var(--vl-space-lg, 2rem), 3.2vw, var(--vl-space-2xl, 6rem));
+        --vl-scene-pad-inline: clamp(var(--vl-space-lg, 2rem), 5vw, var(--vl-space-3xl, 8rem));
+        --vl-scene-pad-block: clamp(var(--vl-space-2xl, 6rem), 10vw, calc(var(--vl-space-3xl, 8rem) * 1.2));
+    }
+
+    [vl-scene][data-vl-scene-mode="full-bleed"] {
+        min-height: 100dvh;
+        align-content: center;
+    }
+
+    [vl-scene] > :where(.vl-scene__inner, [data-vl-scene-inner]) {
+        display: grid;
+        gap: var(--vl-scene-gap);
+        width: min(100%, var(--vl-scene-max));
+        margin-inline: auto;
+        padding-inline: var(--vl-scene-pad-inline);
+        min-width: 0;
+    }
+
+    [vl-scene] :where(.vl-scene__layout--split, [data-vl-scene-layout~="split"]) {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr);
+        gap: var(--vl-scene-gap);
+        align-items: start;
+    }
+
+    [vl-scene] :where(.vl-scene__layout--cluster, [data-vl-scene-layout~="cluster"]) {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(min(100%, var(--vl-scene-cluster-min)), 1fr));
+        gap: var(--vl-scene-gap);
+    }
+
+    [vl-scene] :where(.vl-scene__rail, [data-vl-scene-role="rail"]) {
+        display: grid;
+        gap: var(--vl-space-sm, 0.5rem);
+        align-content: start;
+    }
+
+    [vl-scene] :where(.vl-scene__stack, [data-vl-scene-role="stack"]) {
+        display: grid;
+        gap: var(--vl-scene-gap);
+        min-width: 0;
+    }
+
+    @container vl-scene (min-width: 48rem) {
+        [vl-scene] :where(.vl-scene__layout--split, [data-vl-scene-layout~="split"]) {
+            grid-template-columns:
+                minmax(0, var(--vl-scene-pane-a))
+                minmax(0, var(--vl-scene-pane-b));
+            align-items: center;
+        }
+    }
+
+    @container vl-scene (max-width: 36rem) {
+        [vl-scene][data-vl-scene-density="immersive"] {
+            --vl-scene-pad-inline: clamp(var(--vl-space-md, 1rem), 4vw, var(--vl-space-lg, 2rem));
+            --vl-scene-pad-block: clamp(var(--vl-space-xl, 4rem), 6vw, var(--vl-space-2xl, 6rem));
+        }
+    }
+}
+
+@layer velora.motion {
+    /*
+     * Named scene presets — Velora-look recipes (compat).
+     * Host-agnostic authorship prefers vl-stage + vl-act (see 03c-scene-engine.css).
+     */
+
+    [vl-scene="cinematic-hero"] {
+        display: grid;
+        place-items: center;
+        min-height: 100svh;
+        overflow: clip;
+        isolation: isolate;
+    }
+
+    [vl-scene="cinematic-hero"] > * {
+        animation: vl-reveal-cinematic var(--vl-duration-slower) var(--vl-ease-cinematic) both;
+    }
+
+    [vl-scene="cinematic-hero"] > *:nth-child(2) { animation-delay: 160ms; }
+    [vl-scene="cinematic-hero"] > *:nth-child(3) { animation-delay: 300ms; }
+    [vl-scene="cinematic-hero"] > *:nth-child(4) { animation-delay: 440ms; }
+    [vl-scene="cinematic-hero"] > *:nth-child(n+5) { animation-delay: 560ms; }
+
+    [vl-scene="sticky-story"] {
+        position: sticky;
+        top: 0;
+        min-height: 100svh;
+        overflow: clip;
+        display: grid;
+        align-content: start;
+    }
+
+    [vl-scene="sticky-story"] > * {
+        animation: vl-fade-up both linear;
+        animation-timeline: view(block);
+        animation-range: entry 0% cover 55%;
+    }
+
+    [vl-scene="glass-bento"] {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(min(100%, 18rem), 1fr));
+        gap: var(--vl-space-md, 1rem);
+    }
+
+    [vl-scene="glass-bento"] > * {
+        background: var(--vl-glass-bg, oklch(100% 0 0 / 0.07));
+        backdrop-filter: blur(12px) saturate(1.4);
+        -webkit-backdrop-filter: blur(12px) saturate(1.4);
+        border: 1px solid color-mix(in oklch, var(--vl-border-subtle, oklch(60% 0 0)) 38%, transparent);
+        border-radius: var(--vl-radius-lg, 1rem);
+        animation: vl-scale-in both linear;
+        animation-timeline: view(block);
+        animation-range: entry 5% cover 45%;
+    }
+
+    [vl-scene="product-reveal"] {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: var(--vl-space-xl, 3rem);
+        align-items: center;
+        container-type: inline-size;
+    }
+
+    @container (max-width: 44rem) {
+        [vl-scene="product-reveal"] {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    [vl-scene="product-reveal"] > *:first-child {
+        animation: vl-tilt-in both linear;
+        animation-timeline: view(block);
+        animation-range: entry 5% cover 48%;
+    }
+
+    [vl-scene="product-reveal"] > *:last-child {
+        animation: vl-fade-up both linear;
+        animation-timeline: view(block);
+        animation-range: entry 10% cover 50%;
+    }
+
+    [vl-scene="editorial-cinema"] {
+        display: grid;
+        gap: var(--vl-space-xl, 3rem);
+        container-type: inline-size;
+    }
+
+    [vl-scene="editorial-cinema"] > * {
+        animation: vl-clip-rise both linear;
+        animation-timeline: view(block);
+        animation-range: entry 5% cover 42%;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        [vl-scene="cinematic-hero"] > *,
+        [vl-scene="sticky-story"] > *,
+        [vl-scene="glass-bento"] > *,
+        [vl-scene="product-reveal"] > *,
+        [vl-scene="editorial-cinema"] > * {
+            animation: none !important;
+            opacity: 1;
+            transform: none;
+            filter: none;
+        }
+    }
+}
+
+@layer velora.motion {
+
+    /*
+     * cube-triad-stage — Showcase/Skin demo recipe (not host-agnostic stage contract).
+     * Prefer .vl-3d-stage + CSS vars for reusable 3D stages.
+     */
+    @keyframes vl-cube-scene-rotate {
+        from { transform: rotateX(-15deg) rotateY(0deg); }
+        to { transform: rotateX(-15deg) rotateY(360deg); }
+    }
+
+    @keyframes vl-cube-stage-shadow {
+        0%, 95%, 100% { transform: translate(-0.5em, -0.5em); }
+        20%, 25% { transform: translate(-5.5em, -0.5em); }
+        45%, 50% { transform: translate(-5.5em, -5.5em); }
+        70%, 75% { transform: translate(-0.5em, -5.5em); }
+    }
+
+    @keyframes vl-cube-bottom-cascade {
+        0% { transform: none; }
+        20%, 25% { transform: rotateZ(-90deg); }
+        45%, 50% { transform: rotateZ(-90deg) rotateY(90deg); }
+        70%, 75% { transform: rotateZ(-90deg) rotateY(90deg) rotateX(-90deg); }
+        95%, 100% { transform: rotateZ(-90deg) rotateY(90deg) rotateX(-90deg) rotateZ(-90deg); }
+    }
+
+    @keyframes vl-cube-mid-cascade {
+        0%, 2% { transform: none; }
+        23%, 27% { transform: rotateY(180deg); }
+        48%, 52% { transform: rotateY(180deg) rotateZ(-180deg); }
+        73%, 77% { transform: rotateY(180deg) rotateZ(-180deg) rotateX(180deg); }
+        98%, 100% { transform: rotateY(180deg) rotateZ(-180deg) rotateX(180deg) rotateY(180deg); }
+    }
+
+    @keyframes vl-cube-top-cascade {
+        0%, 5% { transform: none; }
+        25%, 30% { transform: rotateY(-180deg); }
+        50%, 55% { transform: rotateY(-180deg) rotateZ(-180deg); }
+        75%, 80% { transform: rotateY(-180deg) rotateZ(-180deg) rotateX(-180deg); }
+        100% { transform: rotateY(-180deg) rotateZ(-180deg) rotateX(-180deg) rotateY(-180deg); }
+    }
+
+    [vl-effect="cube-triad-stage"] {
+        --vl-cube-duration: 6s;
+        --vl-cube-unit: clamp(0.65rem, 1.15vmin, 1rem);
+        position: relative;
+        display: grid;
+        place-items: center;
+        min-height: clamp(17rem, 34vw, 22rem);
+        perspective: 75em;
+        overflow: hidden;
+        isolation: isolate;
+    }
+
+    [vl-effect="cube-triad-stage"] *:not(:empty) {
+        transform-style: preserve-3d;
+    }
+
+    [vl-effect="cube-triad-stage"] .scene {
+        position: relative;
+        width: 1px;
+        height: 1px;
+        animation: vl-cube-scene-rotate calc(var(--vl-cube-duration) * 13) linear infinite;
+    }
+
+    [vl-effect="cube-triad-stage"] .floor {
+        position: absolute;
+        inset: -50em;
+        background-image:
+            radial-gradient(circle at center, transparent 0%, color-mix(in oklch, black 92%, var(--vl-bg-main)) 52%),
+            repeating-linear-gradient(45deg, color-mix(in oklch, white 12%, transparent), color-mix(in oklch, black 16%, transparent), color-mix(in oklch, white 12%, transparent) 2em),
+            repeating-linear-gradient(-45deg, color-mix(in oklch, white 10%, transparent), color-mix(in oklch, black 14%, transparent), color-mix(in oklch, white 10%, transparent) 2em);
+        background-color: color-mix(in oklch, var(--vl-bg-main) 58%, var(--vl-bg-surface-elevated));
+        transform: rotateX(90deg) translateZ(calc((var(--vl-cube-unit) * -6.4) - 1px));
+    }
+
+    [vl-effect="cube-triad-stage"] .floor::before {
+        content: "";
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        width: calc(var(--vl-cube-unit) * 14.8);
+        height: calc(var(--vl-cube-unit) * 14.8);
+        box-shadow: 0 0 2em color-mix(in oklch, black 45%, transparent);
+        transform: translate(-50%, -50%);
+    }
+
+    [vl-effect="cube-triad-stage"] .stage {
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        width: calc(var(--vl-cube-unit) * 12);
+        height: calc(var(--vl-cube-unit) * 12);
+        transform: translate3d(-50%, -50%, calc(var(--vl-cube-unit) * 1.4));
+        background: inherit;
+        box-shadow: 0 0 1em color-mix(in oklch, black 44%, transparent) inset;
+    }
+
+    [vl-effect="cube-triad-stage"] .stage > div {
+        position: absolute;
+        left: calc(var(--vl-cube-unit) * -1.5);
+        top: 50%;
+        width: calc(var(--vl-cube-unit) * 15);
+        height: calc(var(--vl-cube-unit) * 2.1);
+        background: inherit;
+        box-shadow: inherit;
+        clip-path: polygon(1.5em 0, 13.5em 0, 100% 100%, 0 100%);
+        transform-origin: top;
+        transform: rotateZ(var(--vl-stage-rz, 0deg)) translateY(calc(var(--vl-cube-unit) * 6)) rotateX(-45deg);
+    }
+
+    [vl-effect="cube-triad-stage"] .stage > div:nth-child(1) { --vl-stage-rz: 0deg; }
+    [vl-effect="cube-triad-stage"] .stage > div:nth-child(2) { --vl-stage-rz: 90deg; }
+    [vl-effect="cube-triad-stage"] .stage > div:nth-child(3) { --vl-stage-rz: 180deg; }
+    [vl-effect="cube-triad-stage"] .stage > div:nth-child(4) { --vl-stage-rz: 270deg; }
+
+    [vl-effect="cube-triad-stage"] .stage::after {
+        content: "";
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        width: calc(var(--vl-cube-unit) * 6);
+        height: calc(var(--vl-cube-unit) * 6);
+        background: color-mix(in oklch, black 24%, transparent);
+        filter: blur(0.5em);
+        animation: vl-cube-stage-shadow var(--vl-cube-duration) ease-in-out infinite;
+    }
+
+    [vl-effect="cube-triad-stage"] .bottomCube,
+    [vl-effect="cube-triad-stage"] .midCube,
+    [vl-effect="cube-triad-stage"] .topCube {
+        position: absolute;
+        width: calc(var(--vl-cube-unit) * 5);
+        height: calc(var(--vl-cube-unit) * 5);
+        background-color: color-mix(in oklch, var(--vl-cube-tone, var(--vl-color-primary)) 68%, transparent);
+        background-image:
+            repeating-linear-gradient(45deg, color-mix(in oklch, white 14%, transparent), color-mix(in oklch, black 14%, transparent), color-mix(in oklch, white 14%, transparent) 1em),
+            repeating-linear-gradient(-45deg, color-mix(in oklch, white 14%, transparent), color-mix(in oklch, black 14%, transparent), color-mix(in oklch, white 14%, transparent) 1em);
+        box-shadow: 0 0 1em color-mix(in oklch, black 55%, var(--vl-cube-tone, var(--vl-color-primary))) inset;
+    }
+
+    [vl-effect="cube-triad-stage"] .bottomCube {
+        --vl-cube-tone: var(--vl-color-primary);
+        left: 0;
+        top: 0;
+        transform-origin: bottom left;
+        animation: vl-cube-bottom-cascade var(--vl-cube-duration) ease-in-out infinite;
+    }
+
+    [vl-effect="cube-triad-stage"] .midCube {
+        --vl-cube-tone: var(--vl-color-secondary);
+        inset: 0;
+        transform-origin: bottom right;
+        animation: vl-cube-mid-cascade var(--vl-cube-duration) ease-in-out infinite;
+    }
+
+    [vl-effect="cube-triad-stage"] .topCube {
+        --vl-cube-tone: var(--vl-color-accent, var(--vl-color-secondary));
+        inset: 0;
+        transform-origin: top left;
+        animation: vl-cube-top-cascade var(--vl-cube-duration) ease-in-out infinite;
+    }
+
+    [vl-effect="cube-triad-stage"] i {
+        position: absolute;
+        inset: 0;
+        margin: 0;
+        background: inherit;
+        box-shadow: inherit;
+    }
+
+    [vl-effect="cube-triad-stage"] i:nth-child(1) { transform: rotateX(90deg); transform-origin: top; }
+    [vl-effect="cube-triad-stage"] i:nth-child(2) { transform: rotateX(-90deg); transform-origin: bottom; }
+    [vl-effect="cube-triad-stage"] i:nth-child(3) { transform: rotateY(-90deg); transform-origin: left; }
+    [vl-effect="cube-triad-stage"] i:nth-child(4) { transform: rotateY(90deg); transform-origin: right; }
+    [vl-effect="cube-triad-stage"] i:nth-child(5) { transform: translateZ(calc(var(--vl-cube-unit) * 5)); }
+
+    @media (prefers-reduced-motion: reduce) {
+        [vl-effect="cube-triad-stage"] .scene,
+        [vl-effect="cube-triad-stage"] .stage::after,
+        [vl-effect="cube-triad-stage"] .bottomCube,
+        [vl-effect="cube-triad-stage"] .midCube,
+        [vl-effect="cube-triad-stage"] .topCube {
+            animation: none;
+        }
+    }
+
+}

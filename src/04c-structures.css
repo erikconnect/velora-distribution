@@ -1,0 +1,783 @@
+@layer velora.components {
+    /*
+     * Page structures — header, footer, nav, sidebar, breadcrumb, dividers.
+     * Awwwards-grade layout primitives for marketing sites and web apps.
+     */
+
+    /* =========================================================================
+       1. PAGE SHELL — .vl-page
+       ========================================================================= */
+
+    .vl-page {
+        display: flex;
+        flex-direction: column;
+        min-height: 100dvh;
+    }
+
+    /* =========================================================================
+       2. HEADER — .vl-header
+       ========================================================================= */
+
+    .vl-header {
+        position: sticky;
+        top: 0;
+        z-index: var(--vl-z-sticky);
+        padding-block: var(--vl-space-sm);
+        border-bottom: 1px solid transparent;
+        transition:
+            background-color var(--vl-transition-normal) var(--vl-ease-out-soft),
+            border-color var(--vl-transition-normal) var(--vl-ease-out-soft),
+            backdrop-filter var(--vl-transition-normal) var(--vl-ease-out-soft);
+    }
+
+    .vl-header__inner {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: var(--vl-space-md);
+        width: 100%;
+        max-width: var(--vl-layout-container-max, var(--vl-container-max));
+        margin-inline: auto;
+        padding-left: max(var(--vl-container-gutter), env(safe-area-inset-left, 0px));
+        padding-right: max(var(--vl-container-gutter), env(safe-area-inset-right, 0px));
+    }
+
+    .vl-header__brand {
+        font-family: var(--vl-font-family-display);
+        font-size: var(--vl-font-size-lg);
+        font-weight: var(--vl-font-weight-bold);
+        color: var(--vl-text-primary);
+        text-decoration: none;
+        background: var(--vl-gradient-brand);
+        -webkit-background-clip: text;
+        background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+
+    /* Logo image — color follows design system tokens */
+    .vl-logo {
+        display: block;
+        filter: var(--vl-logo-filter, brightness(0) invert(1));
+        opacity: var(--vl-logo-opacity, 0.9);
+        transition: opacity var(--vl-transition-fast);
+    }
+    .vl-header__brand:hover .vl-logo {
+        opacity: 1;
+    }
+
+    .vl-header__nav {
+        display: flex;
+        align-items: center;
+        gap: var(--vl-space-md);
+    }
+
+    .vl-header__actions {
+        display: flex;
+        align-items: center;
+        gap: var(--vl-space-sm);
+    }
+
+    /* — Variants — */
+
+    .vl-header--glass {
+        background: var(--vl-glass-bg);
+        backdrop-filter: blur(var(--vl-backdrop-blur));
+        -webkit-backdrop-filter: blur(var(--vl-backdrop-blur));
+        border-bottom: 1px solid color-mix(in oklch, var(--vl-color-primary) 14%, transparent);
+    }
+
+    .vl-header--transparent {
+        background: transparent;
+    }
+
+    .vl-header--bordered {
+        border-bottom-color: var(--vl-border-subtle);
+    }
+
+    .vl-header--centered .vl-header__inner {
+        display: grid;
+        grid-template-columns: 1fr auto 1fr;
+        justify-items: center;
+    }
+
+    .vl-header--centered .vl-header__nav {
+        justify-self: start;
+    }
+
+    .vl-header--centered .vl-header__actions {
+        justify-self: end;
+    }
+
+    .vl-header--dark {
+        background: var(--vl-bg-surface);
+        color: var(--vl-text-primary);
+    }
+
+    .vl-header--dark .vl-header__brand {
+        color: var(--vl-text-primary);
+    }
+
+    /* =========================================================================
+       3. NAVIGATION — .vl-nav
+       ========================================================================= */
+
+    .vl-nav {
+        display: flex;
+        gap: var(--vl-space-md);
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+
+    .vl-nav__link {
+        position: relative;
+        color: var(--vl-text-secondary);
+        font-size: var(--vl-font-size-sm);
+        font-weight: var(--vl-font-weight-medium);
+        text-decoration: none;
+        padding-block: var(--vl-space-xs);
+        transition: color var(--vl-transition-fast) var(--vl-ease-out-soft);
+    }
+
+    .vl-nav__link::after {
+        content: "";
+        position: absolute;
+        bottom: 0;
+        left: 50%;
+        width: 0;
+        height: 2px;
+        background: var(--vl-color-primary);
+        border-radius: var(--vl-radius-full);
+        transition: width var(--vl-transition-normal) var(--vl-ease-cinematic), left var(--vl-transition-normal) var(--vl-ease-cinematic);
+    }
+
+    .vl-nav__link:hover {
+        color: var(--vl-text-primary);
+    }
+
+    .vl-nav__link:hover::after {
+        width: 100%;
+        left: 0;
+    }
+
+    .vl-nav__link--active {
+        color: var(--vl-text-primary);
+    }
+
+    .vl-nav__link--active::after {
+        width: 100%;
+        left: 0;
+    }
+
+    .vl-nav__link:focus-visible {
+        outline: var(--vl-focus-ring-width) solid var(--vl-focus-ring-color);
+        outline-offset: var(--vl-focus-ring-offset);
+        border-radius: var(--vl-radius-sm);
+    }
+
+    /* — underline-expand compatibility: reset scaleX so the motion layer's
+       width/left animation can take effect — */
+    .vl-nav__link[vl-effect="underline-expand"]::after {
+        inset-inline: auto;
+        left: 50%;
+        width: 0;
+        transform: none;
+        transform-origin: unset;
+        transition: width var(--vl-transition-normal), left var(--vl-transition-normal);
+    }
+
+    .vl-nav__link[vl-effect="underline-expand"]:hover::after,
+    .vl-nav__link[vl-effect="underline-expand"].vl-nav__link--active::after {
+        width: 100%;
+        left: 0;
+        transform: none;
+    }
+
+    /* — Vertical (sidebar) — */
+
+    .vl-nav--vertical {
+        flex-direction: column;
+        gap: var(--vl-space-2xs);
+    }
+
+    .vl-nav--vertical .vl-nav__link {
+        display: block;
+        padding: var(--vl-space-xs) var(--vl-space-sm);
+        border-radius: var(--vl-radius-sm);
+        transition:
+            color var(--vl-transition-fast) var(--vl-ease-out-soft),
+            background-color var(--vl-transition-fast) var(--vl-ease-out-soft);
+    }
+
+    .vl-nav--vertical .vl-nav__link::after {
+        content: none;
+    }
+
+    .vl-nav--vertical .vl-nav__link:hover {
+        background: color-mix(in oklch, var(--vl-color-primary) 8%, transparent);
+    }
+
+    .vl-nav--vertical .vl-nav__link--active {
+        background: color-mix(in oklch, var(--vl-color-primary) 12%, transparent);
+    }
+
+    /* — Pills — */
+
+    .vl-nav--pills .vl-nav__link {
+        padding: var(--vl-space-xs) var(--vl-space-md);
+        border-radius: var(--vl-radius-full);
+        transition:
+            color var(--vl-transition-fast) var(--vl-ease-out-soft),
+            background-color var(--vl-transition-fast) var(--vl-ease-out-soft);
+    }
+
+    .vl-nav--pills .vl-nav__link::after {
+        content: none;
+    }
+
+    .vl-nav--pills .vl-nav__link:hover {
+        background: var(--vl-color-primary-soft);
+    }
+
+    .vl-nav--pills .vl-nav__link--active {
+        background: var(--vl-color-primary-soft);
+        color: var(--vl-text-primary);
+    }
+
+    /* =========================================================================
+       3.1 BUSSOLA / CINEMA RAIL — shared framework side navigation
+       ========================================================================= */
+    .showcase-cinema-rail,
+    .vl-bussola {
+        position: fixed;
+        right: clamp(1rem, 2vw, 2rem);
+        top: 50%;
+        translate: 0 -50%;
+        z-index: 30;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        justify-content: center;
+        width: 9rem;
+        min-height: 16rem;
+        padding: 1.25rem 0;
+        gap: 0;
+    }
+
+    .vl-bussola__cap {
+        font-family: var(--vl-font-family-mono);
+        font-size: 0.5rem;
+        letter-spacing: 0.22em;
+        text-transform: uppercase;
+        color: color-mix(in oklch, var(--vl-text-muted) 60%, var(--vl-color-primary));
+        opacity: 0.45;
+        margin-bottom: 0.625rem;
+        text-align: right;
+        user-select: none;
+    }
+
+    .vl-bussola__stop {
+        --dot-sz: 0.4375rem;
+        position: relative;
+        display: flex;
+        align-items: center;
+        gap: 0.625rem;
+        padding: 0.9375rem 0;
+        text-decoration: none;
+        cursor: pointer;
+    }
+
+    .vl-bussola__stop:not(:last-child)::after {
+        content: "";
+        position: absolute;
+        right: calc(var(--dot-sz) / 2 - 0.5px);
+        top: calc(50% + var(--dot-sz) / 2 + 1px);
+        width: 1px;
+        height: calc(100% - var(--dot-sz) - 2px);
+        background: linear-gradient(
+            180deg,
+            color-mix(in oklch, var(--vl-border-subtle) 72%, transparent),
+            color-mix(in oklch, var(--vl-border-subtle) 22%, transparent)
+        );
+    }
+
+    .vl-bussola__dot {
+        width: var(--dot-sz);
+        height: var(--dot-sz);
+        border-radius: 50%;
+        background: color-mix(in oklch, var(--vl-border-subtle) 88%, transparent);
+        border: 1px solid color-mix(in oklch, var(--vl-border-subtle) 55%, transparent);
+        flex-shrink: 0;
+    }
+
+    .vl-bussola__label {
+        font-family: var(--vl-font-family-mono);
+        font-size: 0.5625rem;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: var(--vl-text-muted);
+        white-space: nowrap;
+        opacity: 0;
+        transform: translateX(5px);
+        transition: opacity 0.22s ease, transform 0.22s ease, color 0.2s;
+    }
+
+    .vl-bussola__stop:hover .vl-bussola__label,
+    .vl-bussola__stop:focus-visible .vl-bussola__label {
+        opacity: 1;
+        transform: translateX(0);
+        color: var(--vl-color-primary);
+    }
+
+    /* Compatibility with old rail markup still present in some pages */
+    .showcase-cinema-rail__line,
+    .showcase-cinema-rail__progress {
+        display: none;
+    }
+
+    .showcase-cinema-rail__stops {
+        display: grid;
+        gap: 0.8rem;
+    }
+
+    .showcase-cinema-rail__stops > span {
+        width: 0.44rem;
+        height: 0.44rem;
+        border-radius: 50%;
+        background: color-mix(in oklch, var(--vl-border-subtle) 88%, transparent);
+        border: 1px solid color-mix(in oklch, var(--vl-border-subtle) 55%, transparent);
+    }
+
+    .showcase-cinema-rail__stops > span.is-active {
+        background: var(--vl-color-primary);
+        border-color: transparent;
+    }
+
+    .showcase-cinema-rail__label {
+        margin-top: 0.8rem;
+        font-family: var(--vl-font-family-mono);
+        font-size: 0.5rem;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: var(--vl-text-muted);
+        opacity: 0.68;
+    }
+
+    /* =========================================================================
+       4. FOOTER — .vl-footer
+       ========================================================================= */
+
+    .vl-footer {
+        padding-block-start: var(--vl-space-2xl);
+        padding-block-end: var(--vl-space-xl);
+        background: var(--vl-bg-inset);
+        border-top: 1px solid var(--vl-border-subtle);
+    }
+
+    .vl-footer__inner {
+        width: 100%;
+        max-width: var(--vl-layout-container-max, var(--vl-container-max));
+        margin-inline: auto;
+        padding-left: max(var(--vl-container-gutter), env(safe-area-inset-left, 0px));
+        padding-right: max(var(--vl-container-gutter), env(safe-area-inset-right, 0px));
+    }
+
+    .vl-footer__grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(min(12rem, 100%), 1fr));
+        gap: var(--vl-space-xl);
+    }
+
+    .vl-footer__col {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .vl-footer__heading {
+        font-size: var(--vl-font-size-xs);
+        font-weight: var(--vl-font-weight-semibold);
+        color: var(--vl-text-primary);
+        text-transform: uppercase;
+        letter-spacing: var(--vl-tracking-wide);
+        margin-block-end: var(--vl-space-sm);
+    }
+
+    .vl-footer__links {
+        display: flex;
+        flex-direction: column;
+        gap: var(--vl-space-xs);
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+
+    .vl-footer__link {
+        color: var(--vl-text-muted);
+        font-size: var(--vl-font-size-sm);
+        text-decoration: none;
+        transition: color var(--vl-transition-fast) var(--vl-ease-out-soft);
+    }
+
+    .vl-footer__link:hover {
+        color: var(--vl-text-primary);
+    }
+
+    .vl-footer__brand {
+        font-family: var(--vl-font-family-display);
+        font-size: var(--vl-font-size-xl);
+        font-weight: var(--vl-font-weight-bold);
+        background: var(--vl-gradient-brand);
+        -webkit-background-clip: text;
+        background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+
+    .vl-footer__brand .vl-logo {
+        margin-block-end: var(--vl-space-md);
+    }
+
+    .vl-footer__brand .vl-logo-lockup {
+        margin-block-end: var(--vl-space-lg);
+    }
+
+    .vl-footer__brand:hover .vl-logo {
+        opacity: 1;
+    }
+
+    .vl-footer__desc {
+        background: none;
+        color: var(--vl-text-muted);
+        -webkit-text-fill-color: currentColor;
+        font-family: var(--vl-font-family-body, var(--vl-font-family-sans, inherit));
+        font-size: var(--vl-font-size-sm);
+        font-weight: var(--vl-font-weight-regular, 400);
+        line-height: var(--vl-leading-relaxed);
+        max-width: 24ch;
+        margin: 0;
+    }
+
+    .vl-footer__bottom {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: var(--vl-space-md);
+        border-top: 1px solid var(--vl-border-subtle);
+        margin-block-start: var(--vl-space-xl);
+        padding-block-start: var(--vl-space-lg);
+        font-size: var(--vl-font-size-xs);
+        color: var(--vl-text-muted);
+    }
+
+    .vl-footer__social {
+        display: flex;
+        align-items: center;
+        gap: var(--vl-space-sm);
+    }
+
+    .vl-footer__social a {
+        color: var(--vl-text-muted);
+        transition: color var(--vl-transition-fast) var(--vl-ease-out-soft);
+    }
+
+    .vl-footer__social a:hover {
+        color: var(--vl-text-primary);
+    }
+
+    /* — Variants — */
+
+    .vl-footer--minimal {
+        text-align: center;
+    }
+
+    .vl-footer--minimal .vl-footer__bottom {
+        justify-content: center;
+        border-top: none;
+        margin-block-start: 0;
+        padding-block-start: 0;
+    }
+
+    .vl-footer--dark {
+        background: var(--vl-bg-surface);
+    }
+
+    .vl-footer--newsletter .vl-footer__newsletter {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: var(--vl-space-sm);
+        padding-block: var(--vl-space-lg);
+        border-bottom: 1px solid var(--vl-border-subtle);
+        margin-block-end: var(--vl-space-xl);
+    }
+
+    /* =========================================================================
+       5. MAIN CONTENT — .vl-main
+       ========================================================================= */
+
+    .vl-main {
+        flex: 1 1 auto;
+        min-height: 0;
+    }
+
+    .vl-main--sidebar {
+        display: grid;
+        grid-template-columns: auto 1fr;
+        min-height: 0;
+    }
+
+    /* =========================================================================
+       6. SIDEBAR — .vl-sidebar
+       ========================================================================= */
+
+    .vl-sidebar {
+        position: sticky;
+        top: 0;
+        align-self: start;
+        width: 16rem;
+        max-height: 100dvh;
+        overflow-y: auto;
+        padding: var(--vl-space-lg) var(--vl-space-md);
+        border-right: 1px solid var(--vl-border-subtle);
+    }
+
+    .vl-sidebar--left {
+        border-right: 1px solid var(--vl-border-subtle);
+        border-left: none;
+    }
+
+    .vl-sidebar--right {
+        order: 1;
+        border-right: none;
+        border-left: 1px solid var(--vl-border-subtle);
+    }
+
+    /* =========================================================================
+       7. BREADCRUMB — .vl-breadcrumb
+       ========================================================================= */
+
+    .vl-breadcrumb {
+        display: flex;
+        align-items: center;
+        gap: var(--vl-space-xs);
+        font-size: var(--vl-font-size-xs);
+        color: var(--vl-text-muted);
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+
+    .vl-breadcrumb__item + .vl-breadcrumb__item::before {
+        content: "/";
+        margin-inline-end: var(--vl-space-xs);
+        color: var(--vl-border-strong);
+        pointer-events: none;
+    }
+
+    .vl-breadcrumb__item a {
+        color: var(--vl-text-muted);
+        text-decoration: none;
+        transition: color var(--vl-transition-fast) var(--vl-ease-out-soft);
+    }
+
+    .vl-breadcrumb__item a:hover {
+        color: var(--vl-text-primary);
+    }
+
+    .vl-breadcrumb__item:last-child {
+        color: var(--vl-text-primary);
+        font-weight: var(--vl-font-weight-medium);
+    }
+
+    /* =========================================================================
+       8. DIVIDER — .vl-divider
+       ========================================================================= */
+
+    .vl-divider {
+        border: none;
+        height: 1px;
+        background: var(--vl-border-subtle);
+        margin-block: var(--vl-space-xl);
+    }
+
+    .vl-divider--gradient {
+        background: linear-gradient(
+            90deg,
+            transparent,
+            var(--vl-color-primary),
+            transparent
+        );
+    }
+
+    .vl-divider--glow {
+        background: var(--vl-color-primary);
+        box-shadow: 0 0 8px color-mix(in oklch, var(--vl-color-primary) 40%, transparent);
+    }
+
+    .vl-divider--thick {
+        height: 2px;
+    }
+
+    .vl-divider--space-lg {
+        margin-block: var(--vl-space-2xl);
+    }
+
+    .vl-divider--space-xl {
+        margin-block: var(--vl-space-3xl);
+    }
+
+    /* =========================================================================
+       5. MOBILE HEADER — hamburger + drawer
+       ========================================================================= */
+
+    /* Hamburger button — hidden on desktop */
+    .vl-header__menu-btn {
+        display: none;
+        align-items: center;
+        justify-content: center;
+        width: 2.25rem;
+        height: 2.25rem;
+        padding: 0;
+        background: transparent;
+        border: 1px solid color-mix(in oklch, var(--vl-text-primary) 15%, transparent);
+        border-radius: var(--vl-radius-md);
+        color: var(--vl-text-primary);
+        cursor: pointer;
+        flex-shrink: 0;
+        transition: background var(--vl-transition-fast) var(--vl-ease-out-soft),
+                    border-color var(--vl-transition-fast) var(--vl-ease-out-soft);
+    }
+
+    .vl-header__menu-btn:hover {
+        background: color-mix(in oklch, var(--vl-text-primary) 8%, transparent);
+        border-color: color-mix(in oklch, var(--vl-text-primary) 30%, transparent);
+    }
+
+    .vl-header__menu-btn:focus-visible {
+        outline: var(--vl-focus-ring-width) solid var(--vl-focus-ring-color);
+        outline-offset: var(--vl-focus-ring-offset);
+    }
+
+    /* Mobile nav drawer — hidden by default */
+    .vl-header__drawer {
+        display: none;
+        border-top: 1px solid color-mix(in oklch, var(--vl-color-primary) 14%, transparent);
+        padding: var(--vl-space-md) max(var(--vl-container-gutter), env(safe-area-inset-left, 0px));
+        padding-bottom: var(--vl-space-lg);
+    }
+
+    .vl-header__mobile-nav {
+        display: flex;
+        flex-direction: column;
+        margin-block-end: var(--vl-space-md);
+    }
+
+    .vl-header__mobile-link {
+        display: block;
+        padding-block: var(--vl-space-sm);
+        color: var(--vl-text-secondary);
+        font-size: var(--vl-font-size-base);
+        font-weight: var(--vl-font-weight-medium);
+        text-decoration: none;
+        border-bottom: 1px solid color-mix(in oklch, var(--vl-text-primary) 8%, transparent);
+        transition: color var(--vl-transition-fast) var(--vl-ease-out-soft);
+    }
+
+    .vl-header__mobile-link:last-child {
+        border-bottom: none;
+    }
+
+    .vl-header__mobile-link:hover {
+        color: var(--vl-text-primary);
+    }
+
+    .vl-header__mobile-actions {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: var(--vl-space-sm);
+        padding-top: var(--vl-space-md);
+        border-top: 1px solid color-mix(in oklch, var(--vl-text-primary) 8%, transparent);
+    }
+
+    /* ── Mobile breakpoint (≤ 48rem / 768px) ── */
+
+    @media (max-width: 48rem) {
+        .vl-header__nav {
+            display: none;
+        }
+
+        /* In actions: keep GitHub icon + Get Started, hide controls */
+        .vl-header__actions .ds-vt-select,
+        .vl-header__actions .ds-editorial-select,
+        .vl-header__actions .ds-theme-toggle {
+            display: none;
+        }
+
+        .vl-header__menu-btn {
+            display: flex;
+        }
+
+        /* Drawer visible when header carries [data-menu-open] */
+        .vl-header[data-menu-open] .vl-header__drawer {
+            display: block;
+            animation: vl-fade-down var(--vl-duration-normal) var(--vl-ease-cinematic) forwards;
+        }
+    }
+
+    /* ── Desktop: always hide mobile-only elements ── */
+    @media (min-width: 48.0625rem) {
+        .vl-header__menu-btn {
+            display: none !important;
+        }
+
+        .vl-header__drawer {
+            display: none !important;
+        }
+    }
+
+    /* =========================================================================
+       6. MOBILE FOOTER — stack columns on small screens
+       ========================================================================= */
+
+    @media (max-width: 48rem) {
+        .vl-footer__grid {
+            grid-template-columns: repeat(2, 1fr);
+            gap: var(--vl-space-lg);
+        }
+
+        .vl-footer__brand {
+            grid-column: 1 / -1;
+        }
+
+        .vl-footer__bottom {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: var(--vl-space-sm);
+        }
+    }
+
+    @media (max-width: 30rem) {
+        .vl-footer__grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    /* =========================================================================
+       REDUCED MOTION
+       ========================================================================= */
+
+    @media (prefers-reduced-motion: reduce) {
+        .vl-nav__link::after {
+            transition: none;
+        }
+
+        .vl-header {
+            transition: none;
+        }
+
+        .vl-header__menu-btn {
+            transition: none;
+        }
+    }
+}

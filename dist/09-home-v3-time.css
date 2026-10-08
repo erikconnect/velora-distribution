@@ -1,0 +1,212 @@
+/* Home v3 — one native Scene clock, act/span arrivals and a shared exit. */
+@layer velora.overrides {
+  .v3-home .vl-v3-clock {
+    --vl-beats: 4;
+    min-block-size: auto;
+    /* Track stays in flow. [vl-pin] in motion-core also sets --vl-z-sticky (200),
+       which would stack the opaque scene above the Home header (z-index 120). */
+    position: relative;
+    z-index: auto;
+    background: var(--vl-bg-surface);
+    color: var(--vl-text-primary);
+    view-timeline-name: --vl-scene;
+    timeline-scope: --vl-scene;
+  }
+  .vl-v3-clock__stage {
+    display: grid;
+    gap: var(--vl-space-lg);
+    padding: var(--vl-space-xl) var(--v3-pad);
+    padding-inline-end: max(var(--v3-pad), calc(var(--vl-v3-rail) + var(--vl-space-lg)));
+    position: relative;
+    min-block-size: auto;
+    perspective: var(--vl-perspective, 1200px);
+  }
+  .vl-v3-clock__heading { max-inline-size: none; }
+  .vl-v3-clock__heading h2 {
+    margin: var(--vl-space-sm) 0;
+    font-family: var(--vl-font-family-display, var(--vl-font-family));
+    font-size: clamp(3rem, 6vw, 6rem);
+    line-height: .94;
+    letter-spacing: -.055em;
+  }
+  .vl-v3-clock__heading p, .vl-v3-clock__voice p, .vl-v3-clock__handoff p { color: var(--vl-text-secondary); line-height: 1.5; }
+  .vl-v3-clock__voice > div {
+    position: relative;
+    padding: var(--vl-space-lg);
+    min-block-size: 12rem;
+    isolation: isolate;
+    border-radius: var(--vl-radius-lg);
+    background: transparent;
+  }
+  .vl-v3-clock__voice > div::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border-radius: inherit;
+    border: var(--vl-skin-border-width, 1px) solid var(--vl-border-subtle);
+    background: var(--vl-bg-surface-elevated, var(--vl-bg-surface));
+    box-shadow: var(--vl-shadow-lg);
+  }
+  .vl-v3-clock__voice strong { display: block; position: relative; z-index: 1; font-family: var(--vl-font-family-display, var(--vl-font-family)); font-size: clamp(2.5rem, 4vw, 4.5rem); line-height: 1; letter-spacing: -.045em; }
+  .vl-v3-clock__number { display: block; color: var(--vl-color-primary); font: 600 .75rem var(--vl-font-family-mono, monospace); margin-block-end: var(--vl-space-md); }
+  .vl-v3-clock__voice p { position: relative; z-index: 1; max-inline-size: 24ch; }
+  .vl-v3-clock__shape { position: absolute; inset-block-start: 20%; inset-inline-end: 8%; inline-size: 8rem; aspect-ratio: 1; border: var(--vl-space-sm) solid color-mix(in oklch, var(--vl-color-primary) 30%, transparent); border-radius: 50%; }
+  .vl-v3-clock__voice:nth-of-type(2) .vl-v3-clock__shape { border-radius: var(--vl-radius-lg); rotate: 45deg; }
+  .vl-v3-clock__voice:nth-of-type(3) .vl-v3-clock__shape { border-radius: 0; border-width: var(--vl-space-xs); }
+  .vl-v3-clock__shape { overflow: hidden; isolation: isolate; background: var(--vl-bg-inset); }
+  .vl-v3-clock__shape :is(img, video) { position: absolute; inset: 0; inline-size: 100%; block-size: 100%; object-fit: cover; opacity: .55; }
+  .vl-v3-clock__shape video { visibility: hidden; }
+  .vl-v3-clock__shape video[data-playing] { visibility: visible; }
+  .vl-v3-clock__shape:has(video[data-playing]) img { visibility: hidden; }
+  .vl-v3-clock__voice:nth-of-type(1) .vl-v3-clock__shape :is(img, video) { object-position: 30% center; }
+  .vl-v3-clock__voice:nth-of-type(2) .vl-v3-clock__shape :is(img, video) { rotate: -45deg; scale: 1.45; }
+  .vl-v3-clock__voice:nth-of-type(3) .vl-v3-clock__shape :is(img, video) { object-position: 70% center; }
+  .vl-v3-clock__media-control { display: flex; align-items: center; gap: var(--vl-space-sm); margin-block-end: var(--vl-space-sm); inline-size: fit-content; cursor: pointer; color: var(--vl-text-primary); }
+  .vl-v3-clock__media-control input { accent-color: var(--vl-color-primary); }
+  .vl-v3-clock__score { font: .7rem var(--vl-font-family-mono, monospace); color: var(--vl-text-secondary); }
+  .vl-v3-clock__ruler { position: relative; display: grid; grid-template-columns: repeat(4, 1fr); padding-block: var(--vl-space-md); border-block-end: 1px solid var(--vl-border-subtle); }
+  .vl-v3-clock__ruler i { position: absolute; inset: auto 0 0; block-size: 2px; background: var(--vl-color-primary); transform-origin: left; }
+  .vl-v3-clock__score ol { list-style: none; padding: 0; display: grid; gap: var(--vl-space-sm); }
+  .vl-v3-clock__score li { display: grid; grid-template-columns: 8rem 1fr 10rem; gap: var(--vl-space-md); align-items: center; }
+  .vl-v3-clock__score li i { display: block; block-size: var(--vl-space-xs); background: var(--vl-color-primary); transform-origin: left; }
+  .vl-v3-clock__score li:nth-child(1) i { margin-inline-end: 75%; }
+  .vl-v3-clock__score li:nth-child(2) i { margin-inline: 25%; }
+  .vl-v3-clock__score li:nth-child(3) i { margin-inline: 50% 25%; }
+  .vl-v3-clock__handoff { display: grid; grid-template-columns: 1fr 1fr; gap: var(--vl-space-lg); padding: var(--vl-space-xl) var(--v3-pad); padding-inline-end: max(var(--v3-pad), calc(var(--vl-v3-rail) + var(--vl-space-lg))); background: var(--vl-bg-surface); color: var(--vl-text-primary); }
+  .vl-v3-clock__handoff h3 { font-size: clamp(2rem, 3vw, 3rem); margin: 0; }
+  .vl-v3-clock__handoff summary { cursor: pointer; padding-block: var(--vl-space-md); }
+  .vl-v3-clock__handoff pre { white-space: pre-wrap; overflow-wrap: anywhere; font: .75rem / 1.6 var(--vl-font-family-mono, monospace); }
+  /* A readable baseline even when the core binds an unsupported named timeline. */
+  .vl-v3-clock .vl-v3-clock__stage > [vl-enter], .vl-v3-clock .vl-v3-clock__voice > [vl-exit] { animation: none; opacity: 1; transform: none; filter: none; }
+
+  @media (max-width: 959px) {
+    .vl-v3-clock__stage, .vl-v3-clock__handoff { padding-inline: var(--v3-pad); }
+    .vl-v3-clock__handoff { grid-template-columns: 1fr; }
+    .vl-v3-clock__heading h2 { font-size: clamp(2.4rem, 11vw, 3.6rem); }
+    .vl-v3-clock__voice > div {
+      min-block-size: 11rem;
+      padding-inline-end: max(var(--vl-space-lg), 36%);
+      overflow: clip;
+    }
+    .vl-v3-clock__voice strong { font-size: clamp(2rem, 9vw, 3.2rem); }
+    .vl-v3-clock__shape {
+      inline-size: clamp(4.25rem, 26vw, 6.5rem);
+      inset-block-start: 18%;
+      inset-inline-end: 4%;
+      max-inline-size: 34%;
+    }
+    .vl-v3-clock__score li { grid-template-columns: 6rem 1fr; }
+    .vl-v3-clock__score code { grid-column: 2; font-size: .65rem; }
+  }
+  @supports (animation-timeline: view()) {
+    @media (prefers-reduced-motion: no-preference) {
+      @media (min-width: 960px) and (min-height: 760px), (max-width: 959px) and (min-height: 540px) {
+        .v3-home .vl-v3-clock[vl-pin] { min-block-size: 400svh; }
+        .vl-v3-clock .vl-v3-clock__stage { position: sticky; inset-block-start: 0; }
+        .vl-v3-clock__voice > div::before {
+          animation: vl-fade-in linear both;
+          animation-duration: 1ms;
+          animation-timeline: --vl-scene;
+          animation-range: contain var(--vl-act-start) contain var(--vl-act-end);
+        }
+        .vl-v3-clock .vl-v3-clock__stage > [vl-enter] {
+          animation-name: var(--vl-enter-name);
+          animation-duration: 1ms;
+          animation-fill-mode: both;
+          animation-timing-function: linear;
+          animation-timeline: --vl-scene;
+          animation-range: contain var(--vl-act-start) contain var(--vl-act-end);
+        }
+        .vl-v3-clock .vl-v3-clock__voice > [vl-exit] {
+          animation-name: var(--vl-exit-name);
+          animation-duration: 1ms;
+          animation-fill-mode: both;
+          animation-timing-function: linear;
+          animation-timeline: --vl-scene;
+          animation-range: contain 75% contain 100%;
+        }
+        .vl-v3-clock__ruler i { transform: scaleX(0); animation: vl-v3-clock-progress linear both; animation-timeline: --vl-scene; animation-range: contain 0% contain 100%; }
+        .vl-v3-clock__score li:nth-child(1) i { animation: vl-v3-clock-progress linear both; animation-timeline: --vl-scene; animation-range: contain 0% contain 25%; }
+        .vl-v3-clock__score li:nth-child(2) i { animation: vl-v3-clock-progress linear both; animation-timeline: --vl-scene; animation-range: contain 25% contain 75%; }
+        .vl-v3-clock__score li:nth-child(3) i { animation: vl-v3-clock-progress linear both; animation-timeline: --vl-scene; animation-range: contain 50% contain 75%; }
+        .vl-v3-clock__fallback-note { display: none; }
+      }
+      @media (min-width: 960px) and (min-height: 760px) {
+        .vl-v3-clock .vl-v3-clock__stage { block-size: 100svh; min-block-size: 100svh; grid-template-columns: repeat(3, minmax(0, 1fr)); grid-template-rows: auto 1fr auto; gap: var(--vl-space-md); padding-block: max(5rem, var(--vl-space-xl)) var(--vl-space-lg); }
+        .vl-v3-clock__heading { grid-column: 1 / -1; }
+        .vl-v3-clock__heading p:last-child { max-inline-size: 58ch; margin-block: var(--vl-space-sm); }
+        .vl-v3-clock__voice { align-self: center; }
+        .vl-v3-clock__voice > div { min-block-size: 15rem; padding-inline: var(--vl-space-md); }
+        .vl-v3-clock__voice:nth-of-type(2) { align-self: end; }
+        .vl-v3-clock__voice:nth-of-type(3) { align-self: start; }
+        .vl-v3-clock__score { grid-column: 1 / -1; }
+      }
+      @media (max-width: 959px) and (min-height: 540px) {
+        .vl-v3-clock .vl-v3-clock__stage {
+          block-size: 100dvh;
+          min-block-size: 100dvh;
+          overflow: clip;
+          grid-template-columns: minmax(0, 1fr);
+          grid-template-rows: auto minmax(11rem, 1fr) auto;
+          gap: var(--vl-space-sm);
+          padding-block: 5.25rem var(--vl-space-md);
+          padding-inline: 0;
+        }
+        .vl-v3-clock__heading,
+        .vl-v3-clock__score {
+          padding-inline: var(--v3-pad);
+        }
+        .vl-v3-clock__heading { grid-column: 1; grid-row: 1; z-index: 2; }
+        .vl-v3-clock__heading h2 { font-size: clamp(2rem, 9vw, 2.8rem); }
+        .vl-v3-clock__heading p:last-child { margin-block: var(--vl-space-xs) 0; max-inline-size: 42ch; }
+        .vl-v3-clock__score { grid-column: 1; grid-row: 3; z-index: 2; }
+        .vl-v3-clock__voice {
+          --vl-carousel-slot: calc(var(--vl-act) - 1);
+          grid-column: 1;
+          grid-row: 2;
+          z-index: 1;
+          align-self: center;
+          justify-self: stretch;
+          inline-size: 100%;
+          max-inline-size: none;
+          min-inline-size: 0;
+        }
+        .vl-v3-clock__voice > div {
+          inline-size: 100%;
+        }
+        .vl-v3-clock .vl-v3-clock__stage > [vl-enter] {
+          animation-name: vl-fade-in, vl-v3-clock-carousel;
+          animation-duration: 1ms, 1ms;
+          animation-fill-mode: both, both;
+          animation-timing-function: linear, linear;
+          animation-timeline: --vl-scene, --vl-scene;
+          animation-range: contain 0% contain 8%, contain 0% contain 100%;
+        }
+        .vl-v3-clock .vl-v3-clock__stage > [vl-enter]:nth-of-type(2) {
+          animation-range: contain 25% contain 33%, contain 0% contain 100%;
+        }
+        .vl-v3-clock .vl-v3-clock__stage > [vl-enter]:nth-of-type(3) {
+          animation-range: contain 50% contain 58%, contain 0% contain 100%;
+        }
+      }
+    }
+  }
+  @keyframes vl-v3-clock-progress {
+    from { transform: scaleX(0); }
+    to { transform: scaleX(1); }
+  }
+  @keyframes vl-v3-clock-carousel {
+    0%, 25% { translate: calc(var(--vl-carousel-slot) * 100%) 0; }
+    33%, 50% { translate: calc((var(--vl-carousel-slot) - 1) * 100%) 0; }
+    58%, 100% { translate: calc((var(--vl-carousel-slot) - 2) * 100%) 0; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .vl-v3-clock__shape video { display: none; }
+    .vl-v3-clock__shape img { visibility: visible; }
+    .v3-home .vl-v3-clock[vl-pin] { min-block-size: auto; }
+    .vl-v3-clock__stage { position: relative; block-size: auto; overflow: visible; }
+    .vl-v3-clock__voice { translate: none; }
+    .vl-v3-clock__ruler i, .vl-v3-clock__score li i { animation: none; transform: none; }
+  }
+}

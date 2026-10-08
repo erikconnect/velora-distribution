@@ -1,0 +1,36 @@
+{
+  "name": "@velora/css",
+  "version": "1.0.0",
+  "description": "Declarative CSS motion engine (host-agnostic) with optional Velora theme skin",
+  "license": "ISC",
+  "unpkg": "./dist/motion-core.css",
+  "jsdelivr": "./dist/motion-core.css",
+  "main": "./src/velora.css",
+  "exports": {
+    ".": "./src/velora.css",
+    "./base": "./src/base.css",
+    "./motion-core": "./src/motion-core.css",
+    "./motion-extended": "./src/motion-extended.css",
+    "./theme": "./src/theme.css",
+    "./components-core": "./src/components-core.css",
+    "./transitions": "./src/transitions.css",
+    "./premium": "./src/premium.css",
+    "./overrides": "./src/overrides.css",
+    "./full": "./src/velora.css"
+  },
+  "files": [
+    "src",
+    "dist"
+  ],
+  "homepage": "https://veloracss.io",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/erikconnect/velora-distribution.git"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "bugs": {
+    "url": "https://github.com/erikconnect/velora-distribution/issues"
+  }
+}

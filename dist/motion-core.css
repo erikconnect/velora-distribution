@@ -1,0 +1,12 @@
+/**
+ * Velora motion core bundle.
+ * Motion tokens + attribute grammar + conditions + scene engine (track/stage/acts).
+ * Host-agnostic — pair with any UI. Add @velora/css/theme for Velora look.
+ */
+@layer velora.reset, velora.tokens, velora.layout, velora.motion, velora.components, velora.transitions, velora.utilities, velora.overrides;
+
+@import "./01-motion-tokens.css";
+@import "./03-motion.css";
+@import "./03a-motion-conditions.css";
+@import "./03c-scene-engine.css";
+@import "./03d-state-transitions.css";

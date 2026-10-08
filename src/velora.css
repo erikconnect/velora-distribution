@@ -1,0 +1,30 @@
+/**
+ * Velora — entry CSS (full convenience bundle: motion + theme skin + components).
+ * For host-agnostic motion only, prefer @velora/css/motion-core (+ theme opt-in).
+ * Layer order defines unambiguous specificity across the framework.
+ */
+@layer velora.reset, velora.tokens, velora.layout, velora.motion, velora.components, velora.transitions, velora.utilities, velora.overrides;
+
+@import "./00-reset.css";
+@import "./01-tokens.css";
+@import "./01b-editorial-themes.css";
+@import "./01c-skin-models.css";
+@import "./02-layout.css";
+@import "./03-motion.css";
+@import "./03b-motion-extended.css";
+@import "./03a-motion-conditions.css";
+@import "./03c-scene-engine.css";
+@import "./03d-state-transitions.css";
+@import "./scene-recipes.css";
+@import "./04-components.css";
+@import "./04a-forms.css";
+@import "./04b-dialogs.css";
+@import "./04c-structures.css";
+@import "./04d-premium.css";
+@import "./05-transitions.css";
+@import "./06-utilities.css";
+@import "./07-overrides.css";
+
+@view-transition {
+    navigation: auto;
+}

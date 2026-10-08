@@ -1,0 +1,2367 @@
+@layer velora.motion {
+    /*
+     * Velora Motion Extended — v2
+     * Additional effects, 3D systems, text reveals, scroll-driven patterns,
+     * ambient loops, and interaction primitives.
+     *
+     * New public API additions:
+     *   vl-effect="spring-up"        Spring physics entrance
+     *   vl-effect="glide-in"         High-momentum glide
+     *   vl-effect="zoom-blur"        Zoom + blur combo reveal
+     *   vl-effect="slice-in"         Clip-path slice from left
+     *   vl-effect="unfold"           Height unfold from top clip
+     *   vl-effect="slide-diagonal"   Corner diagonal entry
+     *   vl-effect="flip-in"          3D card flip reveal
+     *   vl-effect="spring-3d"        Spring 3D perspective entry
+     *   vl-effect="rise-3d"          Dramatic 3D perspective rise
+     *   vl-effect="pulse-ring"       Expanding sonar ring
+     *   vl-effect="spin-slow"        Slow continuous rotation
+     *   vl-effect="pendulum"         Pendulum swing loop
+     *   vl-effect="breathe"          Subtle scale breathe
+     *   vl-effect="drift"            Slow ambient horizontal drift
+     *   vl-effect="aurora"           Aurora background shift
+     *   vl-effect="border-beam"      Animated gradient border beam
+     *   vl-effect="spotlight"        Radial spotlight on hover
+     *   vl-effect="press"            Physical press feedback
+     *   vl-effect="bounce"           Elastic bounce loop
+     *   vl-effect="shimmer-text"     Text gradient shimmer
+    *   vl-effect="gradient-text-color" Animated gradient color interpolation on text
+    *   vl-effect="circle-text-scroll" Scroll-reactive circular text scene
+    *   vl-effect="code-greeting-stack" Code-style greeting cycler with hover word swap
+    *   vl-effect="cube-triad-stage"  Cascading 3D cube choreography scene
+     *   vl-effect="gradient-slide"   Background gradient position shift
+    *   vl-effect="duotone"          Duotone image blend treatment
+    *   vl-effect="text-ring-orbit"  3D rotating text ring scene
+     *   vl-effect="mesh-pan"         Background mesh drift
+     *   vl-effect="hover-prism"      Prism-like hover tilt + glow
+     *   vl-effect="hover-depth-press"Lift on hover, press on active
+     *   vl-effect="rotate-scroll"    Rotation tied to scroll (+ vl-timeline="scroll")
+     *   vl-effect="wipe-reveal"      Scroll-driven clip wipe
+     *   vl-effect="depth-push"       Perspective depth on scroll
+     *   vl-children="wave"           Wave-pattern stagger
+     *   vl-children="blur-cascade"   Blur cascade mode
+     *   vl-children="zoom-stagger"   Scale-in stagger
+     *   vl-children="cinema-stagger" Cinematic stagger with mixed motion
+     *   vl-stagger="20ms|30ms|40ms|250ms|300ms"   Extra stagger values
+     *   vl-speed="slower|fastest"    Extra speed buckets
+     *   vl-range="exit|center|full"  Extra scroll ranges
+     *   vl-range="exit-short"        Smooth exit range
+     *   .vl-3d-stage                 Perspective scene container
+     *   .vl-cube / .vl-cube__face-* CSS 3D cube system
+     *   .vl-flip-card / inner/front/back  CSS 3D flip card
+     *   .vl-text-wave > span         Per-character wave text
+     *   .vl-text-split > span        Per-word split reveal
+     *   .vl-gradient-text            Animated gradient text clip
+     */
+
+    /* =========================================================================
+       EASING EXTENSIONS  (additional easing tokens)
+       ========================================================================= */
+    :root {
+        --vl-ease-bounce:      cubic-bezier(0.34, 1.72, 0.64, 1);
+        --vl-ease-elastic:     cubic-bezier(0.68, -0.55, 0.265, 1.55);
+        --vl-ease-smooth:      cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        --vl-ease-expo-out:    cubic-bezier(0.19, 1, 0.22, 1);
+        --vl-ease-back-in:     cubic-bezier(0.36, 0, 0.66, -0.56);
+        --vl-ease-back-out:    cubic-bezier(0.34, 1.56, 0.64, 1);
+        --vl-duration-slowest: 1200ms;
+        --vl-duration-fastest: 80ms;
+    }
+
+    /* =========================================================================
+       KEYFRAMES  entrance — advanced
+       ========================================================================= */
+
+    /* Spring physics: overshoot then settle */
+    @keyframes vl-spring-up {
+        0%   { opacity: 0; transform: translate3d(0, 2rem, 0) scale(0.96); }
+        55%  { opacity: 1; transform: translate3d(0, -0.35rem, 0) scale(1.01); }
+        75%  { transform: translate3d(0, 0.12rem, 0) scale(0.995); }
+        100% { transform: translate3d(0, 0, 0) scale(1); }
+    }
+
+    /* High-momentum glide — ease-expo-out */
+    @keyframes vl-glide-in {
+        from {
+            opacity: 0;
+            transform: translate3d(0, var(--vl-distance-y, 3rem), 0);
+        }
+        to {
+            opacity: 1;
+            transform: translate3d(0, 0, 0);
+        }
+    }
+
+    /* Zoom blur: scale from slightly large + soft reveal (GPU-friendly, no filter:blur) */
+    @keyframes vl-zoom-blur {
+        from {
+            opacity: 0;
+            transform: scale(1.06);
+            clip-path: inset(4% round 2px);
+        }
+        to {
+            opacity: 1;
+            transform: scale(1);
+            clip-path: inset(0);
+        }
+    }
+
+    /* Slice: clip-path wipe from left edge */
+    @keyframes vl-slice-in {
+        from {
+            clip-path: inset(0 100% 0 0 round 4px);
+            opacity: 0.4;
+        }
+        to {
+            clip-path: inset(0 0% 0 0 round 0px);
+            opacity: 1;
+        }
+    }
+
+    /* Unfold: reveals from a collapsed top state */
+    @keyframes vl-unfold {
+        from {
+            clip-path: inset(0 0 100% 0);
+            transform: translate3d(0, -0.5rem, 0);
+            opacity: 0;
+        }
+        to {
+            clip-path: inset(0 0 0% 0);
+            transform: translate3d(0, 0, 0);
+            opacity: 1;
+        }
+    }
+
+    /* Diagonal: comes from bottom-left corner */
+    @keyframes vl-slide-diagonal {
+        from {
+            opacity: 0;
+            transform: translate3d(-1.5rem, 1.5rem, 0) scale(0.95);
+        }
+        to {
+            opacity: 1;
+            transform: translate3d(0, 0, 0) scale(1);
+        }
+    }
+
+    /* 3D card flip reveal (rotateY 90deg → 0deg) */
+    @keyframes vl-flip-in {
+        from {
+            opacity: 0;
+            transform: perspective(800px) rotateY(-90deg) translateZ(-40px);
+        }
+        to {
+            opacity: 1;
+            transform: perspective(800px) rotateY(0deg) translateZ(0);
+        }
+    }
+
+    /* Spring 3D: perspective entry with spring overshoot */
+    @keyframes vl-spring-3d {
+        0%   {
+            opacity: 0;
+            transform: perspective(var(--vl-perspective, 900px))
+                rotateX(var(--vl-rotate-x, 22deg))
+                translate3d(0, var(--vl-distance-y, 2rem), var(--vl-depth-z-from, -60px))
+                scale(var(--vl-scale-from, 0.92));
+        }
+        60%  { opacity: 1; transform: perspective(var(--vl-perspective, 900px)) rotateX(-2deg) translate3d(0, -0.2rem, 4px) scale(1.01); }
+        80%  { transform: perspective(var(--vl-perspective, 900px)) rotateX(1deg) translate3d(0, 0.1rem, 0) scale(0.99); }
+        100% { transform: perspective(var(--vl-perspective, 900px)) rotateX(0deg) translate3d(0, 0, 0) scale(1); }
+    }
+
+    /* Rise 3D: dramatic overhead perspective entry */
+    @keyframes vl-rise-3d {
+        from {
+            opacity: 0;
+            transform: perspective(var(--vl-perspective, 1600px))
+                rotateX(var(--vl-rotate-x, 35deg))
+                translate3d(0, var(--vl-distance-y, 4rem), var(--vl-depth-z-from, -120px));
+        }
+        to {
+            opacity: 1;
+            transform: perspective(var(--vl-perspective, 1600px)) rotateX(0deg) translate3d(0, 0, 0);
+        }
+    }
+
+    /* =========================================================================
+       KEYFRAMES  continuous / ambient loops
+       ========================================================================= */
+
+    /* Pulse ring: expanding transparent ring */
+    @keyframes vl-pulse-ring {
+        0%   { transform: scale(0.85); opacity: 0.8; }
+        70%  { transform: scale(1.3); opacity: 0; }
+        100% { transform: scale(0.85); opacity: 0; }
+    }
+
+    /* Slow continuous 360 spin */
+    @keyframes vl-spin-slow {
+        to { transform: rotate(360deg); }
+    }
+
+    /* Pendulum swing */
+    @keyframes vl-pendulum {
+        0%, 100% { transform: rotate(-12deg); transform-origin: top center; }
+        50%      { transform: rotate(12deg);  transform-origin: top center; }
+    }
+
+    /* Breathe: subtle scale pulse */
+    @keyframes vl-breathe {
+        0%, 100% { transform: scale(1); }
+        50%      { transform: scale(1.04); }
+    }
+
+    /* Drift: slow horizontal ambient float */
+    @keyframes vl-drift {
+        0%, 100% { transform: translate3d(0, 0, 0); }
+        33%      { transform: translate3d(0.5rem, -0.25rem, 0); }
+        66%      { transform: translate3d(-0.25rem, 0.3rem, 0); }
+    }
+
+    /* Aurora: animate gradient background-position */
+    @keyframes vl-aurora {
+        0%   { background-position: 0% 50%; }
+        50%  { background-position: 100% 50%; }
+        100% { background-position: 0% 50%; }
+    }
+
+    /* Border beam: rotating conic gradient border */
+    @keyframes vl-border-beam {
+        to { --vl-beam-angle: 360deg; }
+    }
+
+    /* Bounce: elastic bounce on loop */
+    @keyframes vl-bounce {
+        0%, 100% { transform: translate3d(0, 0, 0); animation-timing-function: cubic-bezier(0.8, 0, 1, 1); }
+        50%      { transform: translate3d(0, -0.6rem, 0); animation-timing-function: cubic-bezier(0, 0, 0.2, 1); }
+    }
+
+    /* Shimmer text: gradient sweep across text */
+    @keyframes vl-shimmer-text {
+        0%   { background-position: -200% center; }
+        100% { background-position: 200% center; }
+    }
+
+    @keyframes vl-gradient-text-color-shift {
+        to {
+            --vl-gradient-text-color-1: color-mix(in oklch, var(--vl-color-accent, var(--vl-color-secondary)) 72%, var(--vl-color-primary));
+            --vl-gradient-text-color-2: color-mix(in oklch, var(--vl-color-secondary) 74%, var(--vl-color-primary));
+        }
+    }
+
+    @keyframes vl-circle-text-scroll-sync {
+        to {
+            --vl-circle-rotate: 1;
+            --vl-circle-delayed-rotate: 1;
+        }
+    }
+
+    @keyframes vl-code-greeting-cycle {
+        0%, 20% {
+            transform: translateY(0);
+        }
+        25%, 45% {
+            transform: translateY(-1.18em);
+        }
+        50%, 70% {
+            transform: translateY(-2.36em);
+        }
+        75%, 100% {
+            transform: translateY(-3.54em);
+        }
+    }
+
+    @keyframes vl-cube-scene-rotate {
+        from { transform: rotateX(-15deg) rotateY(0deg); }
+        to { transform: rotateX(-15deg) rotateY(360deg); }
+    }
+
+    @keyframes vl-cube-stage-shadow {
+        0%, 95%, 100% { transform: translate(-0.5em, -0.5em); }
+        20%, 25% { transform: translate(-5.5em, -0.5em); }
+        45%, 50% { transform: translate(-5.5em, -5.5em); }
+        70%, 75% { transform: translate(-0.5em, -5.5em); }
+    }
+
+    @keyframes vl-cube-bottom-cascade {
+        0% { transform: none; }
+        20%, 25% { transform: rotateZ(-90deg); }
+        45%, 50% { transform: rotateZ(-90deg) rotateY(90deg); }
+        70%, 75% { transform: rotateZ(-90deg) rotateY(90deg) rotateX(-90deg); }
+        95%, 100% { transform: rotateZ(-90deg) rotateY(90deg) rotateX(-90deg) rotateZ(-90deg); }
+    }
+
+    @keyframes vl-cube-mid-cascade {
+        0%, 2% { transform: none; }
+        23%, 27% { transform: rotateY(180deg); }
+        48%, 52% { transform: rotateY(180deg) rotateZ(-180deg); }
+        73%, 77% { transform: rotateY(180deg) rotateZ(-180deg) rotateX(180deg); }
+        98%, 100% { transform: rotateY(180deg) rotateZ(-180deg) rotateX(180deg) rotateY(180deg); }
+    }
+
+    @keyframes vl-cube-top-cascade {
+        0%, 5% { transform: none; }
+        25%, 30% { transform: rotateY(-180deg); }
+        50%, 55% { transform: rotateY(-180deg) rotateZ(-180deg); }
+        75%, 80% { transform: rotateY(-180deg) rotateZ(-180deg) rotateX(-180deg); }
+        100% { transform: rotateY(-180deg) rotateZ(-180deg) rotateX(-180deg) rotateY(-180deg); }
+    }
+
+    /* Gradient slide: slow position drift for hero backgrounds */
+    @keyframes vl-gradient-slide {
+        0%   { background-position: 0% 50%; }
+        50%  { background-position: 100% 50%; }
+        100% { background-position: 0% 50%; }
+    }
+
+    @keyframes vl-mesh-pan {
+        0%   { background-position: 0% 0%, 100% 100%; }
+        50%  { background-position: 100% 0%, 0% 100%; }
+        100% { background-position: 0% 0%, 100% 100%; }
+    }
+
+    @keyframes vl-halo-pulse {
+        0%, 100% { opacity: 0.25; transform: scale(0.98); }
+        50%      { opacity: 0.55; transform: scale(1.04); }
+    }
+
+    @keyframes vl-glitch-lite {
+        0%, 100% { transform: translate3d(0, 0, 0); opacity: 1; }
+        20% { transform: translate3d(-1px, 0, 0); }
+        40% { transform: translate3d(1px, 0, 0); }
+        60% { transform: translate3d(0, -1px, 0); }
+        80% { transform: translate3d(0, 1px, 0); }
+    }
+
+    @keyframes vl-scanline-sweep {
+        from { background-position: 0 -120%; }
+        to { background-position: 0 220%; }
+    }
+
+    @keyframes vl-ripple-pulse {
+        0% { box-shadow: 0 0 0 0 color-mix(in oklch, var(--vl-color-primary) 45%, transparent); }
+        70% { box-shadow: 0 0 0 14px transparent; }
+        100% { box-shadow: 0 0 0 0 transparent; }
+    }
+
+    @keyframes vl-levitate-x {
+        0%, 100% { transform: translate3d(0, 0, 0); }
+        25% { transform: translate3d(0.35rem, -0.15rem, 0); }
+        50% { transform: translate3d(0.6rem, 0, 0); }
+        75% { transform: translate3d(0.25rem, 0.18rem, 0); }
+    }
+
+    @keyframes vl-sweep-border {
+        from { background-position: 0% 50%; }
+        to { background-position: 200% 50%; }
+    }
+
+    @keyframes vl-text-ring-scene {
+        from { transform: rotateZ(0deg) rotateX(20deg) rotateZ(360deg); }
+        to { transform: rotateZ(360deg) rotateX(20deg) rotateZ(0deg); }
+    }
+
+    @keyframes vl-text-ring-track {
+        to { transform: translate(-50%, -50%) rotateY(-1turn); }
+    }
+
+    @keyframes vl-grid-wave {
+        0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+        50% { transform: translate3d(0, -0.25rem, 0) scale(1.02); }
+    }
+
+    @keyframes vl-spiral-stagger {
+        from {
+            opacity: 0;
+            transform: rotate(-12deg) scale(0.85) translate3d(0, 0.8rem, 0);
+        }
+        to {
+            opacity: 1;
+            transform: rotate(0deg) scale(1) translate3d(0, 0, 0);
+        }
+    }
+
+    /* Text wave: per-character vertical wave (use on child spans) */
+    @keyframes vl-wave-char {
+        0%, 100% { transform: translateY(0); }
+        50%      { transform: translateY(-0.35em); }
+    }
+
+    /* Text split: vl-word-rise — canonical keyframe lives in 03-motion.css */
+
+    /* =========================================================================
+       KEYFRAMES  scroll-driven
+       ========================================================================= */
+
+    /* Rotate on scroll */
+    @keyframes vl-rotate-scroll {
+        from { transform: rotate(var(--vl-rotate-from, 0deg)); }
+        to   { transform: rotate(var(--vl-rotate-to, 360deg)); }
+    }
+
+    /* Wipe reveal on scroll */
+    @keyframes vl-wipe-scroll {
+        from { clip-path: inset(0 100% 0 0); opacity: 0.3; }
+        to   { clip-path: inset(0 0% 0 0); opacity: 1; }
+    }
+
+    /* Depth push on scroll: zooms out from front */
+    @keyframes vl-depth-push {
+        from {
+            transform: perspective(var(--vl-depth-perspective, 1000px))
+                translateZ(var(--vl-depth-z-from, 80px))
+                scale(var(--vl-depth-scale-from, 1.08));
+            opacity: var(--vl-opacity-from, 0.3);
+        }
+        to {
+            transform: perspective(var(--vl-depth-perspective, 1000px))
+                translateZ(var(--vl-depth-z-to, 0px))
+                scale(var(--vl-depth-scale-to, 1));
+            opacity: var(--vl-opacity-to, 1);
+        }
+    }
+
+    /* Skew slide: skewed lateral reveal */
+    @keyframes vl-skew-slide {
+        from {
+            opacity: 0;
+            transform: skewX(-8deg) translate3d(2rem, 0, 0);
+        }
+        to {
+            opacity: 1;
+            transform: skewX(0deg) translate3d(0, 0, 0);
+        }
+    }
+
+    /* Drop in: falls from above with spring */
+    @keyframes vl-drop-in {
+        0%   { opacity: 0; transform: translate3d(0, -2.5rem, 0) scale(0.94); }
+        55%  { opacity: 1; transform: translate3d(0, 0.3rem, 0) scale(1.01); }
+        75%  { transform: translate3d(0, -0.1rem, 0); }
+        100% { transform: translate3d(0, 0, 0) scale(1); }
+    }
+
+    /* Hinge: swings on top edge like a door opening */
+    @keyframes vl-hinge-down {
+        from {
+            opacity: 0;
+            transform: perspective(600px) rotateX(-70deg);
+            transform-origin: top center;
+        }
+        to {
+            opacity: 1;
+            transform: perspective(600px) rotateX(0deg);
+            transform-origin: top center;
+        }
+    }
+
+    /* Stagger blur: for use on individual children */
+    @keyframes vl-blur-cascade {
+        from {
+            opacity: 0;
+            filter: blur(20px);
+            transform: scale(0.92);
+        }
+        to {
+            opacity: 1;
+            filter: blur(0);
+            transform: scale(1);
+        }
+    }
+
+    /* Zoom stagger: scale-in for children */
+    @keyframes vl-zoom-stagger {
+        from {
+            opacity: 0;
+            transform: scale(0.75) translate3d(0, 1rem, 0);
+        }
+        to {
+            opacity: 1;
+            transform: scale(1) translate3d(0, 0, 0);
+        }
+    }
+
+    /* =========================================================================
+       KEYFRAMES  scroll-driven — advanced layout patterns
+       ========================================================================= */
+
+    /* Parallax: compatibility alias of vl-parallax-shift (P4d unified defaults ±12%). */
+    @keyframes vl-parallax {
+        from { transform: translate3d(0, var(--vl-parallax-from, -12%), 0); }
+        to   { transform: translate3d(0, var(--vl-parallax-to, 12%), 0); }
+    }
+
+    /* Counter-scroll: element moves in the opposite horizontal direction to page scroll */
+    @keyframes vl-counter-scroll {
+        from { transform: translateX(var(--vl-counter-from, -20%)); }
+        to   { transform: translateX(var(--vl-counter-to,   20%)); }
+    }
+
+    /* Image reveal: inset clip expands from centre + subtle scale — more dimensional than wipe-reveal */
+    @keyframes vl-img-reveal {
+        from {
+            clip-path: inset(8% 12% round 6px);
+            opacity: 0.2;
+            transform: scale(1.05);
+        }
+        to {
+            clip-path: inset(0% 0% round 0px);
+            opacity: 1;
+            transform: scale(1);
+        }
+    }
+
+    /* Header shrink: fixed header condenses as page scrolls past threshold */
+    @keyframes vl-header-shrink {
+        from {
+            padding-block: var(--vl-header-pad-start, var(--vl-space-md));
+            box-shadow: none;
+        }
+        to {
+            padding-block: var(--vl-header-pad-end, 0.3rem);
+            box-shadow: 0 2px 20px color-mix(in oklch, black 36%, transparent);
+        }
+    }
+
+    /* Stacking card push: behind-card scales + dims as next card covers it */
+    @keyframes vl-stack-push {
+        to {
+            scale: var(--vl-stack-scale-to, 0.90);
+            filter: brightness(var(--vl-stack-dim-to, 0.78));
+        }
+    }
+
+    /* Cover-flow tilt: off-centre items angle in 3D */
+    @keyframes vl-coverflow-tilt {
+        from {
+            transform: perspective(1000px) rotateY(var(--vl-coverflow-rot, -30deg)) scale(0.86);
+            opacity: 0.55;
+        }
+        to {
+            transform: perspective(1000px) rotateY(0deg) scale(1);
+            opacity: 1;
+        }
+    }
+
+    /* Horizontal travel: track slides left as outer section scrolls */
+    @keyframes vl-horizontal-travel {
+        from { transform: translateX(0); }
+        to   { transform: translateX(var(--vl-h-travel-end, -60vw)); }
+    }
+
+    /* List enter: individual item slides + fades in on its own view-timeline */
+    @keyframes vl-list-enter {
+        from {
+            opacity: 0;
+            transform: translate3d(var(--vl-list-enter-x, -1.5rem), 0, 0);
+        }
+        to {
+            opacity: 1;
+            transform: translate3d(0, 0, 0);
+        }
+    }
+
+    /* =========================================================================
+       PRIMITIVE EFFECTS — entrance advanced
+       ========================================================================= */
+    [vl-effect="spring-up"] {
+        animation: vl-spring-up var(--vl-motion-duration, var(--vl-duration-slow)) var(--vl-ease-bounce) both;
+    }
+
+    [vl-enter~="glide-in"] {
+        --vl-enter-name: vl-glide-in;
+        --vl-enter-duration: var(--vl-duration-slower);
+        --vl-enter-ease: var(--vl-ease-expo-out);
+    }
+
+    [vl-effect="glide-in"] {
+        --vl-motion-duration: var(--vl-duration-slower);
+        animation: vl-glide-in var(--vl-motion-duration) var(--vl-ease-expo-out) both;
+    }
+
+    [vl-effect="zoom-blur"] {
+        --vl-motion-duration: var(--vl-duration-slower);
+        animation: vl-zoom-blur var(--vl-motion-duration) var(--vl-ease-out-soft) both;
+    }
+
+    [vl-effect="slice-in"] {
+        animation: vl-slice-in var(--vl-motion-duration, var(--vl-duration-slow)) var(--vl-ease-cinematic) both;
+    }
+
+    [vl-enter~="unfold"] {
+        --vl-enter-name: vl-unfold;
+        --vl-enter-duration: var(--vl-duration-slower);
+        --vl-enter-ease: var(--vl-ease-cinematic);
+    }
+
+    [vl-effect="unfold"] {
+        --vl-motion-duration: var(--vl-duration-slower);
+        animation: vl-unfold var(--vl-motion-duration) var(--vl-ease-cinematic) both;
+    }
+
+    [vl-effect="slide-diagonal"] {
+        animation: vl-slide-diagonal var(--vl-motion-duration, var(--vl-duration-slow)) var(--vl-ease-cinematic) both;
+    }
+
+    [vl-effect="flip-in"] {
+        animation: vl-flip-in var(--vl-motion-duration, var(--vl-duration-slow)) var(--vl-ease-back-out) both;
+    }
+
+    [vl-effect="spring-3d"] {
+        animation: vl-spring-3d var(--vl-motion-duration, var(--vl-duration-slower)) var(--vl-ease-bounce) both;
+    }
+
+    :is([vl-enter~="spring-3d"], [vl-effect~="spring-3d"]) {
+        --vl-enter-name: vl-spring-3d;
+        --vl-enter-duration: var(--vl-duration-slower);
+        --vl-enter-ease: var(--vl-ease-bounce);
+    }
+
+    [vl-effect="rise-3d"] {
+        --vl-motion-duration: var(--vl-duration-slower);
+        animation: vl-rise-3d var(--vl-motion-duration) var(--vl-ease-expo-out) both;
+    }
+
+    :is([vl-enter~="rise-3d"], [vl-effect~="rise-3d"]) {
+        --vl-enter-name: vl-rise-3d;
+        --vl-enter-duration: var(--vl-duration-slower);
+        --vl-enter-ease: var(--vl-ease-expo-out);
+    }
+
+    [vl-effect="drop-in"] {
+        animation: vl-drop-in var(--vl-motion-duration, var(--vl-duration-slow)) var(--vl-ease-bounce) both;
+    }
+
+    [vl-effect="skew-slide"] {
+        animation: vl-skew-slide var(--vl-motion-duration, var(--vl-duration-slow)) var(--vl-ease-out-soft) both;
+    }
+
+    [vl-effect="hinge-down"] {
+        animation: vl-hinge-down var(--vl-motion-duration, var(--vl-duration-slow)) var(--vl-ease-cinematic) both;
+        transform-origin: top center;
+    }
+
+    /* =========================================================================
+       PRIMITIVE EFFECTS — continuous / ambient
+       ========================================================================= */
+    [vl-effect="pulse-ring"] {
+        animation: vl-pulse-ring 2.4s var(--vl-ease-out-soft) infinite;
+    }
+
+    [vl-effect="spin-slow"] {
+        animation: vl-spin-slow 12s linear infinite;
+        transform-origin: center;
+    }
+
+    [vl-effect="pendulum"] {
+        animation: vl-pendulum 2.2s var(--vl-ease-in-out-smooth) infinite;
+        transform-origin: top center;
+    }
+
+    [vl-effect="breathe"] {
+        animation: vl-breathe 4s var(--vl-ease-in-out-smooth) infinite;
+    }
+
+    [vl-effect="drift"] {
+        animation: vl-drift 8s var(--vl-ease-in-out-smooth) infinite;
+    }
+
+    [vl-effect="bounce"] {
+        animation: vl-bounce 1.4s infinite;
+    }
+
+    [vl-effect="aurora"] {
+        background: linear-gradient(
+            135deg,
+            color-mix(in oklch, var(--vl-color-primary) 60%, var(--vl-bg-surface)),
+            color-mix(in oklch, var(--vl-color-secondary) 55%, var(--vl-bg-main)),
+            color-mix(in oklch, var(--vl-color-accent) 50%, var(--vl-bg-surface)),
+            color-mix(in oklch, var(--vl-color-primary) 40%, var(--vl-bg-inset))
+        );
+        background-size: 300% 300%;
+        animation: vl-aurora 12s var(--vl-ease-in-out-smooth) infinite;
+    }
+
+    [vl-effect="gradient-slide"] {
+        background-size: 300% 300%;
+        animation: vl-gradient-slide 8s var(--vl-ease-in-out-smooth) infinite;
+    }
+
+    [vl-effect="mesh-pan"] {
+        background-image:
+            radial-gradient(circle at 15% 20%, color-mix(in oklch, var(--vl-color-primary) 20%, transparent), transparent 45%),
+            radial-gradient(circle at 85% 80%, color-mix(in oklch, var(--vl-color-secondary) 22%, transparent), transparent 45%);
+        background-size: 180% 180%, 200% 200%;
+        animation: vl-mesh-pan 14s var(--vl-ease-in-out-smooth) infinite;
+    }
+
+    [vl-effect="circle-text-scroll"] {
+        --vl-circle-size: clamp(12rem, 34vmin, 20rem);
+        --vl-circle-spacing: clamp(0.35rem, 1.2vmin, 0.9rem);
+        --vl-circle-font-size: clamp(0.88rem, 2.25vmin, 1.5rem);
+        --vl-circle-ease-speed: 52ms;
+        --vl-circle-rotate: 0;
+        --vl-circle-delayed-rotate: 0;
+        position: relative;
+        display: grid;
+        place-items: center;
+        min-height: clamp(14rem, 30vmin, 18rem);
+        overflow: hidden;
+        isolation: isolate;
+        color: var(--vl-text-primary);
+        font-family: var(--vl-font-family-display);
+        font-size: var(--vl-circle-font-size);
+        animation: vl-circle-text-scroll-sync linear both;
+        animation-timeline: scroll(root block);
+        animation-range: cover 0% cover 100%;
+    }
+
+    [vl-effect="circle-text-scroll"] > ul {
+        position: relative;
+        display: block;
+        width: var(--vl-circle-size);
+        height: var(--vl-circle-size);
+        margin: 0;
+        padding: 0;
+        list-style: none;
+        border-radius: 50%;
+        transform: rotate(calc(var(--vl-circle-rotate) * 1turn));
+    }
+
+    [vl-effect="circle-text-scroll"] > ul > li {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        line-height: 0;
+        text-wrap: nowrap;
+        transform-origin: 0 0;
+        rotate: var(--vl-circle-item-angle, 0deg);
+    }
+
+    [vl-effect="circle-text-scroll"] > ul > li:nth-child(1) { --vl-circle-item-angle: 18deg; }
+    [vl-effect="circle-text-scroll"] > ul > li:nth-child(2) { --vl-circle-item-angle: 36deg; }
+    [vl-effect="circle-text-scroll"] > ul > li:nth-child(3) { --vl-circle-item-angle: 54deg; }
+    [vl-effect="circle-text-scroll"] > ul > li:nth-child(4) { --vl-circle-item-angle: 72deg; }
+    [vl-effect="circle-text-scroll"] > ul > li:nth-child(5) { --vl-circle-item-angle: 90deg; }
+    [vl-effect="circle-text-scroll"] > ul > li:nth-child(6) { --vl-circle-item-angle: 108deg; }
+    [vl-effect="circle-text-scroll"] > ul > li:nth-child(7) { --vl-circle-item-angle: 126deg; }
+    [vl-effect="circle-text-scroll"] > ul > li:nth-child(8) { --vl-circle-item-angle: 144deg; }
+    [vl-effect="circle-text-scroll"] > ul > li:nth-child(9) { --vl-circle-item-angle: 162deg; }
+    [vl-effect="circle-text-scroll"] > ul > li:nth-child(10) { --vl-circle-item-angle: 180deg; }
+    [vl-effect="circle-text-scroll"] > ul > li:nth-child(11) { --vl-circle-item-angle: 198deg; }
+    [vl-effect="circle-text-scroll"] > ul > li:nth-child(12) { --vl-circle-item-angle: 216deg; }
+    [vl-effect="circle-text-scroll"] > ul > li:nth-child(13) { --vl-circle-item-angle: 234deg; }
+    [vl-effect="circle-text-scroll"] > ul > li:nth-child(14) { --vl-circle-item-angle: 252deg; }
+    [vl-effect="circle-text-scroll"] > ul > li:nth-child(15) { --vl-circle-item-angle: 270deg; }
+    [vl-effect="circle-text-scroll"] > ul > li:nth-child(16) { --vl-circle-item-angle: 288deg; }
+    [vl-effect="circle-text-scroll"] > ul > li:nth-child(17) { --vl-circle-item-angle: 306deg; }
+    [vl-effect="circle-text-scroll"] > ul > li:nth-child(18) { --vl-circle-item-angle: 324deg; }
+    [vl-effect="circle-text-scroll"] > ul > li:nth-child(19) { --vl-circle-item-angle: 342deg; }
+    [vl-effect="circle-text-scroll"] > ul > li:nth-child(20) { --vl-circle-item-angle: 360deg; }
+
+    [vl-effect="circle-text-scroll"] > ul > li > span {
+        --vl-circle-velocity: calc(var(--vl-circle-rotate) - var(--vl-circle-delayed-rotate));
+        --vl-circle-spacing-offset: calc(var(--vl-circle-spacing) * -4 * var(--vl-circle-velocity));
+        --vl-circle-x: calc(var(--vl-circle-size) / 2 + var(--vl-circle-spacing-offset));
+        --vl-circle-y: calc((var(--vl-char-index, 0) * -0.85rem) * var(--vl-circle-velocity));
+        --vl-circle-r: calc(90deg * var(--vl-circle-velocity));
+        display: inline-block;
+        transform: translate(var(--vl-circle-x), var(--vl-circle-y)) rotate(var(--vl-circle-r));
+        transform-origin: var(--vl-circle-x) 0;
+        transition: --vl-circle-delayed-rotate calc(var(--vl-circle-ease-speed) * var(--vl-char-index, 0)) var(--vl-ease-out-soft);
+    }
+
+    [vl-effect="circle-text-scroll"] > ul > li > span:nth-child(1) { --vl-char-index: 0; }
+    [vl-effect="circle-text-scroll"] > ul > li > span:nth-child(2) { --vl-char-index: 1; }
+    [vl-effect="circle-text-scroll"] > ul > li > span:nth-child(3) { --vl-char-index: 2; }
+    [vl-effect="circle-text-scroll"] > ul > li > span:nth-child(4) { --vl-char-index: 3; }
+    [vl-effect="circle-text-scroll"] > ul > li > span:nth-child(5) { --vl-char-index: 4; }
+    [vl-effect="circle-text-scroll"] > ul > li > span:nth-child(6) { --vl-char-index: 5; }
+    [vl-effect="circle-text-scroll"] > ul > li > span:nth-child(7) { --vl-char-index: 6; }
+    [vl-effect="circle-text-scroll"] > ul > li > span:nth-child(8) { --vl-char-index: 7; }
+    [vl-effect="circle-text-scroll"] > ul > li > span:nth-child(9) { --vl-char-index: 8; }
+    [vl-effect="circle-text-scroll"] > ul > li > span:nth-child(10) { --vl-char-index: 9; }
+
+    [vl-effect="circle-text-scroll"] > em {
+        position: absolute;
+        inset: auto 0 0;
+        margin: 0;
+        padding: 0.4rem 0.6rem 0.55rem;
+        text-align: center;
+        font-family: var(--vl-font-family-mono);
+        font-size: 0.66rem;
+        line-height: 1.35;
+        letter-spacing: 0.03em;
+        color: var(--vl-text-secondary);
+        background: linear-gradient(to top, color-mix(in oklch, var(--vl-bg-main) 88%, transparent), transparent);
+        pointer-events: none;
+    }
+
+    @supports (animation-timeline: scroll()) {
+        [vl-effect="circle-text-scroll"] > em {
+            display: none;
+        }
+    }
+
+    [vl-effect="code-greeting-stack"] {
+        position: relative;
+        display: grid;
+        justify-items: start;
+        gap: 0.08em;
+        width: min(100%, 38rem);
+        margin: 0 auto;
+        font-family: var(--vl-font-family-mono);
+        font-size: clamp(1rem, 2.7vmin, 1.7rem);
+        line-height: 1.1;
+        color: color-mix(in oklch, var(--vl-color-primary) 56%, var(--vl-color-secondary));
+        user-select: none;
+        isolation: isolate;
+    }
+
+    [vl-effect="code-greeting-stack"] .vl-code-line {
+        margin: 0;
+        font: inherit;
+        line-height: 1;
+        font-weight: 520;
+        font-stretch: 102%;
+        font-size: 0.98em;
+        letter-spacing: -0.01em;
+        white-space: nowrap;
+        transition:
+            font-weight var(--vl-transition-normal) var(--vl-ease-out-soft),
+            font-size var(--vl-transition-normal) var(--vl-ease-out-soft),
+            font-stretch var(--vl-transition-normal) var(--vl-ease-out-soft),
+            letter-spacing var(--vl-transition-normal) var(--vl-ease-out-soft);
+    }
+
+    [vl-effect="code-greeting-stack"] .vl-code-greetings {
+        position: relative;
+        height: 1.18em;
+        min-height: 1.18em;
+        overflow: hidden;
+        width: 100%;
+    }
+
+    [vl-effect="code-greeting-stack"] .vl-code-greetings-track {
+        display: grid;
+        grid-auto-rows: 1.18em;
+        gap: 0;
+        transition: opacity var(--vl-transition-normal) var(--vl-ease-out-soft);
+        will-change: transform, opacity;
+    }
+
+    [vl-effect="code-greeting-stack"] .vl-code-greetings-track > span {
+        display: block;
+        min-height: 1.18em;
+        line-height: 1.18em;
+        font-weight: 520;
+        font-stretch: 102%;
+        font-size: 0.98em;
+        letter-spacing: -0.01em;
+        white-space: nowrap;
+        color: var(--vl-code-greeting-color, color-mix(in oklch, var(--vl-color-primary) 70%, white));
+        transition:
+            font-weight var(--vl-transition-normal) var(--vl-ease-out-soft),
+            font-size var(--vl-transition-normal) var(--vl-ease-out-soft),
+            font-stretch var(--vl-transition-normal) var(--vl-ease-out-soft),
+            letter-spacing var(--vl-transition-normal) var(--vl-ease-out-soft);
+    }
+
+    [vl-effect="code-greeting-stack"] .vl-code-greetings-track--base {
+        --vl-code-greeting-color: color-mix(in oklch, var(--vl-color-primary) 74%, white);
+        animation: vl-code-greeting-cycle 8s steps(1, end) infinite;
+    }
+
+    [vl-effect="code-greeting-stack"] .vl-code-greetings-track--hover {
+        --vl-code-greeting-color: color-mix(in oklch, var(--vl-color-accent, var(--vl-color-secondary)) 74%, white);
+        position: absolute;
+        inset: 0;
+        opacity: 0;
+        animation: vl-code-greeting-cycle 7.2s steps(1, end) infinite;
+        animation-play-state: paused;
+    }
+
+    [vl-effect="code-greeting-stack"]:is(:hover, :focus-within) .vl-code-line,
+    [vl-effect="code-greeting-stack"]:is(:hover, :focus-within) .vl-code-greetings-track > span {
+        font-weight: 650;
+        font-stretch: 112%;
+        font-size: 1.04em;
+        letter-spacing: -0.015em;
+    }
+
+    [vl-effect="code-greeting-stack"]:is(:hover, :focus-within) .vl-code-greetings-track--base {
+        opacity: 0;
+        animation-play-state: paused;
+    }
+
+    [vl-effect="code-greeting-stack"]:is(:hover, :focus-within) .vl-code-greetings-track--hover {
+        opacity: 1;
+        animation-play-state: running;
+    }
+
+    [vl-effect="code-greeting-stack"] .vl-code-token-plain { color: var(--vl-text-primary); }
+    [vl-effect="code-greeting-stack"] .vl-code-token-secondary { color: color-mix(in oklch, var(--vl-color-secondary) 78%, white); }
+    [vl-effect="code-greeting-stack"] .vl-code-token-accent { color: color-mix(in oklch, var(--vl-color-accent, var(--vl-color-secondary)) 78%, white); }
+    [vl-effect="code-greeting-stack"] .vl-code-token-warm { color: color-mix(in oklch, var(--vl-color-primary) 74%, var(--vl-color-accent, var(--vl-color-secondary))); }
+
+    [vl-effect="cube-triad-stage"] {
+        --vl-cube-duration: 6s;
+        --vl-cube-unit: clamp(0.65rem, 1.15vmin, 1rem);
+        position: relative;
+        display: grid;
+        place-items: center;
+        min-height: clamp(17rem, 34vw, 22rem);
+        perspective: 75em;
+        overflow: hidden;
+        isolation: isolate;
+    }
+
+    [vl-effect="cube-triad-stage"] *:not(:empty) {
+        transform-style: preserve-3d;
+    }
+
+    [vl-effect="cube-triad-stage"] .scene {
+        position: relative;
+        width: 1px;
+        height: 1px;
+        animation: vl-cube-scene-rotate calc(var(--vl-cube-duration) * 13) linear infinite;
+    }
+
+    [vl-effect="cube-triad-stage"] .floor {
+        position: absolute;
+        inset: -50em;
+        background-image:
+            radial-gradient(circle at center, transparent 0%, color-mix(in oklch, black 92%, var(--vl-bg-main)) 52%),
+            repeating-linear-gradient(45deg, color-mix(in oklch, white 12%, transparent), color-mix(in oklch, black 16%, transparent), color-mix(in oklch, white 12%, transparent) 2em),
+            repeating-linear-gradient(-45deg, color-mix(in oklch, white 10%, transparent), color-mix(in oklch, black 14%, transparent), color-mix(in oklch, white 10%, transparent) 2em);
+        background-color: color-mix(in oklch, var(--vl-bg-main) 58%, var(--vl-bg-surface-elevated));
+        transform: rotateX(90deg) translateZ(calc((var(--vl-cube-unit) * -6.4) - 1px));
+    }
+
+    [vl-effect="cube-triad-stage"] .floor::before {
+        content: "";
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        width: calc(var(--vl-cube-unit) * 14.8);
+        height: calc(var(--vl-cube-unit) * 14.8);
+        box-shadow: 0 0 2em color-mix(in oklch, black 45%, transparent);
+        transform: translate(-50%, -50%);
+    }
+
+    [vl-effect="cube-triad-stage"] .stage {
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        width: calc(var(--vl-cube-unit) * 12);
+        height: calc(var(--vl-cube-unit) * 12);
+        transform: translate3d(-50%, -50%, calc(var(--vl-cube-unit) * 1.4));
+        background: inherit;
+        box-shadow: 0 0 1em color-mix(in oklch, black 44%, transparent) inset;
+    }
+
+    [vl-effect="cube-triad-stage"] .stage > div {
+        position: absolute;
+        left: calc(var(--vl-cube-unit) * -1.5);
+        top: 50%;
+        width: calc(var(--vl-cube-unit) * 15);
+        height: calc(var(--vl-cube-unit) * 2.1);
+        background: inherit;
+        box-shadow: inherit;
+        clip-path: polygon(1.5em 0, 13.5em 0, 100% 100%, 0 100%);
+        transform-origin: top;
+        transform: rotateZ(var(--vl-stage-rz, 0deg)) translateY(calc(var(--vl-cube-unit) * 6)) rotateX(-45deg);
+    }
+
+    [vl-effect="cube-triad-stage"] .stage > div:nth-child(1) { --vl-stage-rz: 0deg; }
+    [vl-effect="cube-triad-stage"] .stage > div:nth-child(2) { --vl-stage-rz: 90deg; }
+    [vl-effect="cube-triad-stage"] .stage > div:nth-child(3) { --vl-stage-rz: 180deg; }
+    [vl-effect="cube-triad-stage"] .stage > div:nth-child(4) { --vl-stage-rz: 270deg; }
+
+    [vl-effect="cube-triad-stage"] .stage::after {
+        content: "";
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        width: calc(var(--vl-cube-unit) * 6);
+        height: calc(var(--vl-cube-unit) * 6);
+        background: color-mix(in oklch, black 24%, transparent);
+        filter: blur(0.5em);
+        animation: vl-cube-stage-shadow var(--vl-cube-duration) ease-in-out infinite;
+    }
+
+    [vl-effect="cube-triad-stage"] .bottomCube,
+    [vl-effect="cube-triad-stage"] .midCube,
+    [vl-effect="cube-triad-stage"] .topCube {
+        position: absolute;
+        width: calc(var(--vl-cube-unit) * 5);
+        height: calc(var(--vl-cube-unit) * 5);
+        background-color: color-mix(in oklch, var(--vl-cube-tone, var(--vl-color-primary)) 68%, transparent);
+        background-image:
+            repeating-linear-gradient(45deg, color-mix(in oklch, white 14%, transparent), color-mix(in oklch, black 14%, transparent), color-mix(in oklch, white 14%, transparent) 1em),
+            repeating-linear-gradient(-45deg, color-mix(in oklch, white 14%, transparent), color-mix(in oklch, black 14%, transparent), color-mix(in oklch, white 14%, transparent) 1em);
+        box-shadow: 0 0 1em color-mix(in oklch, black 55%, var(--vl-cube-tone, var(--vl-color-primary))) inset;
+    }
+
+    [vl-effect="cube-triad-stage"] .bottomCube {
+        --vl-cube-tone: var(--vl-color-primary);
+        left: 0;
+        top: 0;
+        transform-origin: bottom left;
+        animation: vl-cube-bottom-cascade var(--vl-cube-duration) ease-in-out infinite;
+    }
+
+    [vl-effect="cube-triad-stage"] .midCube {
+        --vl-cube-tone: var(--vl-color-secondary);
+        inset: 0;
+        transform-origin: bottom right;
+        animation: vl-cube-mid-cascade var(--vl-cube-duration) ease-in-out infinite;
+    }
+
+    [vl-effect="cube-triad-stage"] .topCube {
+        --vl-cube-tone: var(--vl-color-accent, var(--vl-color-secondary));
+        inset: 0;
+        transform-origin: top left;
+        animation: vl-cube-top-cascade var(--vl-cube-duration) ease-in-out infinite;
+    }
+
+    [vl-effect="cube-triad-stage"] i {
+        position: absolute;
+        inset: 0;
+        margin: 0;
+        background: inherit;
+        box-shadow: inherit;
+    }
+
+    [vl-effect="cube-triad-stage"] i:nth-child(1) { transform: rotateX(90deg); transform-origin: top; }
+    [vl-effect="cube-triad-stage"] i:nth-child(2) { transform: rotateX(-90deg); transform-origin: bottom; }
+    [vl-effect="cube-triad-stage"] i:nth-child(3) { transform: rotateY(-90deg); transform-origin: left; }
+    [vl-effect="cube-triad-stage"] i:nth-child(4) { transform: rotateY(90deg); transform-origin: right; }
+    [vl-effect="cube-triad-stage"] i:nth-child(5) { transform: translateZ(calc(var(--vl-cube-unit) * 5)); }
+
+    [vl-effect="text-ring-orbit"] {
+        --vl-text-ring-size: clamp(1.8rem, 5.6vw, 3.7rem);
+        --vl-text-ring-radius: 1.55em;
+        position: relative;
+        display: grid;
+        place-items: center;
+        overflow: hidden;
+        isolation: isolate;
+        perspective: 600px;
+        text-transform: none;
+        color: var(--vl-text-primary);
+    }
+
+    [vl-effect="text-ring-orbit"] * {
+        transform-style: preserve-3d;
+    }
+
+    [vl-effect="text-ring-orbit"] .vl-text-ring-stage {
+        position: relative;
+        width: min(100%, 20rem);
+        height: min(100%, 12rem);
+        animation: vl-text-ring-scene 12s linear infinite;
+    }
+
+    [vl-effect="text-ring-orbit"] .vl-text-ring-stage::after {
+        content: "";
+        position: absolute;
+        inset: -7.5em -1.5em;
+        background-image: linear-gradient(
+            to right,
+            transparent 0%,
+            transparent 10%,
+            color-mix(in oklch, var(--vl-bg-main) 92%, black) 25%,
+            color-mix(in oklch, var(--vl-bg-main) 92%, black) 75%,
+            transparent 90%,
+            transparent 100%
+        );
+        pointer-events: none;
+    }
+
+    [vl-effect="text-ring-orbit"] .vl-text-ring-track {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        translate: -50% -50%;
+        font-family: var(--vl-font-family-display);
+        font-size: var(--vl-text-ring-size);
+        line-height: 1;
+        animation: vl-text-ring-track 8s linear infinite;
+        user-select: none;
+    }
+
+    [vl-effect="text-ring-orbit"] .vl-text-ring-track:nth-child(1) {
+        color: color-mix(in oklch, var(--vl-color-primary) 68%, white);
+        animation-delay: 0s;
+    }
+
+    [vl-effect="text-ring-orbit"] .vl-text-ring-track:nth-child(2) {
+        color: color-mix(in oklch, var(--vl-color-secondary) 66%, white);
+        animation-delay: -2s;
+    }
+
+    [vl-effect="text-ring-orbit"] .vl-text-ring-track:nth-child(3) {
+        color: color-mix(in oklch, var(--vl-color-accent, var(--vl-color-secondary)) 70%, white);
+        animation-delay: -4s;
+    }
+
+    [vl-effect="text-ring-orbit"] .vl-text-ring-track:nth-child(4) {
+        color: color-mix(in oklch, var(--vl-color-primary) 46%, var(--vl-color-secondary));
+        animation-delay: -6s;
+    }
+
+    [vl-effect="text-ring-orbit"] .vl-text-ring-track > span {
+        position: absolute;
+        inset: -1em;
+        display: grid;
+        place-items: center;
+        font-weight: 700;
+        transform:
+            translateY(calc((var(--vl-ring-index, 0) - 6) * 0.6em))
+            rotateY(calc(var(--vl-ring-index, 0) * 20deg))
+            translateZ(var(--vl-text-ring-radius))
+            rotateZ(-40deg);
+    }
+
+    [vl-effect="text-ring-orbit"] .vl-text-ring-track > span:nth-child(1) { --vl-ring-index: 0; }
+    [vl-effect="text-ring-orbit"] .vl-text-ring-track > span:nth-child(2) { --vl-ring-index: 1.25; }
+    [vl-effect="text-ring-orbit"] .vl-text-ring-track > span:nth-child(3) { --vl-ring-index: 2.5; }
+    [vl-effect="text-ring-orbit"] .vl-text-ring-track > span:nth-child(4) { --vl-ring-index: 4.5; }
+    [vl-effect="text-ring-orbit"] .vl-text-ring-track > span:nth-child(5) { --vl-ring-index: 5.5; }
+    [vl-effect="text-ring-orbit"] .vl-text-ring-track > span:nth-child(6) { --vl-ring-index: 7; }
+    [vl-effect="text-ring-orbit"] .vl-text-ring-track > span:nth-child(7) { --vl-ring-index: 8; }
+    [vl-effect="text-ring-orbit"] .vl-text-ring-track > span:nth-child(8) { --vl-ring-index: 9; }
+    [vl-effect="text-ring-orbit"] .vl-text-ring-track > span:nth-child(9) { --vl-ring-index: 10; }
+    [vl-effect="text-ring-orbit"] .vl-text-ring-track > span:nth-child(10) { --vl-ring-index: 11; }
+    [vl-effect="text-ring-orbit"] .vl-text-ring-track > span:nth-child(11) { --vl-ring-index: 12; }
+    [vl-effect="text-ring-orbit"] .vl-text-ring-track > span:nth-child(12) { --vl-ring-index: 13; }
+
+    /* =========================================================================
+       PRIMITIVE EFFECTS — interaction
+       ========================================================================= */
+
+    [vl-effect="duotone"] {
+        --vl-duotone-a: color-mix(in oklch, var(--vl-color-primary) 78%, white 4%);
+        --vl-duotone-b: color-mix(in oklch, var(--vl-color-accent, var(--vl-color-secondary)) 74%, black 10%);
+        position: relative;
+        display: inline-block;
+        isolation: isolate;
+        overflow: hidden;
+        background-color: var(--vl-duotone-a);
+    }
+
+    [vl-effect="duotone"]::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background-color: color-mix(in oklch, var(--vl-duotone-b) 52%, transparent);
+        mix-blend-mode: lighten;
+        pointer-events: none;
+    }
+
+    [vl-effect="duotone"] > img,
+    [vl-effect="duotone"] img {
+        position: relative;
+        display: block;
+        width: 100%;
+        max-width: 100%;
+        height: auto;
+        mix-blend-mode: darken;
+        filter: contrast(1.08) saturate(0.9);
+    }
+
+    /* Spotlight: uses @property for smooth gradient tracking on hover */
+    @property --vl-spotlight-x { syntax: "<percentage>"; inherits: true; initial-value: 50%; }
+    @property --vl-spotlight-y { syntax: "<percentage>"; inherits: true; initial-value: 50%; }
+
+    [vl-effect="spotlight"] {
+        position: relative;
+        overflow: hidden;
+        transition:
+            --vl-spotlight-x var(--vl-duration-normal) var(--vl-ease-out-soft),
+            --vl-spotlight-y var(--vl-duration-normal) var(--vl-ease-out-soft);
+    }
+
+    [vl-effect="spotlight"]::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: radial-gradient(
+            circle at var(--vl-spotlight-x, 50%) var(--vl-spotlight-y, 50%),
+            color-mix(in oklch, var(--vl-color-primary) 15%, transparent) 0%,
+            transparent 65%
+        );
+        opacity: 0;
+        transition: opacity var(--vl-transition-normal);
+        pointer-events: none;
+    }
+
+    [vl-effect="spotlight"]:hover::before {
+        opacity: 1;
+    }
+
+    /* Border beam: conic gradient animated border */
+    @property --vl-beam-angle { syntax: "<angle>"; inherits: true; initial-value: 0deg; }
+
+    [vl-effect="border-beam"] {
+        position: relative;
+        --vl-beam-angle: 0deg;
+        animation: vl-border-beam 4s linear infinite;
+    }
+
+    [vl-effect="border-beam"]::before {
+        content: "";
+        position: absolute;
+        inset: -1px;
+        border-radius: inherit;
+        padding: 1px;
+        background: conic-gradient(
+            from var(--vl-beam-angle),
+            transparent 0%,
+            color-mix(in oklch, var(--vl-color-primary) 85%, transparent) 18%,
+            transparent 36%
+        );
+        -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+        mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+        -webkit-mask-composite: xor;
+        mask-composite: exclude;
+        pointer-events: none;
+    }
+
+    /* Press: physical depress feedback */
+    [vl-effect="press"] {
+        transition: transform var(--vl-duration-fast) var(--vl-ease-back-in), box-shadow var(--vl-duration-fast);
+        cursor: pointer;
+    }
+
+    [vl-effect="press"]:active {
+        transform: scale(0.96) translateY(1px);
+        box-shadow: inset 0 2px 6px color-mix(in oklch, var(--vl-color-primary) 20%, transparent);
+    }
+
+    [vl-effect="hover-prism"] {
+        position: relative;
+        transform-style: preserve-3d;
+        transition:
+            transform var(--vl-duration-normal) var(--vl-ease-back-out),
+            box-shadow var(--vl-duration-normal) var(--vl-ease-cinematic),
+            filter var(--vl-duration-normal) var(--vl-ease-cinematic);
+    }
+
+    [vl-effect="hover-prism"]::after {
+        content: "";
+        position: absolute;
+        inset: -10%;
+        background: radial-gradient(circle at center, color-mix(in oklch, var(--vl-color-primary) 24%, transparent), transparent 62%);
+        opacity: 0;
+        transform: scale(0.92);
+        transition:
+            opacity var(--vl-duration-normal) var(--vl-ease-cinematic),
+            transform var(--vl-duration-normal) var(--vl-ease-cinematic);
+        pointer-events: none;
+        z-index: -1;
+    }
+
+    [vl-effect="hover-prism"]:hover,
+    [vl-effect="hover-prism"]:focus-visible {
+        transform: perspective(1400px) rotateX(5deg) rotateY(-6deg) translate3d(0, -8px, 0);
+        box-shadow: var(--vl-shadow-float), var(--vl-shadow-glow);
+        filter: saturate(1.08);
+    }
+
+    [vl-effect="hover-prism"]:hover::after,
+    [vl-effect="hover-prism"]:focus-visible::after {
+        opacity: 1;
+        transform: scale(1);
+        animation: vl-halo-pulse 2.4s var(--vl-ease-in-out-smooth) infinite;
+    }
+
+    [vl-effect="hover-depth-press"] {
+        transition:
+            transform var(--vl-duration-normal) var(--vl-ease-cinematic),
+            box-shadow var(--vl-duration-normal) var(--vl-ease-cinematic);
+    }
+
+    [vl-effect="hover-depth-press"]:hover,
+    [vl-effect="hover-depth-press"]:focus-visible {
+        transform: translate3d(0, -6px, 0);
+        box-shadow: var(--vl-shadow-float);
+    }
+
+    [vl-effect="hover-depth-press"]:active {
+        transform: translate3d(0, -1px, 0) scale(0.985);
+        box-shadow: inset 0 2px 8px color-mix(in oklch, var(--vl-color-primary) 22%, transparent);
+    }
+
+    [vl-effect="glitch-lite"] {
+        animation: vl-glitch-lite 700ms steps(2, end) infinite;
+    }
+
+    [vl-effect="scanline"] {
+        position: relative;
+        overflow: clip;
+    }
+
+    [vl-effect="scanline"]::before {
+        content: "";
+        position: absolute;
+        inset: -120% 0;
+        background: linear-gradient(
+            180deg,
+            transparent 0%,
+            color-mix(in oklch, var(--vl-color-primary) 28%, transparent) 48%,
+            transparent 100%
+        );
+        background-size: 100% 200%;
+        animation: vl-scanline-sweep 2.4s linear infinite;
+        pointer-events: none;
+    }
+
+    [vl-effect="ripple"] {
+        animation: vl-ripple-pulse 1.8s var(--vl-ease-out-soft) infinite;
+    }
+
+    [vl-effect="levitate-x"] {
+        animation: vl-levitate-x 4.8s var(--vl-ease-in-out-smooth) infinite;
+    }
+
+    [vl-effect="halo-breathe"] {
+        position: relative;
+        isolation: isolate;
+    }
+
+    [vl-effect="halo-breathe"]::after {
+        content: "";
+        position: absolute;
+        inset: -14%;
+        border-radius: inherit;
+        background: radial-gradient(circle at center, color-mix(in oklch, var(--vl-color-primary) 26%, transparent), transparent 60%);
+        z-index: -1;
+        animation: vl-halo-pulse 3s var(--vl-ease-in-out-smooth) infinite;
+    }
+
+    [vl-effect="sweep-border"] {
+        position: relative;
+        border: 1px solid transparent;
+        background:
+            linear-gradient(var(--vl-bg-surface), var(--vl-bg-surface)) padding-box,
+            linear-gradient(90deg, transparent, color-mix(in oklch, var(--vl-color-primary) 75%, transparent), transparent) border-box;
+        background-size: auto, 200% 100%;
+        animation: vl-sweep-border 2.2s linear infinite;
+    }
+
+    /* Shimmer text: gradient sweep on text */
+    [vl-effect="shimmer-text"] {
+        background: linear-gradient(
+            90deg,
+            var(--vl-text-primary) 0%,
+            color-mix(in oklch, var(--vl-color-primary) 90%, white) 35%,
+            var(--vl-text-primary) 55%,
+            var(--vl-text-primary) 100%
+        );
+        background-size: 200% auto;
+        -webkit-background-clip: text;
+        background-clip: text;
+        -webkit-text-fill-color: transparent;
+        animation: vl-shimmer-text 3s var(--vl-ease-in-out-smooth) infinite;
+    }
+
+    @property --vl-gradient-text-color-1 {
+        syntax: "<color>";
+        inherits: false;
+        initial-value: currentColor;
+    }
+
+    @property --vl-gradient-text-color-2 {
+        syntax: "<color>";
+        inherits: false;
+        initial-value: currentColor;
+    }
+
+    @property --vl-circle-rotate {
+        syntax: "<number>";
+        inherits: true;
+        initial-value: 0;
+    }
+
+    @property --vl-circle-delayed-rotate {
+        syntax: "<number>";
+        inherits: true;
+        initial-value: 0;
+    }
+
+    [vl-effect="gradient-text-color"] {
+        --vl-gradient-text-color-1: color-mix(in oklch, var(--vl-color-primary) 74%, var(--vl-color-secondary));
+        --vl-gradient-text-color-2: color-mix(in oklch, var(--vl-color-accent, var(--vl-color-secondary)) 72%, var(--vl-color-primary));
+        animation: vl-gradient-text-color-shift 2.2s linear infinite alternate;
+        background: linear-gradient(
+            to right in oklch,
+            var(--vl-gradient-text-color-1),
+            var(--vl-gradient-text-color-2)
+        );
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        color: transparent;
+    }
+
+    /* Fallback for browsers without @property support — static gradient instead of animated */
+    @supports not (font-tech(color-COLRv1)) {
+        /* Use an always-false @supports as proxy for @property support (Safari <15.4) */
+    }
+    @supports not selector(:has(+ *)) {
+        [vl-effect="gradient-text-color"] {
+            animation: none;
+            background: linear-gradient(
+                to right in oklch,
+                color-mix(in oklch, var(--vl-color-primary) 74%, var(--vl-color-secondary)),
+                color-mix(in oklch, var(--vl-color-accent, var(--vl-color-secondary)) 72%, var(--vl-color-primary))
+            );
+        }
+    }
+
+    /* =========================================================================
+       PRIMITIVE EFFECTS — scroll-driven
+       ========================================================================= */
+    [vl-effect="rotate-scroll"] {
+        animation: vl-rotate-scroll linear both;
+        animation-timeline: view(block);
+        animation-range: cover;
+    }
+
+    [vl-effect="wipe-reveal"] {
+        animation: vl-wipe-scroll linear both;
+        animation-timeline: view(block);
+        animation-range: entry 0% cover 50%;
+    }
+
+    :is([vl-scroll~="depth-push"], [vl-effect="depth-push"]) {
+        --vl-scroll-name: vl-depth-push;
+        animation: vl-depth-push linear both;
+        animation-timeline: view(block);
+        animation-range: var(--vl-range, var(--vl-range-start, entry 0%) var(--vl-range-end, entry 100%));
+    }
+
+    /* Parallax — unified onto vl-parallax-shift (typed + legacy). */
+    [vl-effect="parallax"] {
+        --vl-scroll-name: vl-parallax-shift;
+        animation: vl-parallax-shift both linear;
+        animation-timeline: view(block);
+        animation-range: var(--vl-range, var(--vl-range-start, cover 0%) var(--vl-range-end, cover 100%));
+    }
+
+    /* Counter-scroll — element moves in the opposite direction to page scroll */
+    [vl-effect="counter-scroll"] {
+        animation: vl-counter-scroll linear both;
+        animation-timeline: scroll(root block);
+        animation-range: 0% 100%;
+    }
+
+    /* Image reveal — clip-path expands from centre as element enters the viewport */
+    [vl-effect="img-reveal"] {
+        animation: vl-img-reveal linear both;
+        animation-timeline: view(block);
+        animation-range: entry 0% entry 75%;
+    }
+
+    /* Header shrink — sticky/fixed bar condenses when the page scrolls */
+    [vl-effect="header-shrink"] {
+        animation: vl-header-shrink linear both;
+        animation-timeline: scroll(root block);
+        animation-range: 0px 120px;
+    }
+
+    /* =========================================================================
+       TEXT SYSTEMS
+       ========================================================================= */
+
+    /* Animated gradient text clip */
+    .vl-gradient-text {
+        background: linear-gradient(
+            90deg,
+            var(--vl-color-primary),
+            var(--vl-color-secondary),
+            var(--vl-brand-stone),
+            var(--vl-color-primary)
+        );
+        background-size: 300% auto;
+        -webkit-background-clip: text;
+        background-clip: text;
+        -webkit-text-fill-color: transparent;
+        animation: vl-shimmer-text 5s var(--vl-ease-in-out-smooth) infinite;
+    }
+
+    /* Wave text: each child span waves */
+    .vl-text-wave {
+        display: inline-flex;
+        flex-wrap: wrap;
+        overflow: hidden;
+    }
+
+    .vl-text-wave > span {
+        display: inline-block;
+        animation: vl-wave-char 1.8s var(--vl-ease-in-out-smooth) infinite;
+    }
+
+    .vl-text-wave > span:nth-child(1)  { animation-delay: 0ms; }
+    .vl-text-wave > span:nth-child(2)  { animation-delay: 80ms; }
+    .vl-text-wave > span:nth-child(3)  { animation-delay: 160ms; }
+    .vl-text-wave > span:nth-child(4)  { animation-delay: 240ms; }
+    .vl-text-wave > span:nth-child(5)  { animation-delay: 320ms; }
+    .vl-text-wave > span:nth-child(6)  { animation-delay: 400ms; }
+    .vl-text-wave > span:nth-child(7)  { animation-delay: 480ms; }
+    .vl-text-wave > span:nth-child(8)  { animation-delay: 560ms; }
+    .vl-text-wave > span:nth-child(9)  { animation-delay: 640ms; }
+    .vl-text-wave > span:nth-child(10) { animation-delay: 720ms; }
+
+    /* Split text: each child word rises in */
+    .vl-text-split {
+        display: inline-flex;
+        flex-wrap: wrap;
+        gap: 0.25em;
+        overflow: hidden;
+    }
+
+    .vl-text-split > span {
+        display: inline-block;
+        animation: vl-word-rise var(--vl-duration-slower) var(--vl-ease-cinematic) both;
+    }
+
+    .vl-text-split > span:nth-child(1) { animation-delay: 0ms; }
+    .vl-text-split > span:nth-child(2) { animation-delay: 90ms; }
+    .vl-text-split > span:nth-child(3) { animation-delay: 180ms; }
+    .vl-text-split > span:nth-child(4) { animation-delay: 270ms; }
+    .vl-text-split > span:nth-child(5) { animation-delay: 360ms; }
+    .vl-text-split > span:nth-child(6) { animation-delay: 450ms; }
+    .vl-text-split > span:nth-child(7) { animation-delay: 540ms; }
+    .vl-text-split > span:nth-child(8) { animation-delay: 630ms; }
+
+    /* Scroll-driven word split */
+    .vl-text-split[vl-timeline="view"] > span {
+        animation-timeline: view(block);
+        animation-range: entry 10% cover 50%;
+    }
+
+    /* =========================================================================
+       3D STAGE SYSTEM
+       Inspired by pure CSS 3D (amit_sheen style) — zero JavaScript
+       ========================================================================= */
+
+    /* Perspective container */
+    .vl-3d-stage {
+        perspective: var(--vl-3d-perspective, 1000px);
+        perspective-origin: var(--vl-3d-origin, 50% 50%);
+        transform-style: preserve-3d;
+    }
+
+    /* 3D scene: preserves child transforms in 3D space */
+    .vl-3d-scene {
+        transform-style: preserve-3d;
+        transform: rotateX(var(--vl-3d-rot-x, 0deg)) rotateY(var(--vl-3d-rot-y, 0deg));
+        transition:
+            transform var(--vl-duration-slow) var(--vl-ease-out-soft);
+    }
+
+    /* Spinning 3D scene */
+    .vl-3d-scene--spin {
+        animation: vl-spin-slow 18s linear infinite;
+        transform-style: preserve-3d;
+    }
+
+    .vl-3d-scene--spin-reverse {
+        animation: vl-spin-slow 24s linear infinite reverse;
+        transform-style: preserve-3d;
+    }
+
+    /* CSS Cube system ─────────────────────────────────────────────── */
+    .vl-cube {
+        --vl-cube-size: 120px;
+        width: var(--vl-cube-size);
+        height: var(--vl-cube-size);
+        position: relative;
+        transform-style: preserve-3d;
+        animation: vl-cube-tumble 8s var(--vl-ease-in-out-smooth) infinite;
+    }
+
+    @keyframes vl-cube-tumble {
+        0%   { transform: rotateX(0deg)   rotateY(0deg); }
+        25%  { transform: rotateX(90deg)  rotateY(45deg); }
+        50%  { transform: rotateX(180deg) rotateY(180deg); }
+        75%  { transform: rotateX(270deg) rotateY(225deg); }
+        100% { transform: rotateX(360deg) rotateY(360deg); }
+    }
+
+    .vl-cube__face {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        border: 1px solid color-mix(in oklch, var(--vl-color-primary) 40%, transparent);
+        background: color-mix(in oklch, var(--vl-bg-surface) 75%, transparent);
+        backdrop-filter: blur(8px);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-family: var(--vl-font-family-mono);
+        font-size: 0.75rem;
+        color: var(--vl-text-secondary);
+    }
+
+    .vl-cube__face--front  { transform: translateZ(calc(var(--vl-cube-size) / 2)); }
+    .vl-cube__face--back   { transform: rotateY(180deg) translateZ(calc(var(--vl-cube-size) / 2)); }
+    .vl-cube__face--left   { transform: rotateY(-90deg) translateZ(calc(var(--vl-cube-size) / 2)); }
+    .vl-cube__face--right  { transform: rotateY(90deg)  translateZ(calc(var(--vl-cube-size) / 2)); }
+    .vl-cube__face--top    { transform: rotateX(90deg)  translateZ(calc(var(--vl-cube-size) / 2)); }
+    .vl-cube__face--bottom { transform: rotateX(-90deg) translateZ(calc(var(--vl-cube-size) / 2)); }
+
+    /* Nested cubes (orbit rings) */
+    .vl-cube--lg { --vl-cube-size: 200px; }
+    .vl-cube--sm { --vl-cube-size: 60px; }
+    .vl-cube--xs { --vl-cube-size: 40px; }
+
+    /* Cube with glow */
+    .vl-cube--glow .vl-cube__face {
+        background: color-mix(in oklch, var(--vl-color-primary) 12%, transparent);
+        border-color: color-mix(in oklch, var(--vl-color-primary) 55%, transparent);
+        box-shadow: inset 0 0 20px color-mix(in oklch, var(--vl-color-primary) 15%, transparent);
+    }
+
+    /* CSS Flip Card system ─────────────────────────────────────────── */
+    .vl-flip-card {
+        perspective: 1000px;
+    }
+
+    .vl-flip-card__inner {
+        position: relative;
+        transform-style: preserve-3d;
+        transition: transform var(--vl-duration-slow) var(--vl-ease-out-soft);
+        width: 100%;
+        height: 100%;
+    }
+
+    .vl-flip-card:hover .vl-flip-card__inner,
+    .vl-flip-card[aria-pressed="true"] .vl-flip-card__inner {
+        transform: rotateY(180deg);
+    }
+
+    .vl-flip-card__front,
+    .vl-flip-card__back {
+        position: absolute;
+        inset: 0;
+        -webkit-backface-visibility: hidden;
+    backface-visibility: hidden;
+        border-radius: inherit;
+    }
+
+    .vl-flip-card__back {
+        transform: rotateY(180deg);
+        background: var(--vl-bg-surface-elevated);
+    }
+
+    /* CSS 3D Orbit system ─────────────────────────────────────────── */
+    .vl-orbit-system {
+        position: relative;
+        transform-style: preserve-3d;
+    }
+
+    .vl-orbit-ring {
+        position: absolute;
+        inset: 0;
+        border-radius: 50%;
+        border: 1px dashed color-mix(in oklch, var(--vl-color-primary) 30%, transparent);
+        transform-style: preserve-3d;
+        animation: vl-spin-slow var(--vl-orbit-duration, 10s) linear infinite;
+    }
+
+    .vl-orbit-ring:nth-child(2) {
+        transform: rotateX(60deg);
+        animation-duration: 14s;
+        animation-direction: reverse;
+    }
+
+    .vl-orbit-ring:nth-child(3) {
+        transform: rotateX(120deg);
+        animation-duration: 18s;
+    }
+
+    .vl-orbit-dot {
+        position: absolute;
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: var(--vl-color-primary);
+        top: -4px;
+        left: calc(50% - 4px);
+        box-shadow: 0 0 8px var(--vl-color-primary);
+    }
+
+    /* =========================================================================
+       CHILDREN CHOREOGRAPHY EXTENSIONS
+       ========================================================================= */
+
+    /* Wave: children animate in a wave pattern (stagger + wave-char keyframe) */
+    [vl-children="wave"] > :not([vl-effect]):not([vl-enter]):not([vl-exit]) {
+        animation: vl-wave-char 1.8s var(--vl-ease-in-out-smooth) infinite;
+    }
+
+    [vl-children="wave"] > *:nth-child(1)  { animation-delay: calc(0  * var(--vl-stagger-step, 80ms)); }
+    [vl-children="wave"] > *:nth-child(2)  { animation-delay: calc(1  * var(--vl-stagger-step, 80ms)); }
+    [vl-children="wave"] > *:nth-child(3)  { animation-delay: calc(2  * var(--vl-stagger-step, 80ms)); }
+    [vl-children="wave"] > *:nth-child(4)  { animation-delay: calc(3  * var(--vl-stagger-step, 80ms)); }
+    [vl-children="wave"] > *:nth-child(5)  { animation-delay: calc(4  * var(--vl-stagger-step, 80ms)); }
+    [vl-children="wave"] > *:nth-child(6)  { animation-delay: calc(5  * var(--vl-stagger-step, 80ms)); }
+    [vl-children="wave"] > *:nth-child(7)  { animation-delay: calc(6  * var(--vl-stagger-step, 80ms)); }
+    [vl-children="wave"] > *:nth-child(8)  { animation-delay: calc(7  * var(--vl-stagger-step, 80ms)); }
+
+    /* Blur cascade: children blur-in with stagger */
+    [vl-children="blur-cascade"] > :not([vl-effect]):not([vl-enter]):not([vl-exit]) {
+        animation: vl-blur-cascade var(--vl-duration-slower) var(--vl-ease-out-soft) both;
+    }
+
+    [vl-children="blur-cascade"] > *:nth-child(1)  { animation-delay: calc(0  * var(--vl-stagger-step, 80ms)); }
+    [vl-children="blur-cascade"] > *:nth-child(2)  { animation-delay: calc(1  * var(--vl-stagger-step, 80ms)); }
+    [vl-children="blur-cascade"] > *:nth-child(3)  { animation-delay: calc(2  * var(--vl-stagger-step, 80ms)); }
+    [vl-children="blur-cascade"] > *:nth-child(4)  { animation-delay: calc(3  * var(--vl-stagger-step, 80ms)); }
+    [vl-children="blur-cascade"] > *:nth-child(5)  { animation-delay: calc(4  * var(--vl-stagger-step, 80ms)); }
+    [vl-children="blur-cascade"] > *:nth-child(6)  { animation-delay: calc(5  * var(--vl-stagger-step, 80ms)); }
+    [vl-children="blur-cascade"] > *:nth-child(7)  { animation-delay: calc(6  * var(--vl-stagger-step, 80ms)); }
+    [vl-children="blur-cascade"] > *:nth-child(8)  { animation-delay: calc(7  * var(--vl-stagger-step, 80ms)); }
+
+    /* Zoom stagger: children zoom-scale-in with stagger */
+    [vl-children="zoom-stagger"] > :not([vl-effect]):not([vl-enter]):not([vl-exit]) {
+        animation: vl-zoom-stagger var(--vl-duration-slow) var(--vl-ease-spring) both;
+    }
+
+    [vl-children="zoom-stagger"] > *:nth-child(1)  { animation-delay: calc(0  * var(--vl-stagger-step, 70ms)); }
+    [vl-children="zoom-stagger"] > *:nth-child(2)  { animation-delay: calc(1  * var(--vl-stagger-step, 70ms)); }
+    [vl-children="zoom-stagger"] > *:nth-child(3)  { animation-delay: calc(2  * var(--vl-stagger-step, 70ms)); }
+    [vl-children="zoom-stagger"] > *:nth-child(4)  { animation-delay: calc(3  * var(--vl-stagger-step, 70ms)); }
+    [vl-children="zoom-stagger"] > *:nth-child(5)  { animation-delay: calc(4  * var(--vl-stagger-step, 70ms)); }
+    [vl-children="zoom-stagger"] > *:nth-child(6)  { animation-delay: calc(5  * var(--vl-stagger-step, 70ms)); }
+    [vl-children="zoom-stagger"] > *:nth-child(7)  { animation-delay: calc(6  * var(--vl-stagger-step, 70ms)); }
+    [vl-children="zoom-stagger"] > *:nth-child(8)  { animation-delay: calc(7  * var(--vl-stagger-step, 70ms)); }
+
+    [vl-children="cinema-stagger"] > :not([vl-effect]):not([vl-enter]):not([vl-exit]) {
+        animation: vl-glide-in var(--vl-duration-slow) var(--vl-ease-expo-out) both;
+    }
+
+    [vl-children="cinema-stagger"] > :not([vl-effect]):not([vl-enter]):not([vl-exit]):nth-child(odd) {
+        animation-name: vl-spring-up;
+    }
+
+    [vl-children="cinema-stagger"] > *:nth-child(1)  { animation-delay: calc(0  * var(--vl-stagger-step, 90ms)); }
+    [vl-children="cinema-stagger"] > *:nth-child(2)  { animation-delay: calc(1  * var(--vl-stagger-step, 90ms)); }
+    [vl-children="cinema-stagger"] > *:nth-child(3)  { animation-delay: calc(2  * var(--vl-stagger-step, 90ms)); }
+    [vl-children="cinema-stagger"] > *:nth-child(4)  { animation-delay: calc(3  * var(--vl-stagger-step, 90ms)); }
+    [vl-children="cinema-stagger"] > *:nth-child(5)  { animation-delay: calc(4  * var(--vl-stagger-step, 90ms)); }
+    [vl-children="cinema-stagger"] > *:nth-child(6)  { animation-delay: calc(5  * var(--vl-stagger-step, 90ms)); }
+    [vl-children="cinema-stagger"] > *:nth-child(7)  { animation-delay: calc(6  * var(--vl-stagger-step, 90ms)); }
+    [vl-children="cinema-stagger"] > *:nth-child(8)  { animation-delay: calc(7  * var(--vl-stagger-step, 90ms)); }
+
+    [vl-children="grid-wave"] > :not([vl-effect]):not([vl-enter]):not([vl-exit]) {
+        animation: vl-grid-wave 1.6s var(--vl-ease-in-out-smooth) infinite;
+    }
+
+    [vl-children="grid-wave"] > *:nth-child(1)  { animation-delay: 0ms; }
+    [vl-children="grid-wave"] > *:nth-child(2)  { animation-delay: 80ms; }
+    [vl-children="grid-wave"] > *:nth-child(3)  { animation-delay: 160ms; }
+    [vl-children="grid-wave"] > *:nth-child(4)  { animation-delay: 240ms; }
+    [vl-children="grid-wave"] > *:nth-child(5)  { animation-delay: 320ms; }
+    [vl-children="grid-wave"] > *:nth-child(6)  { animation-delay: 400ms; }
+    [vl-children="grid-wave"] > *:nth-child(7)  { animation-delay: 480ms; }
+    [vl-children="grid-wave"] > *:nth-child(8)  { animation-delay: 560ms; }
+
+    [vl-children="spiral-stagger"] > :not([vl-effect]):not([vl-enter]):not([vl-exit]) {
+        animation: vl-spiral-stagger var(--vl-duration-slow) var(--vl-ease-back-out) both;
+    }
+
+    [vl-children="spiral-stagger"] > *:nth-child(1)  { animation-delay: calc(0  * var(--vl-stagger-step, 90ms)); }
+    [vl-children="spiral-stagger"] > *:nth-child(2)  { animation-delay: calc(1  * var(--vl-stagger-step, 90ms)); }
+    [vl-children="spiral-stagger"] > *:nth-child(3)  { animation-delay: calc(2  * var(--vl-stagger-step, 90ms)); }
+    [vl-children="spiral-stagger"] > *:nth-child(4)  { animation-delay: calc(3  * var(--vl-stagger-step, 90ms)); }
+    [vl-children="spiral-stagger"] > *:nth-child(5)  { animation-delay: calc(4  * var(--vl-stagger-step, 90ms)); }
+    [vl-children="spiral-stagger"] > *:nth-child(6)  { animation-delay: calc(5  * var(--vl-stagger-step, 90ms)); }
+    [vl-children="spiral-stagger"] > *:nth-child(7)  { animation-delay: calc(6  * var(--vl-stagger-step, 90ms)); }
+    [vl-children="spiral-stagger"] > *:nth-child(8)  { animation-delay: calc(7  * var(--vl-stagger-step, 90ms)); }
+
+    /* Extra stagger values */
+    [vl-stagger="20ms"]  { --vl-stagger-step: 20ms; }
+    [vl-stagger="30ms"]  { --vl-stagger-step: 30ms; }
+    [vl-stagger="40ms"]  { --vl-stagger-step: 40ms; }
+    [vl-stagger="250ms"] { --vl-stagger-step: 250ms; }
+    [vl-stagger="300ms"] { --vl-stagger-step: 300ms; }
+
+    /* =========================================================================
+       SPEED EXTENSIONS
+       ========================================================================= */
+    [vl-speed="slower"]  { --vl-motion-duration: var(--vl-duration-slowest, 1200ms); }
+    [vl-speed="fastest"] { --vl-motion-duration: var(--vl-duration-fastest, 80ms); }
+    [vl-speed="turbo"] { --vl-motion-duration: 60ms; }
+    [vl-speed="ultra-slow"] { --vl-motion-duration: 1800ms; }
+
+    /* =========================================================================
+       RANGE EXTENSIONS
+       ========================================================================= */
+
+    /* Exit range: animate as element exits viewport */
+    [vl-range="exit"] {
+        animation-range: exit 0% exit 100%;
+    }
+
+    [vl-range="exit-short"] {
+        animation-range: contain 70% exit 100%;
+    }
+
+    /* Center: animate only while element is centered in viewport */
+    [vl-range="center"] {
+        animation-range: contain 30% contain 70%;
+    }
+
+    /* Full: entire cover range */
+    [vl-range="full"] {
+        animation-range: cover 0% cover 100%;
+    }
+
+    [vl-range="entry-micro"] {
+        animation-range: entry 20% cover 30%;
+    }
+
+    [vl-range="cinema-wide"] {
+        animation-range: entry 0% cover 90%;
+    }
+
+    /* =========================================================================
+       SCROLL-DRIVEN LAYOUT SYSTEMS
+       ========================================================================= */
+
+    /* --- Stacking cards ------------------------------------------------------- */
+    .vl-stack-cards {
+        display: block;
+        padding-bottom: var(--vl-stack-bottom, 4rem);
+    }
+
+    .vl-stack-card {
+        --vl-stack-i: 0;
+        position: sticky;
+        top: calc(var(--vl-stack-offset, 5rem) + var(--vl-stack-i) * var(--vl-stack-spread, 1.5rem));
+        transform-origin: top center;
+        z-index: calc(var(--vl-stack-i) + 1);
+        animation: vl-stack-push linear both;
+        animation-timeline: view(block);
+        animation-range: contain 25% exit 0%;
+    }
+
+    .vl-stack-cards > :nth-child(1) { --vl-stack-i: 0; }
+    .vl-stack-cards > :nth-child(2) { --vl-stack-i: 1; }
+    .vl-stack-cards > :nth-child(3) { --vl-stack-i: 2; }
+    .vl-stack-cards > :nth-child(4) { --vl-stack-i: 3; }
+    .vl-stack-cards > :nth-child(5) { --vl-stack-i: 4; }
+    .vl-stack-cards > :nth-child(6) { --vl-stack-i: 5; }
+    .vl-stack-cards > :nth-child(7) { --vl-stack-i: 6; }
+    .vl-stack-cards > :nth-child(8) { --vl-stack-i: 7; }
+
+    .vl-stack-cards > .vl-stack-card:last-child { animation: none; }
+
+    /* --- Scroll shadows ------------------------------------------------------- */
+    .vl-scroll-shadows {
+        overflow-y: auto;
+        background:
+            linear-gradient(color-mix(in oklch, var(--vl-bg-surface) 100%, transparent) 33%, transparent)
+                center top    / 100% var(--vl-scroll-shadow-size, 2.5rem) local  no-repeat,
+            linear-gradient(transparent, color-mix(in oklch, var(--vl-bg-surface) 100%, transparent) 66%)
+                center bottom / 100% var(--vl-scroll-shadow-size, 2.5rem) local  no-repeat,
+            radial-gradient(farthest-side at 50% 0%,   color-mix(in oklch, black 28%, transparent), transparent)
+                center top    / 100% var(--vl-scroll-shadow-size, 2.5rem) scroll no-repeat,
+            radial-gradient(farthest-side at 50% 100%, color-mix(in oklch, black 28%, transparent), transparent)
+                center bottom / 100% var(--vl-scroll-shadow-size, 2.5rem) scroll no-repeat;
+        background-color: var(--vl-bg-surface);
+    }
+
+    .vl-scroll-shadows--x {
+        overflow-y: visible;
+        overflow-x: auto;
+        background:
+            linear-gradient(to right, color-mix(in oklch, var(--vl-bg-surface) 100%, transparent) 33%, transparent)
+                left  / var(--vl-scroll-shadow-size, 2.5rem) 100% local  no-repeat,
+            linear-gradient(to left,  color-mix(in oklch, var(--vl-bg-surface) 100%, transparent) 33%, transparent)
+                right / var(--vl-scroll-shadow-size, 2.5rem) 100% local  no-repeat,
+            radial-gradient(farthest-side at 0%   50%, color-mix(in oklch, black 28%, transparent), transparent)
+                left  / var(--vl-scroll-shadow-size, 2.5rem) 100% scroll no-repeat,
+            radial-gradient(farthest-side at 100% 50%, color-mix(in oklch, black 28%, transparent), transparent)
+                right / var(--vl-scroll-shadow-size, 2.5rem) 100% scroll no-repeat;
+        background-color: var(--vl-bg-surface);
+    }
+
+    /* --- Cover flow ----------------------------------------------------------- */
+    .vl-cover-flow {
+        display: flex;
+        gap: var(--vl-coverflow-gap, var(--vl-space-md));
+        overflow-x: auto;
+        scroll-snap-type: x mandatory;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+        overscroll-behavior-x: contain;
+        perspective: var(--vl-coverflow-perspective, 1200px);
+        padding-block: var(--vl-space-lg);
+        padding-inline: max(var(--vl-space-lg), calc(50% - var(--vl-coverflow-item-size, 14rem) / 2));
+    }
+
+    .vl-cover-flow::-webkit-scrollbar { display: none; }
+
+    .vl-cover-flow__item {
+        flex: 0 0 var(--vl-coverflow-item-size, 14rem);
+        scroll-snap-align: center;
+        transform-style: preserve-3d;
+        overflow: hidden;
+        border-radius: var(--vl-radius-md, 0.5rem);
+        margin: 0;
+        animation: vl-coverflow-tilt linear both;
+        animation-timeline: view(inline);
+        animation-range: entry 0% entry 100%;
+    }
+
+    .vl-cover-flow__item:nth-child(odd)  { --vl-coverflow-rot: -28deg; }
+    .vl-cover-flow__item:nth-child(even) { --vl-coverflow-rot:  28deg; }
+
+    /* --- Horizontal section --------------------------------------------------- */
+    .vl-horizontal-section {
+        height: var(--vl-h-section-height, 300vh);
+        timeline-scope: --vl-h-section;
+        view-timeline-name: --vl-h-section;
+        view-timeline-axis: block;
+    }
+
+    .vl-horizontal-section__pin {
+        position: sticky;
+        top: 0;
+        height: 100dvh;
+        overflow: hidden;
+        display: flex;
+        align-items: center;
+    }
+
+    .vl-horizontal-section__track {
+        display: flex;
+        gap: var(--vl-h-section-gap, var(--vl-space-xl));
+        align-items: center;
+        will-change: transform;
+        animation: vl-horizontal-travel linear both;
+        animation-timeline: --vl-h-section;
+        animation-range: contain 0% contain 100%;
+    }
+
+    /* --- List enter (scroll-driven stagger) ----------------------------------- */
+    [vl-children="list-enter"] > :not([vl-effect]):not([vl-enter]):not([vl-exit]) {
+        animation: vl-list-enter var(--vl-duration-slow) var(--vl-ease-expo-out) both;
+        animation-timeline: view(block);
+        animation-range: entry 0% entry 60%;
+    }
+
+    [vl-children="list-enter-right"] > :not([vl-effect]):not([vl-enter]):not([vl-exit]) {
+        --vl-list-enter-x: 1.5rem;
+        animation: vl-list-enter var(--vl-duration-slow) var(--vl-ease-expo-out) both;
+        animation-timeline: view(block);
+        animation-range: entry 0% entry 60%;
+    }
+
+    /* --- Scroll markers (CSS-native, Chrome 135+) ----------------------------- */
+    :is(.vl-scroll-markers, [vl-scroll-markers]) { scroll-marker-group: after; }
+
+    :is(.vl-scroll-markers, [vl-scroll-markers])::scroll-marker-group {
+        display: flex;
+        gap: var(--vl-marker-gap, var(--vl-space-xs));
+        justify-content: center;
+        align-items: center;
+        padding-block: var(--vl-space-sm);
+        height: calc(var(--vl-marker-h, 0.5rem) + var(--vl-space-sm) * 2);
+    }
+
+    :is(.vl-scroll-markers, [vl-scroll-markers]) > *::scroll-marker {
+        content: "";
+        width: var(--vl-marker-w, 0.5rem);
+        height: var(--vl-marker-h, 0.5rem);
+        border-radius: 999px;
+        background: color-mix(in oklch, var(--vl-color-primary) 30%, var(--vl-bg-surface));
+        border: 1px solid color-mix(in oklch, var(--vl-color-primary) 35%, transparent);
+        transition:
+            width      var(--vl-duration-normal) var(--vl-ease-back-out),
+            background var(--vl-duration-normal) var(--vl-ease-out-soft);
+    }
+
+    :is(.vl-scroll-markers, [vl-scroll-markers]) > *::scroll-marker:target-current {
+        width: var(--vl-marker-w-active, 1.75rem);
+        background: var(--vl-color-primary);
+        border-color: transparent;
+    }
+
+    /* =========================================================================
+       GPU hints for new effects
+       ========================================================================= */
+    [vl-effect="spring-up"],
+    [vl-effect="glide-in"],
+    [vl-effect="zoom-blur"],
+    [vl-effect="slice-in"],
+    [vl-effect="unfold"],
+    [vl-effect="slide-diagonal"],
+    [vl-effect="flip-in"],
+    [vl-effect="spring-3d"],
+    [vl-effect="rise-3d"],
+    [vl-effect="drop-in"],
+    [vl-effect="skew-slide"],
+    [vl-effect="hinge-down"],
+    [vl-effect="cube-triad-stage"],
+    [vl-effect="rotate-scroll"],
+    [vl-effect="wipe-reveal"],
+    [vl-effect="depth-push"],
+    [vl-effect="parallax"],
+    [vl-effect="counter-scroll"],
+    [vl-effect="img-reveal"],
+    .vl-stack-card,
+    .vl-cover-flow__item,
+    .vl-horizontal-section__track,
+    [vl-children="list-enter"] > *,
+    [vl-children="list-enter-right"] > * {
+        will-change: transform, opacity;
+    }
+
+    [vl-effect="zoom-blur"],
+    [vl-effect="glide-in"],
+    .vl-stack-card {
+        will-change: transform, opacity, filter;
+    }
+
+    /* =========================================================================
+       REDUCED MOTION — respects user preference for all new effects
+       ========================================================================= */
+    @media (prefers-reduced-motion: reduce) {
+        [vl-effect="spring-up"],
+        [vl-effect="glide-in"],
+        [vl-effect="zoom-blur"],
+        [vl-effect="slice-in"],
+        [vl-effect="unfold"],
+        [vl-effect="slide-diagonal"],
+        [vl-effect="flip-in"],
+        [vl-effect="spring-3d"],
+        [vl-effect="rise-3d"],
+        [vl-effect="drop-in"],
+        [vl-effect="skew-slide"],
+        [vl-effect="hinge-down"],
+        [vl-effect="img-reveal"] {
+            animation: vl-fade-in var(--vl-duration-fast) linear both;
+        }
+
+        [vl-effect="parallax"],
+        [vl-scroll~="parallax"],
+        [vl-effect="counter-scroll"],
+        [vl-effect="header-shrink"],
+        .vl-stack-card,
+        .vl-cover-flow__item,
+        [vl-children="list-enter"] > *,
+        [vl-children="list-enter-right"] > * {
+            animation: none;
+        }
+
+        .vl-horizontal-section__track {
+            animation: none;
+            transform: translateX(0) !important;
+        }
+
+        [vl-effect="pulse-ring"],
+        [vl-effect="spin-slow"],
+        [vl-effect="pendulum"],
+        [vl-effect="breathe"],
+        [vl-effect="drift"],
+        [vl-effect="bounce"],
+        [vl-effect="aurora"],
+        [vl-effect="circle-text-scroll"],
+        [vl-effect="circle-text-scroll"] > ul,
+        [vl-effect="code-greeting-stack"] .vl-code-greetings-track,
+        [vl-effect="cube-triad-stage"] .scene,
+        [vl-effect="cube-triad-stage"] .stage::after,
+        [vl-effect="cube-triad-stage"] .bottomCube,
+        [vl-effect="cube-triad-stage"] .midCube,
+        [vl-effect="cube-triad-stage"] .topCube,
+        [vl-effect="gradient-slide"],
+        [vl-effect="gradient-text-color"],
+        [vl-effect="mesh-pan"],
+        [vl-effect="text-ring-orbit"] .vl-text-ring-stage,
+        [vl-effect="text-ring-orbit"] .vl-text-ring-track,
+        .vl-text-wave > span,
+        .vl-cube,
+        .vl-orbit-ring {
+            animation: none;
+        }
+
+        [vl-effect="text-ring-orbit"] .vl-text-ring-stage {
+            transform: rotateX(20deg);
+        }
+
+        [vl-effect="circle-text-scroll"] > ul > li > span {
+            transition: none;
+            transform: translate(calc(var(--vl-circle-size) / 2), 0) rotate(0deg);
+        }
+
+        [vl-effect="code-greeting-stack"] .vl-code-greetings-track {
+            transform: translateY(0);
+            transition: none;
+        }
+
+        [vl-effect="code-greeting-stack"] .vl-code-greetings-track--hover {
+            opacity: 0;
+        }
+
+        [vl-effect="gradient-text-color"] {
+            color: color-mix(in oklch, var(--vl-color-primary) 58%, var(--vl-text-primary));
+            -webkit-text-fill-color: currentColor;
+            background: none;
+        }
+
+        [vl-effect="rotate-scroll"],
+        [vl-effect="wipe-reveal"],
+        [vl-effect="depth-push"],
+        [vl-scroll~="depth-push"] {
+            animation: none;
+        }
+
+        [vl-children="wave"] > *,
+        [vl-children="blur-cascade"] > *,
+        [vl-children="zoom-stagger"] > *,
+        [vl-children="cinema-stagger"] > * {
+            animation: vl-fade-in var(--vl-duration-fast) linear both;
+        }
+
+        [vl-effect="hover-prism"]:hover,
+        [vl-effect="hover-prism"]:focus-visible,
+        [vl-effect="hover-depth-press"]:hover,
+        [vl-effect="hover-depth-press"]:focus-visible {
+            transform: none;
+            box-shadow: none;
+            filter: none;
+        }
+
+        [vl-effect="hover-prism"]::after {
+            display: none;
+        }
+    }
+
+    /* =========================================================================
+       FALLBACK  browsers without scroll-driven animations
+       ========================================================================= */
+    @supports not (animation-timeline: view(block)) {
+        [vl-effect="rotate-scroll"],
+        [vl-effect="wipe-reveal"],
+        [vl-effect="depth-push"] {
+            animation-timeline: auto;
+            animation-range: normal;
+        }
+
+        [vl-effect="rotate-scroll"] {
+            animation: none;
+        }
+
+        [vl-effect="wipe-reveal"] {
+            animation: vl-slice-in var(--vl-duration-slower) var(--vl-ease-cinematic) both;
+        }
+
+        [vl-effect="depth-push"] {
+            animation: vl-zoom-blur var(--vl-duration-slower) var(--vl-ease-out-soft) both;
+        }
+    }
+
+    /* Border beam graceful fallback: if @property/conic-gradient unsupported, show static border */
+    @supports not (background: conic-gradient(from 0deg, red, blue)) {
+        [vl-effect="border-beam"] {
+            border-color: color-mix(in oklch, var(--vl-color-primary) 40%, transparent);
+            animation: none;
+        }
+
+        [vl-effect="border-beam"]::before {
+            display: none;
+        }
+    } 
+
+    /* =========================================================================
+       CINEMATIC TYPOGRAPHY SYSTEM
+       Reveal, stagger, masking, split-line, and oversized type motion.
+       ========================================================================= */
+
+    /* --- Keyframes: typography-specific --- */
+
+    @keyframes vl-text-rise {
+        from {
+            opacity: 0;
+            transform: translate3d(0, 110%, 0);
+        }
+        to {
+            opacity: 1;
+            transform: translate3d(0, 0, 0);
+        }
+    }
+
+    @keyframes vl-text-mask-up {
+        from {
+            clip-path: inset(100% 0 0 0);
+        }
+        to {
+            clip-path: inset(0 0 0 0);
+        }
+    }
+
+    @keyframes vl-text-mask-down {
+        from {
+            clip-path: inset(0 0 100% 0);
+        }
+        to {
+            clip-path: inset(0 0 0 0);
+        }
+    }
+
+    @keyframes vl-text-blur-reveal {
+        from {
+            opacity: 0;
+            filter: blur(20px);
+            transform: scale(1.1);
+        }
+        to {
+            opacity: 1;
+            filter: blur(0);
+            transform: scale(1);
+        }
+    }
+
+    @keyframes vl-text-slide-mask {
+        from {
+            clip-path: inset(0 100% 0 0);
+        }
+        to {
+            clip-path: inset(0 0 0 0);
+        }
+    }
+
+    @keyframes vl-text-oversized-drift {
+        from {
+            opacity: 0;
+            transform: translate3d(-2%, 0, 0) scale(1.02);
+            filter: blur(4px);
+        }
+        50% {
+            opacity: 1;
+            filter: blur(0);
+        }
+        to {
+            opacity: 1;
+            transform: translate3d(0, 0, 0) scale(1);
+            filter: blur(0);
+        }
+    }
+
+    @keyframes vl-char-cascade {
+        0%   { opacity: 0; transform: translate3d(0, 0.5em, 0); filter: blur(4px); }
+        60%  { opacity: 1; filter: blur(0); }
+        100% { opacity: 1; transform: translate3d(0, 0, 0); filter: blur(0); }
+    }
+
+    /* --- Reveal systems --- */
+
+    .vl-text-reveal {
+        overflow: hidden;
+    }
+
+    .vl-text-reveal > * {
+        animation: vl-text-rise var(--vl-motion-duration, var(--vl-duration-slow)) var(--vl-ease-cinematic) both;
+    }
+
+    .vl-text-reveal[vl-children="stagger"] > * {
+        --_i: var(--vl-child-index, 0);
+        animation-delay: calc(var(--_i) * var(--vl-stagger-step, 80ms));
+    }
+
+    /* --- Mask systems --- */
+
+    .vl-text-mask-up {
+        animation: vl-text-mask-up var(--vl-motion-duration, var(--vl-duration-slow)) var(--vl-ease-cinematic) both;
+    }
+
+    .vl-text-mask-down {
+        animation: vl-text-mask-down var(--vl-motion-duration, var(--vl-duration-slow)) var(--vl-ease-cinematic) both;
+    }
+
+    .vl-text-slide-mask {
+        animation: vl-text-slide-mask var(--vl-motion-duration, var(--vl-duration-slow)) var(--vl-ease-silk, var(--vl-ease-cinematic)) both;
+    }
+
+    /* --- Blur reveal --- */
+
+    .vl-text-blur-reveal {
+        animation: vl-text-blur-reveal var(--vl-motion-duration, var(--vl-duration-slower)) var(--vl-ease-fluid, var(--vl-ease-out-soft)) both;
+    }
+
+    /* --- Split-line systems: per-line stagger --- */
+
+    .vl-split-lines {
+        overflow: hidden;
+    }
+
+    .vl-split-lines > * {
+        display: block;
+        overflow: hidden;
+        animation: vl-text-mask-up var(--vl-motion-duration, var(--vl-duration-slow)) var(--vl-ease-cinematic) both;
+        --_i: var(--vl-child-index, 0);
+        animation-delay: calc(var(--_i) * var(--vl-stagger-step, 120ms));
+    }
+
+    /* --- Oversized cinematic typography --- */
+
+    .vl-type-cinematic {
+        font-family: var(--vl-font-family-display);
+        font-size: clamp(3rem, 10vw, 8rem);
+        font-weight: var(--vl-font-weight-bold, 700);
+        line-height: var(--vl-leading-tight, 1.1);
+        letter-spacing: var(--vl-tracking-tight, -0.03em);
+        animation: vl-text-oversized-drift var(--vl-duration-slower, 800ms) var(--vl-ease-cinematic) both;
+    }
+
+    .vl-type-cinematic-hero {
+        font-family: var(--vl-font-family-display);
+        font-size: clamp(4rem, 14vw, 12rem);
+        font-weight: var(--vl-font-weight-bold, 700);
+        line-height: 0.95;
+        letter-spacing: -0.04em;
+        animation: vl-text-blur-reveal var(--vl-duration-slower, 800ms) var(--vl-ease-cinematic) both;
+    }
+
+    /* --- Character cascade (with CSS counter/nth-child stagger) --- */
+
+    .vl-char-cascade > span {
+        display: inline-block;
+        animation: vl-char-cascade var(--vl-duration-slow, 500ms) var(--vl-ease-cinematic) both;
+    }
+
+    .vl-char-cascade > span:nth-child(1)  { animation-delay: 0ms; }
+    .vl-char-cascade > span:nth-child(2)  { animation-delay: 30ms; }
+    .vl-char-cascade > span:nth-child(3)  { animation-delay: 60ms; }
+    .vl-char-cascade > span:nth-child(4)  { animation-delay: 90ms; }
+    .vl-char-cascade > span:nth-child(5)  { animation-delay: 120ms; }
+    .vl-char-cascade > span:nth-child(6)  { animation-delay: 150ms; }
+    .vl-char-cascade > span:nth-child(7)  { animation-delay: 180ms; }
+    .vl-char-cascade > span:nth-child(8)  { animation-delay: 210ms; }
+    .vl-char-cascade > span:nth-child(9)  { animation-delay: 240ms; }
+    .vl-char-cascade > span:nth-child(10) { animation-delay: 270ms; }
+    .vl-char-cascade > span:nth-child(n+11) {
+        animation-delay: calc((var(--vl-child-index, 10) - 1) * 30ms);
+    }
+
+    /* --- Scroll-triggered text reveals --- */
+
+    .vl-text-reveal[vl-timeline="view"],
+    .vl-text-mask-up[vl-timeline="view"],
+    .vl-text-mask-down[vl-timeline="view"],
+    .vl-text-blur-reveal[vl-timeline="view"],
+    .vl-text-slide-mask[vl-timeline="view"],
+    .vl-type-cinematic[vl-timeline="view"],
+    .vl-type-cinematic-hero[vl-timeline="view"] {
+        animation-timeline: view();
+        animation-range: entry 10% entry 60%;
+    }
+}

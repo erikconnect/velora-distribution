@@ -1,0 +1,301 @@
+/* Home v3 experiment: opening continuity — Prologue into Intent, one brand object. */
+@layer velora.overrides {
+  .vl-v3-prologue,
+  .vl-v3-intent {
+    --vl-opening-gap: var(--vl-skin-grid-gap, 2rem);
+    --vl-opening-pad-start: clamp(10rem, 15vw, 13rem);
+    position: relative;
+    isolation: isolate;
+    min-height: 100svh;
+    padding: var(--vl-opening-pad-start) max(var(--v3-pad), calc((100vw - var(--v3-max)) / 2)) var(--vl-space-12, 3rem);
+    padding-inline-end: max(var(--v3-pad), var(--vl-v3-rail), calc((100vw - var(--v3-max)) / 2));
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: var(--vl-space-12, 3rem);
+  }
+
+  .vl-v3-prologue__composition,
+  .vl-v3-intent__composition {
+    display: grid;
+    grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr);
+    align-items: center;
+    gap: var(--vl-opening-gap);
+  }
+
+  .vl-v3-prologue__eyebrow,
+  .vl-v3-prologue__sequence,
+  .vl-v3-prologue__footer a > span,
+  .vl-v3-intent__eyebrow,
+  .vl-v3-intent__channels,
+  .vl-v3-intent__next a > span {
+    font: 600 var(--vl-text-xs, .75rem) var(--vl-font-family-mono, monospace);
+    color: var(--vl-text-secondary);
+    text-wrap: pretty;
+  }
+
+  .vl-v3-prologue h1,
+  .vl-v3-intent h2 {
+    font-family: var(--vl-font-family-display, var(--vl-font-family));
+    line-height: 1;
+    letter-spacing: -.055em;
+    text-wrap: balance;
+    margin-block: var(--vl-space-6, 1.5rem);
+  }
+
+  .vl-v3-prologue h1 {
+    font-size: clamp(3rem, 6.5vw, 7rem);
+    max-width: 13ch;
+  }
+
+  .vl-v3-intent h2 {
+    font-size: clamp(2.5rem, 5.4vw, 5.5rem);
+    max-width: 14ch;
+  }
+
+  .vl-v3-prologue__direction {
+    color: var(--vl-color-primary);
+    font-family: var(--vl-font-family-display, var(--vl-font-family));
+    font-size: clamp(1.5rem, 3vw, 3rem);
+    margin: 0;
+  }
+
+  .vl-v3-intent__lead {
+    max-width: 36rem;
+    color: var(--vl-text-secondary);
+    line-height: 1.65;
+    margin: 0;
+  }
+
+  .vl-v3-prologue__object,
+  .vl-v3-intent__object {
+    position: relative;
+    display: grid;
+    place-items: center;
+    aspect-ratio: 1;
+    color: var(--vl-text-primary);
+    background: radial-gradient(ellipse, color-mix(in oklch, var(--vl-color-primary) 10%, transparent), transparent 70%);
+  }
+
+  .vl-v3-prologue__orbit,
+  .vl-v3-intent__orbit {
+    position: absolute;
+    inset: 8%;
+    border: var(--vl-skin-border-width, 1px) solid var(--vl-border-subtle);
+    border-radius: 50%;
+    transform: rotate(-30deg) scaleY(.7);
+    pointer-events: none;
+  }
+
+  .vl-v3-prologue__object {
+    --vl-v3-emblem-period: calc(var(--vl-duration-slow) * 30);
+    perspective: var(--vl-perspective, 1200px);
+  }
+  .vl-v3-prologue__emblem { width: 52%; aspect-ratio: 429 / 456; position: relative; transform-style: preserve-3d; }
+  .vl-v3-prologue__monogram { display: block; width: 100%; height: auto; overflow: visible; transform-origin: center; color: var(--vl-text-primary); filter: drop-shadow(0 var(--vl-space-sm) var(--vl-space-md) color-mix(in oklch, var(--vl-bg-main) 35%, transparent)); }
+  .vl-v3-prologue__object::after { content: ""; position: absolute; inset: auto 22% 14%; height: 7%; border-radius: 50%; background: radial-gradient(ellipse, color-mix(in oklch, var(--vl-text-primary) 14%, transparent), transparent 70%); pointer-events: none; }
+  .vl-v3-prologue__pause { position: absolute; inset: auto auto 0; display: flex; align-items: center; gap: var(--vl-space-sm); font: .7rem var(--vl-font-family-mono, monospace); color: var(--vl-text-secondary); cursor: pointer; }
+  .vl-v3-prologue__pause input { accent-color: var(--vl-color-primary); }
+  .vl-v3-prologue__object:has(:checked) :is(.vl-v3-prologue__emblem, .vl-v3-prologue__monogram) { animation-play-state: paused; }
+  @media (prefers-reduced-motion: no-preference) {
+    .vl-v3-prologue__monogram { animation: vl-v3-emblem-turn var(--vl-v3-emblem-period) var(--vl-ease-in-out-smooth) infinite; }
+  }
+  @keyframes vl-v3-emblem-turn {
+    0%, 25% { transform: rotateX(8deg) rotateY(-12deg) rotateZ(-6deg); }
+    65%, 100% { transform: rotateX(8deg) rotateY(348deg) rotateZ(-6deg); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .vl-v3-prologue__monogram { animation: none; transform: none; }
+  }
+
+  .vl-v3-prologue__brand,
+  .vl-v3-intent__brand {
+    width: 80%;
+    aspect-ratio: 3.5;
+    background: currentColor;
+    mask: url('/img/velora-logo.svg') center / contain no-repeat;
+  }
+
+  .vl-v3-prologue__footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: end;
+    gap: var(--vl-opening-gap);
+    padding-block-start: var(--vl-space-6, 1.5rem);
+    border-top: var(--vl-skin-border-width, 1px) solid var(--vl-border-subtle);
+  }
+
+  .vl-v3-prologue__footer p { color: var(--vl-text-secondary); line-height: 1.6; margin: 0; }
+  .vl-v3-prologue__sequence {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--vl-space-6, 1.5rem);
+    padding: 0;
+    margin-block: var(--vl-space-4, 1rem) 0;
+    list-style: none;
+  }
+
+  .vl-v3-prologue__sequence li[aria-current="step"],
+  .vl-v3-intent__channels li[aria-current="step"] {
+    color: var(--vl-text-primary);
+    border-bottom: var(--vl-skin-border-width, 1px) solid var(--vl-color-primary);
+    padding-block-end: var(--vl-space-2, .5rem);
+  }
+
+  .vl-v3-prologue__footer a,
+  .vl-v3-intent__next a {
+    display: grid;
+    gap: var(--vl-space-3, .75rem);
+    padding-block: var(--vl-space-3, .75rem);
+    color: var(--vl-text-primary);
+    text-decoration: none;
+  }
+
+  .vl-v3-prologue__footer a strong,
+  .vl-v3-intent__next a strong {
+    font-weight: 500;
+    border-bottom: var(--vl-skin-border-width, 1px) solid currentColor;
+    padding-block-end: var(--vl-space-2, .5rem);
+  }
+
+  .vl-v3-prologue__footer a:focus-visible,
+  .vl-v3-intent__next a:focus-visible,
+  .vl-v3-intent__channels code {
+    outline-offset: var(--vl-space-2, .5rem);
+  }
+
+  .vl-v3-prologue__footer a:focus-visible,
+  .vl-v3-intent__next a:focus-visible {
+    outline: var(--vl-space-1, .25rem) solid var(--vl-color-primary);
+  }
+
+  .vl-v3-intent__channels {
+    display: flex;
+    flex-direction: column;
+    align-items: start;
+    flex-wrap: nowrap;
+    gap: var(--vl-space-3, .75rem);
+    padding: 0;
+    margin-block: var(--vl-space-8, 2rem) 0;
+    list-style: none;
+  }
+
+  .vl-v3-intent__channels code {
+    display: block;
+    padding: var(--vl-space-3, .75rem) 0;
+    color: var(--vl-color-primary);
+    overflow-wrap: anywhere;
+  }
+
+  .vl-v3-intent__next {
+    display: flex;
+    justify-content: space-between;
+    align-items: end;
+    gap: var(--vl-opening-gap);
+    padding-block-start: var(--vl-space-6, 1.5rem);
+    border-top: var(--vl-skin-border-width, 1px) solid var(--vl-border-subtle);
+    color: var(--vl-text-secondary);
+    line-height: 1.6;
+    margin: 0;
+  }
+
+  @media (max-width: 70rem) {
+    .vl-v3-prologue__footer,
+    .vl-v3-intent__next {
+      align-items: stretch;
+      flex-direction: column;
+      gap: var(--vl-space-5, 1.25rem);
+    }
+    .vl-v3-prologue__footer a,
+    .vl-v3-intent__next a {
+      width: max-content;
+      max-width: 100%;
+    }
+  }
+
+  @media (max-width: 52rem) {
+    .vl-v3-prologue,
+    .vl-v3-intent {
+      min-height: auto;
+      padding-block: clamp(5.25rem, 16vw, 7rem) clamp(2rem, 7vw, 3.25rem);
+      gap: var(--vl-space-8, 2rem);
+      justify-content: flex-start;
+    }
+    .vl-v3-prologue__composition,
+    .vl-v3-intent__composition {
+      grid-template-columns: 1fr;
+      gap: var(--vl-space-6, 1.5rem);
+    }
+    .vl-v3-prologue__copy,
+    .vl-v3-prologue__footer,
+    .vl-v3-prologue__footer p {
+      max-width: none;
+    }
+    .vl-v3-prologue__copy {
+      display: grid;
+      gap: 0;
+    }
+    .vl-v3-prologue__eyebrow {
+      margin: 0;
+    }
+    .vl-v3-prologue h1 {
+      font-size: clamp(2.45rem, 9.4vw, 3.85rem);
+      max-width: 13ch;
+      margin-block: var(--vl-space-4, 1rem) var(--vl-space-3, .75rem);
+    }
+    .vl-v3-prologue__direction {
+      font-size: clamp(1.25rem, 5.5vw, 1.85rem);
+      line-height: 1.15;
+    }
+    .vl-v3-prologue__object,
+    .vl-v3-intent__object {
+      width: min(58%, 14.5rem);
+      aspect-ratio: 1;
+      justify-self: center;
+      margin-inline: auto;
+    }
+    .vl-v3-prologue__emblem { width: 58%; }
+    .vl-v3-prologue__pause {
+      inset: auto 50% -.15rem auto;
+      translate: 50% 0;
+      white-space: nowrap;
+    }
+    .vl-v3-intent h2 { font-size: clamp(2.25rem, 8vw, 3.5rem); }
+    .vl-v3-prologue__footer,
+    .vl-v3-intent__next {
+      align-items: stretch;
+      flex-direction: column;
+      gap: var(--vl-space-5, 1.25rem);
+      padding-block-start: var(--vl-space-5, 1.25rem);
+    }
+    .vl-v3-prologue__footer p {
+      font-size: .95rem;
+    }
+    .vl-v3-prologue__sequence {
+      gap: var(--vl-space-4, 1rem);
+      margin-block: var(--vl-space-3, .75rem) 0;
+    }
+    .vl-v3-prologue__footer a {
+      width: 100%;
+      padding-block: var(--vl-space-4, 1rem);
+    }
+  }
+
+  @media (max-width: 44rem) {
+    .vl-v3-prologue__object {
+      width: min(68%, 13.25rem);
+    }
+    .vl-v3-prologue h1 {
+      font-size: clamp(2.3rem, 10.5vw, 3.4rem);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .vl-v3-prologue__brand,
+    .vl-v3-intent__brand,
+    .vl-v3-intent__object {
+      animation: none;
+      transform: none;
+    }
+  }
+}

@@ -1,0 +1,31 @@
+/* Reusable Lab recipe: native clocks + readable fallback. Included in static exports. */
+@layer velora.overrides {
+  /* Baseline is readable; enhance only when the native clock is supported. */
+  [data-vl-lab-playback][vl-timeline="view"] { min-block-size: auto; }
+  [data-vl-lab-playback][vl-timeline="view"] [vl-stage] { position: relative; min-block-size: auto; }
+  [data-vl-lab-playback][vl-timeline="view"] :is([vl-enter], [vl-exit]) { animation: none; opacity: 1; transform: none; filter: none; }
+  @supports (animation-timeline: view()) {
+    @media (min-width: 540px) and (prefers-reduced-motion: no-preference) {
+      [data-vl-lab-playback][vl-timeline="view"] { min-block-size: calc(var(--vl-pin-factor) * 100svh); }
+      [data-vl-lab-playback][vl-timeline="view"] [vl-stage] { position: sticky; inset-block-start: 0; block-size: 100svh; }
+      [data-vl-lab-playback][vl-timeline="view"] [vl-stage] > [vl-enter] {
+        animation: var(--vl-enter-name) 1ms linear both;
+        animation-timeline: --vl-scene;
+        animation-range: contain var(--vl-act-start) contain var(--vl-act-end);
+      }
+      [data-vl-lab-playback][vl-timeline="view"] [vl-exit] {
+        animation: var(--vl-exit-name) 1ms linear both;
+        animation-timeline: --vl-scene;
+        animation-range: var(--vl-range);
+      }
+    }
+  }
+  [data-vl-lab-playback][vl-timeline="auto"] [vl-stage] { position: relative; min-block-size: 100svh; }
+  [data-vl-lab-playback][vl-timeline="auto"] [vl-stage] > [vl-enter] { animation-duration: calc(var(--vl-span) * var(--vl-beat)); }
+  [data-vl-lab-playback][vl-timeline="auto"] [vl-exit] { animation-timeline: auto; animation-range: normal; animation-delay: calc(var(--vl-beats) * .75 * var(--vl-beat)); animation-duration: calc(var(--vl-beats) * .25 * var(--vl-beat)); }
+  @media (prefers-reduced-motion: reduce) {
+    [data-vl-lab-playback][vl-timeline] { min-block-size: auto; }
+    [data-vl-lab-playback][vl-timeline] [vl-stage] { position: relative; block-size: auto; min-block-size: auto; }
+    [data-vl-lab-playback] :is([vl-enter], [vl-exit], [vl-loop-effect]) { animation: none; opacity: 1; transform: none; filter: none; }
+  }
+}

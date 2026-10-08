@@ -1,0 +1,719 @@
+/* ============================================================
+   04d-premium.css  —  Premium Visual Effects
+   Awwwards-grade effects: noise textures, text masks, scroll-
+   driven animations, loading states, mesh gradients, and more.
+   Pure CSS — no JavaScript required.
+   Layer: velora.components (consolidated from velora.premium).
+   ============================================================ */
+
+@layer velora.components {
+
+  /* --- @property registrations ---------------------------------- */
+
+  @property --vl-counter-value {
+    syntax: "<integer>";
+    initial-value: 0;
+    inherits: false;
+  }
+
+  /* --- Keyframes ------------------------------------------------ */
+
+  @keyframes vl-text-clip-reveal {
+    from { clip-path: inset(0 100% 0 0); }
+    to   { clip-path: inset(0 0 0 0); }
+  }
+
+  @keyframes vl-text-clip-reveal-up {
+    from {
+      clip-path: inset(0 100% 0 0);
+      transform: translateY(0.4em);
+    }
+    to {
+      clip-path: inset(0 0 0 0);
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes vl-text-clip-reveal-blur {
+    from {
+      clip-path: inset(0 100% 0 0);
+      filter: blur(8px);
+    }
+    to {
+      clip-path: inset(0 0 0 0);
+      filter: blur(0);
+    }
+  }
+
+  @keyframes vl-scroll-progress-scale {
+    from { transform: scaleX(0); }
+    to   { transform: scaleX(1); }
+  }
+
+  @keyframes vl-skeleton-shimmer {
+    from { background-position: -200% 0; }
+    to   { background-position: 200% 0; }
+  }
+
+  @keyframes vl-spinner-rotate {
+    to { transform: rotate(360deg); }
+  }
+
+  @keyframes vl-dots-bounce {
+    0%, 80%, 100% { transform: scale(0); }
+    40%           { transform: scale(1); }
+  }
+
+  @keyframes vl-text-mask-pan {
+    from { background-position: 0% 50%; }
+    to   { background-position: 100% 50%; }
+  }
+
+  @keyframes vl-mesh-drift {
+    0%   { background-position: 0% 0%, 100% 0%, 50% 100%; }
+    50%  { background-position: 100% 50%, 0% 100%, 80% 0%; }
+    100% { background-position: 0% 0%, 100% 0%, 50% 100%; }
+  }
+
+  @keyframes vl-marquee-vertical {
+    from { transform: translateY(0); }
+    to   { transform: translateY(-50%); }
+  }
+
+  @keyframes vl-counter-up {
+    from { --vl-counter-value: 0; }
+    to   { --vl-counter-value: var(--vl-counter-to, 100); }
+  }
+
+  /* ============================================================
+     1. Film Grain / Noise Overlay
+     Usage: add .vl-noise to a container (e.g. <body> or section)
+     ============================================================ */
+
+  .vl-noise {
+    position: relative;
+    isolation: isolate;
+  }
+
+  .vl-noise::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: 1;
+    pointer-events: none;
+    opacity: 0.04;
+    mix-blend-mode: overlay;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.7' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    background-repeat: repeat;
+    background-size: 256px 256px;
+  }
+
+  .vl-noise--heavy::before { opacity: 0.08; }
+  .vl-noise--light::before { opacity: 0.02; }
+
+  /* ============================================================
+     2. Text Mask — characters reveal an image or gradient
+     Usage: <h1 class="vl-text-mask" style="--vl-text-mask-src: url(hero.jpg)">
+     ============================================================ */
+
+  .vl-text-mask {
+    background-image: var(--vl-text-mask-src);
+    background-size: cover;
+    background-position: center;
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  .vl-text-mask--animate {
+    background-size: 200% 100%;
+    animation: vl-text-mask-pan 8s linear infinite alternate;
+  }
+
+  .vl-text-mask--gradient {
+    background-image: var(--vl-gradient-brand);
+  }
+
+  /* ============================================================
+     3. Text Reveal — clip-path based headline reveal
+     ============================================================ */
+
+  .vl-text-reveal {
+    clip-path: inset(0 100% 0 0);
+    animation: vl-text-clip-reveal 0.8s var(--vl-ease-cinematic) forwards;
+  }
+
+  /* Staggered word reveal — wrap each word in a <span> */
+  .vl-text-reveal--word {
+    clip-path: none;
+    animation: none;
+  }
+
+  .vl-text-reveal--word > * {
+    display: inline-block;
+    clip-path: inset(0 100% 0 0);
+    animation: vl-text-clip-reveal 0.6s var(--vl-ease-cinematic) forwards;
+  }
+
+  .vl-text-reveal--word > :nth-child(1) { animation-delay: 0s; }
+  .vl-text-reveal--word > :nth-child(2) { animation-delay: 0.08s; }
+  .vl-text-reveal--word > :nth-child(3) { animation-delay: 0.16s; }
+  .vl-text-reveal--word > :nth-child(4) { animation-delay: 0.24s; }
+  .vl-text-reveal--word > :nth-child(5) { animation-delay: 0.32s; }
+  .vl-text-reveal--word > :nth-child(6) { animation-delay: 0.40s; }
+  .vl-text-reveal--word > :nth-child(7) { animation-delay: 0.48s; }
+  .vl-text-reveal--word > :nth-child(8) { animation-delay: 0.56s; }
+
+  /* Reveal with upward slide */
+  .vl-text-reveal--up {
+    clip-path: inset(0 100% 0 0);
+    animation: vl-text-clip-reveal-up 0.8s var(--vl-ease-cinematic) forwards;
+  }
+
+  /* Reveal with blur-in */
+  .vl-text-reveal--blur {
+    clip-path: inset(0 100% 0 0);
+    animation: vl-text-clip-reveal-blur 0.8s var(--vl-ease-cinematic) forwards;
+  }
+
+  /* ============================================================
+     4. Scroll Progress Bar
+     Pure CSS scroll indicator — no JS needed.
+     Uses scroll-driven animation (Chromium 115+, Firefox 128+).
+     ============================================================ */
+
+  .vl-scroll-progress {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 3px;
+    background: var(--vl-gradient-brand);
+    transform-origin: left;
+    transform: scaleX(0);
+    animation: vl-scroll-progress-scale linear forwards;
+    animation-timeline: scroll(root);
+    z-index: var(--vl-z-toast);
+    pointer-events: none;
+    will-change: transform;
+  }
+
+  .vl-scroll-progress--glow {
+    box-shadow:
+      0 0 8px 2px color-mix(in oklch, var(--vl-color-primary) 50%, transparent),
+      0 0 20px 4px color-mix(in oklch, var(--vl-color-primary) 25%, transparent);
+  }
+
+  .vl-scroll-progress--thick {
+    height: 5px;
+  }
+
+  /* ============================================================
+     5. Loading States — skeletons, spinners, dots
+     ============================================================ */
+
+  /* --- Skeleton shimmer --- */
+
+  .vl-loading-skeleton {
+    display: block;
+    border-radius: var(--vl-radius-md);
+    background: linear-gradient(
+      90deg,
+      var(--vl-bg-inset) 25%,
+      var(--vl-bg-surface-elevated) 50%,
+      var(--vl-bg-inset) 75%
+    );
+    background-size: 200% 100%;
+    animation: vl-skeleton-shimmer 1.8s var(--vl-ease-in-out-smooth) infinite;
+    color: transparent;
+    user-select: none;
+  }
+
+  .vl-loading-skeleton--text {
+    height: 1em;
+    width: 80%;
+    border-radius: var(--vl-radius-sm);
+  }
+
+  .vl-loading-skeleton--text:nth-child(even) {
+    width: 60%;
+  }
+
+  .vl-loading-skeleton--text + .vl-loading-skeleton--text {
+    margin-top: var(--vl-space-xs);
+  }
+
+  .vl-loading-skeleton--avatar {
+    width: 3rem;
+    height: 3rem;
+    border-radius: 9999px;
+    flex-shrink: 0;
+  }
+
+  .vl-loading-skeleton--card {
+    width: 100%;
+    min-height: 12rem;
+    border-radius: var(--vl-radius-lg);
+  }
+
+  /* --- Spinner (border technique) --- */
+
+  .vl-loading-spinner {
+    --vl-spinner-size: 2rem;
+    --vl-spinner-weight: 3px;
+
+    display: inline-block;
+    width: var(--vl-spinner-size);
+    height: var(--vl-spinner-size);
+    border: var(--vl-spinner-weight) solid
+      color-mix(in oklch, var(--vl-color-primary) 20%, transparent);
+    border-top-color: var(--vl-color-primary);
+    border-radius: 9999px;
+    animation: vl-spinner-rotate 0.7s linear infinite;
+  }
+
+  .vl-loading-spinner--sm {
+    --vl-spinner-size: 1.25rem;
+    --vl-spinner-weight: 2px;
+  }
+
+  .vl-loading-spinner--lg {
+    --vl-spinner-size: 3rem;
+    --vl-spinner-weight: 4px;
+  }
+
+  /* --- Bouncing dots — use <span class="vl-loading-dots"><span></span></span> --- */
+
+  .vl-loading-dots {
+    display: inline-flex;
+    gap: var(--vl-space-2xs);
+    align-items: center;
+  }
+
+  .vl-loading-dots::before,
+  .vl-loading-dots > span,
+  .vl-loading-dots::after {
+    content: "";
+    display: block;
+    width: 0.5rem;
+    height: 0.5rem;
+    border-radius: 9999px;
+    background: var(--vl-color-primary);
+    animation: vl-dots-bounce 1.4s var(--vl-ease-in-out-smooth) infinite both;
+  }
+
+  .vl-loading-dots::before  { animation-delay: -0.32s; }
+  .vl-loading-dots > span   { animation-delay: -0.16s; }
+  .vl-loading-dots::after   { animation-delay: 0s; }
+
+  /* ============================================================
+     6. Spotlight — radial glow that follows the cursor
+     Set --vl-mouse-x / --vl-mouse-y via inline style or a
+     tiny mousemove handler. Works centered as a static fallback.
+     ============================================================ */
+
+  .vl-spotlight {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .vl-spotlight::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(
+      600px circle at var(--vl-mouse-x, 50%) var(--vl-mouse-y, 50%),
+      color-mix(in oklch, var(--vl-color-primary) 6%, transparent),
+      transparent 60%
+    );
+    pointer-events: none;
+    z-index: 1;
+    transition: background var(--vl-duration-fast) linear;
+  }
+
+  .vl-spotlight--strong::before {
+    background: radial-gradient(
+      600px circle at var(--vl-mouse-x, 50%) var(--vl-mouse-y, 50%),
+      color-mix(in oklch, var(--vl-color-primary) 12%, transparent),
+      transparent 60%
+    );
+  }
+
+  .vl-spotlight--accent::before {
+    background: radial-gradient(
+      600px circle at var(--vl-mouse-x, 50%) var(--vl-mouse-y, 50%),
+      color-mix(in oklch, var(--vl-color-accent) 8%, transparent),
+      transparent 60%
+    );
+  }
+
+  /* ============================================================
+     7. Magnetic Hover Card
+     Tilts toward cursor via --vl-mag-x / --vl-mag-y custom props.
+     Pure CSS fallback: gentle tilt on :hover.
+     ============================================================ */
+
+  .vl-magnetic {
+    transition: transform var(--vl-transition-fast);
+    transform:
+      perspective(800px)
+      rotateY(var(--vl-mag-x, 0deg))
+      rotateX(var(--vl-mag-y, 0deg));
+    will-change: transform;
+  }
+
+  .vl-magnetic:hover {
+    transform:
+      perspective(800px)
+      rotateY(var(--vl-mag-x, -2deg))
+      rotateX(var(--vl-mag-y, 1.5deg))
+      scale(1.02);
+  }
+
+  /* ============================================================
+     8. Gradient Mesh Backgrounds
+     Multi-layer radial gradients that mimic mesh-gradient tools.
+     ============================================================ */
+
+  .vl-gradient-mesh {
+    background:
+      radial-gradient(ellipse at 20% 50%, oklch(55% 0.2 275 / 0.3), transparent 50%),
+      radial-gradient(ellipse at 80% 20%, oklch(58% 0.22 350 / 0.25), transparent 50%),
+      radial-gradient(ellipse at 50% 80%, oklch(62% 0.14 155 / 0.2), transparent 50%),
+      var(--vl-bg-main);
+  }
+
+  .vl-gradient-mesh--animate {
+    background-size: 200% 200%, 200% 200%, 200% 200%, 100% 100%;
+    animation: vl-mesh-drift 20s var(--vl-ease-in-out-smooth) infinite;
+  }
+
+  .vl-gradient-mesh--subtle {
+    background:
+      radial-gradient(ellipse at 20% 50%, oklch(55% 0.2 275 / 0.12), transparent 50%),
+      radial-gradient(ellipse at 80% 20%, oklch(58% 0.22 350 / 0.1), transparent 50%),
+      radial-gradient(ellipse at 50% 80%, oklch(62% 0.14 155 / 0.08), transparent 50%),
+      var(--vl-bg-main);
+  }
+
+  .vl-gradient-mesh--warm {
+    background:
+      radial-gradient(ellipse at 20% 50%, oklch(60% 0.22 30 / 0.3), transparent 50%),
+      radial-gradient(ellipse at 80% 20%, oklch(65% 0.2 50 / 0.25), transparent 50%),
+      radial-gradient(ellipse at 50% 80%, oklch(55% 0.18 15 / 0.2), transparent 50%),
+      var(--vl-bg-main);
+  }
+
+  .vl-gradient-mesh--cool {
+    background:
+      radial-gradient(ellipse at 20% 50%, oklch(55% 0.18 230 / 0.3), transparent 50%),
+      radial-gradient(ellipse at 80% 20%, oklch(52% 0.2 260 / 0.25), transparent 50%),
+      radial-gradient(ellipse at 50% 80%, oklch(60% 0.15 200 / 0.2), transparent 50%),
+      var(--vl-bg-main);
+  }
+
+  /* ============================================================
+     9. Custom Cursor Styles
+     ============================================================ */
+
+  .vl-cursor-pointer   { cursor: pointer; }
+  .vl-cursor-grab      { cursor: grab; }
+  .vl-cursor-grab:active { cursor: grabbing; }
+  .vl-cursor-none      { cursor: none; }
+  .vl-cursor-crosshair { cursor: crosshair; }
+
+  /* ============================================================
+     10. Animated Counter (CSS @property)
+     Usage: <span class="vl-counter" style="--vl-counter-to: 42">
+     Pair with .vl-counter--scroll for scroll-driven counting.
+     ============================================================ */
+
+  .vl-counter {
+    counter-reset: vl-count var(--vl-counter-value);
+    transition: --vl-counter-value 2s var(--vl-ease-cinematic);
+  }
+
+  .vl-counter::after {
+    content: counter(vl-count);
+  }
+
+  /* Fallback: browsers without @property can't animate custom properties.
+     Jump straight to the target value so users still see the final number. */
+  @supports not (background: paint(a)) {
+    .vl-counter {
+      counter-reset: vl-count var(--vl-counter-to, 100);
+      transition: none;
+    }
+  }
+
+  .vl-counter--scroll {
+    animation: vl-counter-up linear forwards;
+    animation-timeline: view(block);
+    animation-range: entry 10% cover 50%;
+  }
+
+  /* ============================================================
+     11. Vertical Marquee
+     Duplicate children inside the inner wrapper so content
+     loops seamlessly: <div class="vl-marquee-v"><div>……</div></div>
+     ============================================================ */
+
+  .vl-marquee-v {
+    overflow: hidden;
+  }
+
+  .vl-marquee-v > * {
+    display: flex;
+    flex-direction: column;
+    animation: vl-marquee-vertical var(--vl-marquee-duration, 20s) linear infinite;
+  }
+
+  .vl-marquee-v--reverse > * {
+    animation-direction: reverse;
+  }
+
+  .vl-marquee-v:hover > * {
+    animation-play-state: paused;
+  }
+
+  /* ============================================================
+     12. Corner Ribbon
+     Usage:
+       <div style="position:relative">
+         <div class="vl-ribbon"><span>New</span></div>
+         …card content…
+       </div>
+     ============================================================ */
+
+  .vl-ribbon {
+    position: absolute;
+    top: 0;
+    right: 0;
+    overflow: hidden;
+    width: 8rem;
+    height: 8rem;
+    pointer-events: none;
+    z-index: 1;
+  }
+
+  .vl-ribbon span {
+    display: block;
+    position: absolute;
+    top: 1.5rem;
+    right: -2rem;
+    width: 12rem;
+    padding: var(--vl-space-3xs) 0;
+    background: var(--vl-gradient-brand);
+    color: #fff;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-align: center;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    transform: rotate(45deg);
+    box-shadow: var(--vl-shadow-sm);
+    pointer-events: auto;
+  }
+
+  .vl-ribbon--left {
+    right: auto;
+    left: 0;
+  }
+
+  .vl-ribbon--left span {
+    right: auto;
+    left: -2rem;
+    transform: rotate(-45deg);
+  }
+
+  /* ============================================================
+     13. Premium Surface Utilities
+     ============================================================ */
+
+  @keyframes vl-premium-aurora {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+  }
+
+  .vl-glass {
+    background: var(--vl-glass-bg, oklch(100% 0 0 / 0.08));
+    border: 1px solid color-mix(in oklch, var(--vl-border-subtle) 44%, transparent);
+    backdrop-filter: blur(14px) saturate(1.35);
+    -webkit-backdrop-filter: blur(14px) saturate(1.35);
+  }
+
+  .vl-glow {
+    box-shadow:
+      0 0.35rem 1.5rem color-mix(in oklch, var(--vl-color-primary) 22%, transparent),
+      0 0 0 1px color-mix(in oklch, var(--vl-color-primary) 30%, transparent) inset;
+  }
+
+  .vl-aurora {
+    background:
+      linear-gradient(
+        120deg,
+        color-mix(in oklch, var(--vl-color-primary) 55%, var(--vl-bg-surface-elevated)),
+        color-mix(in oklch, var(--vl-color-accent, var(--vl-color-secondary)) 48%, var(--vl-bg-main)),
+        color-mix(in oklch, var(--vl-color-primary) 36%, var(--vl-bg-inset))
+      );
+    background-size: 240% 240%;
+    animation: vl-premium-aurora 12s var(--vl-ease-in-out-smooth) infinite;
+  }
+
+  .vl-gradient-text {
+    background-image: linear-gradient(
+      120deg,
+      color-mix(in oklch, var(--vl-color-primary) 78%, white),
+      color-mix(in oklch, var(--vl-color-accent, var(--vl-color-secondary)) 70%, white)
+    );
+    background-clip: text;
+    -webkit-background-clip: text;
+    color: transparent;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .vl-depth-card {
+    border: 1px solid color-mix(in oklch, var(--vl-border-subtle) 72%, transparent);
+    box-shadow:
+      0 10px 24px color-mix(in oklch, black 20%, transparent),
+      0 1px 0 color-mix(in oklch, white 10%, transparent) inset;
+    transform: translateZ(0);
+    transition:
+      transform var(--vl-transition-normal) var(--vl-ease-cinematic),
+      box-shadow var(--vl-transition-normal) var(--vl-ease-cinematic);
+  }
+
+  .vl-depth-card:is(:hover, :focus-within) {
+    transform: translate3d(0, -6px, 0);
+    box-shadow:
+      0 18px 40px color-mix(in oklch, black 28%, transparent),
+      0 0 0 1px color-mix(in oklch, var(--vl-color-primary) 26%, transparent) inset;
+  }
+
+  .vl-border-trace {
+    position: relative;
+    isolation: isolate;
+  }
+
+  .vl-border-trace::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: 1px;
+    background: linear-gradient(
+      135deg,
+      color-mix(in oklch, var(--vl-color-primary) 76%, transparent),
+      color-mix(in oklch, var(--vl-color-accent, var(--vl-color-primary)) 64%, transparent),
+      color-mix(in oklch, var(--vl-color-primary) 38%, transparent)
+    );
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    opacity: 0.66;
+    pointer-events: none;
+  }
+
+  .vl-surface-premium {
+    background:
+      radial-gradient(circle at 14% 12%, color-mix(in oklch, var(--vl-color-primary) 16%, transparent), transparent 48%),
+      linear-gradient(160deg, color-mix(in oklch, var(--vl-bg-surface-elevated) 92%, transparent), color-mix(in oklch, var(--vl-bg-inset) 86%, transparent));
+    border: 1px solid color-mix(in oklch, var(--vl-border-subtle) 72%, transparent);
+    box-shadow: 0 16px 44px color-mix(in oklch, black 24%, transparent);
+  }
+
+  .vl-frame-cinematic {
+    position: relative;
+    border: 1px solid color-mix(in oklch, var(--vl-border-subtle) 56%, transparent);
+    overflow: clip;
+  }
+
+  .vl-frame-cinematic::before,
+  .vl-frame-cinematic::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: clamp(0.8rem, 2.2vw, 1.6rem);
+    background: color-mix(in oklch, black 38%, transparent);
+    pointer-events: none;
+    z-index: 1;
+  }
+
+  .vl-frame-cinematic::before { top: 0; }
+  .vl-frame-cinematic::after { bottom: 0; }
+
+  /* ============================================================
+     Reduced Motion
+     Disable or simplify every animation for a11y compliance.
+     ============================================================ */
+
+  @media (prefers-reduced-motion: reduce) {
+
+    /* Text reveals — show immediately */
+    .vl-text-reveal,
+    .vl-text-reveal--up,
+    .vl-text-reveal--blur,
+    .vl-text-reveal--word > * {
+      clip-path: none;
+      filter: none;
+      transform: none;
+      animation: none;
+    }
+
+    /* Text mask pan */
+    .vl-text-mask--animate {
+      animation: none;
+    }
+
+    /* Skeleton shimmer → static placeholder */
+    .vl-loading-skeleton {
+      animation: none;
+    }
+
+    /* Spinner → slower rotation (still communicates "loading") */
+    .vl-loading-spinner {
+      animation-duration: 1.5s;
+    }
+
+    /* Dots → static */
+    .vl-loading-dots::before,
+    .vl-loading-dots > span,
+    .vl-loading-dots::after {
+      animation: none;
+      opacity: 0.6;
+    }
+
+    /* Mesh drift */
+    .vl-gradient-mesh--animate {
+      animation: none;
+    }
+
+    .vl-aurora {
+      animation: none;
+      background-position: 50% 50%;
+    }
+
+    .vl-depth-card:is(:hover, :focus-within) {
+      transform: none;
+    }
+
+    /* Marquee */
+    .vl-marquee-v > * {
+      animation: none;
+    }
+
+    /* Counter — jump to final value */
+    .vl-counter--scroll {
+      animation: none;
+      --vl-counter-value: var(--vl-counter-to, 100);
+    }
+
+    /* Scroll progress — allow (it's non-distracting) but remove glow */
+    .vl-scroll-progress--glow {
+      box-shadow: none;
+    }
+  }
+
+} /* end @layer velora.components (premium) */

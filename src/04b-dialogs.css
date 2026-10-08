@@ -1,0 +1,572 @@
+@layer velora.components {
+    /*
+     * Velora — Dialogs & overlays layer
+     * Native <dialog>, [popover], @starting-style, transition-behavior.
+     * All classes: .vl-*   All custom props: --vl-*
+     * NO JavaScript required for open/close animations.
+     */
+
+    /* =========================================================================
+       1. Modal Dialog  —  <dialog class="vl-dialog">
+       ========================================================================= */
+
+    /* Optional native anchor contract for popovers. Positional enhancement only. */
+    .vl-anchor-scope {
+        anchor-scope: --vl-anchor;
+    }
+
+    .vl-anchor {
+        anchor-name: --vl-anchor;
+    }
+
+    @supports (position-anchor: --vl-anchor) {
+        .vl-popover--anchored {
+            position: fixed;
+            position-anchor: --vl-anchor;
+            position-area: bottom span-right;
+            position-try-fallbacks: flip-block, flip-inline;
+            margin: var(--vl-space-xs) 0;
+        }
+    }
+    .vl-dialog {
+        display: block;
+        max-width: 32rem;
+        max-height: 85dvh;
+        overflow: auto;
+        margin: auto;
+        padding: var(--vl-space-lg);
+        color: var(--vl-text-primary);
+        font-family: var(--vl-font-family);
+        background: var(--vl-bg-surface-elevated);
+        border: 1px solid var(--vl-border-subtle);
+        border-radius: var(--vl-radius-xl);
+        box-shadow: var(--vl-shadow-lg);
+        opacity: 1;
+        transform: scale(1) translateY(0);
+        transition:
+            opacity var(--vl-transition-normal),
+            transform var(--vl-transition-normal),
+            overlay var(--vl-transition-normal) allow-discrete,
+            display var(--vl-transition-normal) allow-discrete;
+    }
+
+    .vl-dialog:not([open]) {
+        display: none;
+    }
+
+    .vl-dialog::backdrop {
+        background: var(--vl-bg-overlay);
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+        opacity: 1;
+        transition:
+            opacity var(--vl-transition-normal),
+            backdrop-filter var(--vl-transition-normal),
+            overlay var(--vl-transition-normal) allow-discrete,
+            display var(--vl-transition-normal) allow-discrete;
+    }
+
+    /* Entry animation */
+    @starting-style {
+        .vl-dialog[open] {
+            opacity: 0;
+            transform: scale(0.95) translateY(1rem);
+        }
+
+        .vl-dialog[open]::backdrop {
+            opacity: 0;
+            backdrop-filter: blur(0);
+            -webkit-backdrop-filter: blur(0);
+        }
+    }
+
+    /* --- Sub-elements --- */
+    .vl-dialog__header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: var(--vl-space-sm);
+        margin-block-end: var(--vl-space-md);
+    }
+
+    .vl-dialog__title {
+        margin: 0;
+        font-family: var(--vl-font-family-display);
+        font-size: var(--vl-font-size-xl);
+        font-weight: var(--vl-font-weight-semibold);
+        line-height: var(--vl-leading-tight);
+        color: var(--vl-text-primary);
+    }
+
+    .vl-dialog__body {
+        color: var(--vl-text-secondary);
+        font-size: var(--vl-font-size-md);
+        line-height: var(--vl-leading-relaxed);
+    }
+
+    .vl-dialog__body > * + * {
+        margin-block-start: var(--vl-space-sm);
+    }
+
+    .vl-dialog__footer {
+        display: flex;
+        justify-content: flex-end;
+        gap: var(--vl-space-sm);
+        margin-block-start: var(--vl-space-lg);
+        padding-block-start: var(--vl-space-md);
+        border-top: 1px solid var(--vl-border-subtle);
+    }
+
+    .vl-dialog__close {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        width: 2rem;
+        height: 2rem;
+        padding: 0;
+        color: var(--vl-text-muted);
+        background: transparent;
+        border: none;
+        border-radius: var(--vl-radius-sm);
+        cursor: pointer;
+        transition:
+            color var(--vl-transition-fast),
+            background var(--vl-transition-fast);
+    }
+
+    .vl-dialog__close:hover {
+        color: var(--vl-text-primary);
+        background: color-mix(in oklch, var(--vl-bg-surface) 60%, transparent);
+    }
+
+    .vl-dialog__close:focus-visible {
+        outline: var(--vl-focus-ring-width) solid var(--vl-focus-ring-color);
+        outline-offset: var(--vl-focus-ring-offset);
+    }
+
+    /* =========================================================================
+       2. Drawer variant  —  <dialog class="vl-dialog vl-dialog--drawer">
+       ========================================================================= */
+    .vl-dialog--drawer {
+        position: fixed;
+        inset-block: 0;
+        inset-inline-end: 0;
+        margin: 0;
+        width: min(24rem, 90vw);
+        max-width: none;
+        max-height: 100dvh;
+        height: 100dvh;
+        border-radius: var(--vl-radius-xl) 0 0 var(--vl-radius-xl);
+        transform: translateX(0);
+        transition:
+            opacity var(--vl-transition-normal),
+            transform var(--vl-transition-normal),
+            overlay var(--vl-transition-normal) allow-discrete,
+            display var(--vl-transition-normal) allow-discrete;
+    }
+
+    .vl-dialog--drawer::backdrop {
+        background: oklch(0% 0 0 / 0.5);
+        backdrop-filter: blur(4px);
+        -webkit-backdrop-filter: blur(4px);
+    }
+
+    @starting-style {
+        .vl-dialog--drawer[open] {
+            opacity: 1;
+            transform: translateX(100%);
+        }
+
+        .vl-dialog--drawer[open]::backdrop {
+            opacity: 0;
+        }
+    }
+
+    /* =========================================================================
+       3. Fullscreen variant  —  <dialog class="vl-dialog vl-dialog--fullscreen">
+       ========================================================================= */
+    .vl-dialog--fullscreen {
+        width: 100dvw;
+        max-width: 100dvw;
+        height: 100dvh;
+        max-height: 100dvh;
+        margin: 0;
+        border: none;
+        border-radius: 0;
+        transform: scale(1);
+        transition:
+            opacity var(--vl-transition-slow),
+            transform var(--vl-transition-slow),
+            overlay var(--vl-transition-slow) allow-discrete,
+            display var(--vl-transition-slow) allow-discrete;
+    }
+
+    .vl-dialog--fullscreen::backdrop {
+        backdrop-filter: none;
+        -webkit-backdrop-filter: none;
+    }
+
+    @starting-style {
+        .vl-dialog--fullscreen[open] {
+            opacity: 0;
+            transform: scale(1.03);
+        }
+
+        .vl-dialog--fullscreen[open]::backdrop {
+            opacity: 0;
+        }
+    }
+
+    /* =========================================================================
+       4. Popover  —  <div popover class="vl-popover">
+       ========================================================================= */
+    .vl-popover {
+        position: fixed;
+        inset: unset;
+        margin: 0;
+        padding: var(--vl-space-sm) var(--vl-space-md);
+        max-width: 20rem;
+        color: var(--vl-text-primary);
+        font-family: var(--vl-font-family);
+        font-size: var(--vl-font-size-sm);
+        line-height: var(--vl-leading-normal);
+        background: var(--vl-bg-surface-elevated);
+        border: 1px solid var(--vl-border-subtle);
+        border-radius: var(--vl-radius-lg);
+        box-shadow: var(--vl-shadow-lg);
+        opacity: 1;
+        transform: scale(1);
+        transition:
+            opacity var(--vl-transition-fast),
+            transform var(--vl-transition-fast),
+            overlay var(--vl-transition-fast) allow-discrete,
+            display var(--vl-transition-fast) allow-discrete;
+    }
+
+    .vl-popover:not(:popover-open) {
+        display: none;
+    }
+
+    .vl-popover::before {
+        content: "";
+        position: absolute;
+        bottom: 100%;
+        left: 50%;
+        translate: -50% 0;
+        border: 6px solid transparent;
+        border-bottom-color: var(--vl-bg-surface-elevated);
+    }
+
+    @starting-style {
+        .vl-popover:popover-open {
+            opacity: 0;
+            transform: scale(0.96) translateY(4px);
+        }
+    }
+
+    /* =========================================================================
+       5. Tooltip  —  pure CSS hover reveal
+       <span class="vl-tooltip-trigger">
+           Hover me
+           <span class="vl-tooltip" role="tooltip">Tip</span>
+       </span>
+       ========================================================================= */
+    .vl-tooltip-trigger {
+        position: relative;
+        display: inline-flex;
+        cursor: default;
+    }
+
+    .vl-tooltip {
+        position: absolute;
+        z-index: var(--vl-z-toast);
+        bottom: calc(100% + 6px);
+        left: 50%;
+        translate: -50% 0;
+        padding: var(--vl-space-xs) var(--vl-space-sm);
+        max-width: 16rem;
+        width: max-content;
+        font-family: var(--vl-font-family);
+        font-size: var(--vl-font-size-xs);
+        line-height: var(--vl-leading-snug);
+        color: var(--vl-text-primary);
+        background: var(--vl-bg-inset);
+        border-radius: var(--vl-radius-sm);
+        box-shadow: var(--vl-shadow-md);
+        pointer-events: none;
+        opacity: 0;
+        transform: translateY(4px);
+        transition:
+            opacity var(--vl-transition-fast),
+            transform var(--vl-transition-fast);
+    }
+
+    /* Arrow */
+    .vl-tooltip::after {
+        content: "";
+        position: absolute;
+        top: 100%;
+        left: 50%;
+        translate: -50% 0;
+        border: 5px solid transparent;
+        border-top-color: var(--vl-bg-inset);
+    }
+
+    .vl-tooltip-trigger:hover > .vl-tooltip,
+    .vl-tooltip-trigger:focus-within > .vl-tooltip {
+        opacity: 1;
+        transform: translateY(0);
+    }
+
+    /* --- Directional variants --- */
+    .vl-tooltip--bottom {
+        bottom: auto;
+        top: calc(100% + 6px);
+        transform: translateY(-4px);
+    }
+
+    .vl-tooltip--bottom::after {
+        top: auto;
+        bottom: 100%;
+        border-top-color: transparent;
+        border-bottom-color: var(--vl-bg-inset);
+    }
+
+    .vl-tooltip-trigger:hover > .vl-tooltip--bottom,
+    .vl-tooltip-trigger:focus-within > .vl-tooltip--bottom {
+        transform: translateY(0);
+    }
+
+    .vl-tooltip--left {
+        bottom: auto;
+        left: auto;
+        top: 50%;
+        right: calc(100% + 6px);
+        translate: 0 -50%;
+        transform: translateX(4px);
+    }
+
+    .vl-tooltip--left::after {
+        top: 50%;
+        left: 100%;
+        bottom: auto;
+        translate: 0 -50%;
+        border-top-color: transparent;
+        border-left-color: var(--vl-bg-inset);
+    }
+
+    .vl-tooltip-trigger:hover > .vl-tooltip--left,
+    .vl-tooltip-trigger:focus-within > .vl-tooltip--left {
+        transform: translateX(0);
+    }
+
+    .vl-tooltip--right {
+        bottom: auto;
+        left: calc(100% + 6px);
+        top: 50%;
+        translate: 0 -50%;
+        transform: translateX(-4px);
+    }
+
+    .vl-tooltip--right::after {
+        top: 50%;
+        left: auto;
+        right: 100%;
+        bottom: auto;
+        translate: 0 -50%;
+        border-top-color: transparent;
+        border-right-color: var(--vl-bg-inset);
+    }
+
+    .vl-tooltip-trigger:hover > .vl-tooltip--right,
+    .vl-tooltip-trigger:focus-within > .vl-tooltip--right {
+        transform: translateX(0);
+    }
+
+    /* =========================================================================
+       6. Toast  —  <div popover="manual" class="vl-toast">
+       ========================================================================= */
+    .vl-toast {
+        position: fixed;
+        inset: unset;
+        bottom: var(--vl-space-lg);
+        right: var(--vl-space-lg);
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: var(--vl-space-sm);
+        padding: var(--vl-space-sm) var(--vl-space-md);
+        min-width: 16rem;
+        max-width: 24rem;
+        color: var(--vl-text-primary);
+        font-family: var(--vl-font-family);
+        font-size: var(--vl-font-size-sm);
+        line-height: var(--vl-leading-normal);
+        background: var(--vl-bg-surface);
+        border: 1px solid var(--vl-border-subtle);
+        border-radius: var(--vl-radius-lg);
+        box-shadow: var(--vl-shadow-lg);
+        opacity: 1;
+        transform: translateX(0);
+        transition:
+            opacity var(--vl-transition-normal),
+            transform var(--vl-transition-normal),
+            overlay var(--vl-transition-normal) allow-discrete,
+            display var(--vl-transition-normal) allow-discrete;
+    }
+
+    .vl-toast:not(:popover-open) {
+        display: none;
+    }
+
+    @starting-style {
+        .vl-toast:popover-open {
+            opacity: 0;
+            transform: translateX(calc(100% + var(--vl-space-lg)));
+        }
+    }
+
+    .vl-toast__icon {
+        flex-shrink: 0;
+        width: 1.25rem;
+        height: 1.25rem;
+    }
+
+    .vl-toast__content {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .vl-toast__close {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        width: 1.5rem;
+        height: 1.5rem;
+        padding: 0;
+        color: var(--vl-text-muted);
+        background: transparent;
+        border: none;
+        border-radius: var(--vl-radius-sm);
+        cursor: pointer;
+        transition: color var(--vl-transition-fast);
+    }
+
+    .vl-toast__close:hover {
+        color: var(--vl-text-primary);
+    }
+
+    /* Color variants — left accent border */
+    .vl-toast--success {
+        border-inline-start: 3px solid var(--vl-color-success);
+    }
+
+    .vl-toast--warning {
+        border-inline-start: 3px solid var(--vl-color-warning);
+    }
+
+    .vl-toast--danger {
+        border-inline-start: 3px solid var(--vl-color-danger);
+    }
+
+    /* =========================================================================
+       7. Command Palette  —  <dialog class="vl-dialog vl-command">
+       ========================================================================= */
+    .vl-command {
+        max-width: 40rem;
+        width: 90vw;
+        max-height: 70dvh;
+        margin-block-start: 15vh;
+        margin-inline: auto;
+        padding: 0;
+        border-radius: var(--vl-radius-2xl);
+        overflow: hidden;
+    }
+
+    @starting-style {
+        .vl-command[open] {
+            opacity: 0;
+            transform: scale(0.98) translateY(-0.5rem);
+        }
+
+        .vl-command[open]::backdrop {
+            opacity: 0;
+            backdrop-filter: blur(0);
+            -webkit-backdrop-filter: blur(0);
+        }
+    }
+
+    .vl-command__input {
+        display: block;
+        width: 100%;
+        padding: var(--vl-space-md) var(--vl-space-lg);
+        font-family: var(--vl-font-family);
+        font-size: var(--vl-font-size-lg);
+        color: var(--vl-text-primary);
+        background: transparent;
+        border: none;
+        border-bottom: 1px solid var(--vl-border-subtle);
+        outline: none;
+    }
+
+    .vl-command__input::placeholder {
+        color: var(--vl-text-muted);
+    }
+
+    .vl-command__list {
+        list-style: none;
+        margin: 0;
+        padding: var(--vl-space-xs);
+        overflow-y: auto;
+        max-height: calc(70dvh - 4rem);
+    }
+
+    .vl-command__item {
+        display: flex;
+        align-items: center;
+        gap: var(--vl-space-sm);
+        padding: var(--vl-space-xs) var(--vl-space-sm);
+        font-size: var(--vl-font-size-sm);
+        color: var(--vl-text-secondary);
+        border-radius: var(--vl-radius-md);
+        cursor: default;
+        transition:
+            background var(--vl-transition-fast),
+            color var(--vl-transition-fast);
+    }
+
+    .vl-command__item:hover,
+    .vl-command__item[aria-selected="true"] {
+        background: color-mix(in oklch, var(--vl-color-primary) 12%, transparent);
+        color: var(--vl-text-primary);
+    }
+
+    .vl-command__item:active {
+        background: color-mix(in oklch, var(--vl-color-primary) 20%, transparent);
+    }
+
+    /* =========================================================================
+       Reduced motion
+       ========================================================================= */
+    @media (prefers-reduced-motion: reduce) {
+        .vl-dialog,
+        .vl-dialog::backdrop,
+        .vl-popover,
+        .vl-toast {
+            transition-duration: 0s;
+        }
+
+        .vl-tooltip {
+            transition: none;
+        }
+
+        /* Remove blur from backdrops — compositing cost */
+        .vl-dialog::backdrop,
+        .vl-dialog--drawer::backdrop {
+            backdrop-filter: none;
+            -webkit-backdrop-filter: none;
+        }
+    }
+}

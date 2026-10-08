@@ -1,0 +1,7 @@
+/**
+ * Velora motion extended bundle.
+ * Includes advanced motion effects and extended choreography.
+ */
+@layer velora.reset, velora.tokens, velora.layout, velora.motion, velora.components, velora.transitions, velora.utilities, velora.overrides;
+
+@import "./03b-motion-extended.css";

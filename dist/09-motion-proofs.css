@@ -1,0 +1,17 @@
+/* Lab chrome; never loaded by the independent motion-core fixtures. */
+@layer velora.components {
+  .vl-proof-lab { max-width:92rem; margin:auto; padding:8rem max(1rem,4vw) 4rem; padding-inline-end:max(10rem,4vw); }
+  .vl-proof-lab h1 { font:600 clamp(3rem,6vw,6rem)/.95 var(--vl-font-family-display); letter-spacing:-.05em; }
+  .vl-proof-lab p { color:var(--vl-text-secondary); line-height:1.6; }
+  .vl-proof-lab a { color:var(--vl-color-primary); }
+  .vl-proof { scroll-margin-top:6rem; margin-block:4rem; border-top:1px solid var(--vl-border-subtle); padding-top:2rem; }
+  .vl-proof h2 { font:600 clamp(2rem,4vw,3.5rem)/1 var(--vl-font-family-display); letter-spacing:-.035em; }
+  .vl-proof__panes { display:grid; grid-template-columns:minmax(0,1.2fr) minmax(0,1fr); gap:var(--vl-space-lg); }
+  .vl-proof__panes > div { min-width:0; }
+  .vl-proof iframe { width:100%; height:38rem; border:1px solid var(--vl-border-subtle); border-radius:var(--vl-radius-lg); background:var(--vl-bg-inset); }
+  .vl-proof pre { overflow:auto; max-height:38rem; padding:var(--vl-space-md); background:var(--vl-bg-inset); border:1px solid var(--vl-border-subtle); font:.75rem/1.6 var(--vl-font-family-mono); }
+  .vl-proof details { padding-block:var(--vl-space-sm); }
+  .vl-proof__tag { font:.75rem var(--vl-font-family-mono); color:var(--vl-color-primary); }
+  @media (max-width:64rem) { .vl-proof-lab { padding-inline:1rem 4rem; } .vl-proof__panes { grid-template-columns:minmax(0,1fr); } .vl-proof__panes > div { min-width:0; }
+  .vl-proof iframe { height:34rem; } }
+}
