@@ -12,7 +12,7 @@ execFileSync('npm', ['install', join(temp, pack.filename), '--prefix', temp, '--
 const require = createRequire(join(temp, 'consumer.cjs'));
 const pkg = JSON.parse(readFileSync('package.json'));
 for (const [entry, path] of Object.entries(pkg.exports)) {
-  assert.equal(require.resolve(entry === '.' ? '@velora/css' : '@velora/css/' + entry.slice(2)), realpathSync(resolve(temp,'node_modules/@velora/css',path)));
+  assert.equal(require.resolve(entry === '.' ? '@veloracss.io/css' : '@veloracss.io/css/' + entry.slice(2)), realpathSync(resolve(temp,'node_modules/@veloracss.io/css',path)));
 }
-assert.equal(readdirSync(join(temp,'node_modules/@velora/css/src')).length, 43);
+assert.equal(readdirSync(join(temp,'node_modules/@veloracss.io/css/src')).length, 43);
 console.log('Isolated tarball installation and all 10 entrypoints passed.');

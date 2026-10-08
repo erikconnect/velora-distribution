@@ -1,4 +1,4 @@
-# @velora/css
+# @veloracss.io/css
 
 Declarative CSS motion with zero animation runtime JavaScript. Optional Velora Skins layer.
 
@@ -7,11 +7,11 @@ Prepared for distribution; not yet published to npm.
 After publication:
 
 ```sh
-npm install @velora/css
+npm install @veloracss.io/css
 ```
 
 ```css
-@import "@velora/css/motion-core";
+@import "@veloracss.io/css/motion-core";
 ```
 
 Documentation: https://docs.veloracss.io/

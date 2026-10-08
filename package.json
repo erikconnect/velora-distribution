@@ -1,5 +1,5 @@
 {
-  "name": "@velora/css",
+  "name": "@veloracss.io/css",
   "version": "1.0.0",
   "description": "Declarative CSS motion engine (host-agnostic) with optional Velora theme skin",
   "license": "ISC",
