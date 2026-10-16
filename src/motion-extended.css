@@ -1,6 +1,7 @@
 /**
  * Velora motion extended bundle.
  * Includes advanced motion effects and extended choreography.
+ * Add-on: load it together with motion-core (keyframes, tokens and the shared stagger delay live there).
  */
 @layer velora.reset, velora.tokens, velora.layout, velora.motion, velora.components, velora.transitions, velora.utilities, velora.overrides;
 

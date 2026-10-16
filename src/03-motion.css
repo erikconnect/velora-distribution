@@ -355,6 +355,11 @@
         to   { transform: rotate(360deg) translateX(var(--vl-orbit-radius, 2.5rem)) rotate(-360deg); }
     }
 
+    @keyframes vl-sway {
+        from { rotate: y calc(var(--vl-sway-angle, 20deg) * -1); }
+        to   { rotate: y var(--vl-sway-angle, 20deg); }
+    }
+
     @keyframes vl-rock {
         0%, 100% { transform: rotate(-4deg); }
         50%      { transform: rotate(4deg); }
@@ -427,6 +432,29 @@
         to   { width: min(var(--vl-type-chars, 21ch), 100%); }
     }
 
+    /* Auto-fit: the reveal ends at the real text width (calc-size(max-content)), so the last word is never cut.
+       --vl-type-chars still sets an explicit width. Without calc-size() the 21ch default above applies. */
+    @supports (width: calc-size(max-content, size)) {
+        @keyframes vl-typewriter {
+            from { width: 0; }
+            to   { width: var(--vl-type-chars, calc-size(max-content, size)); }
+        }
+    }
+
+    /* Looping variant: types in the first 75% of each pass, then HOLDS the complete text (the steps() easing
+       applies per keyframe interval). The target width adds 1ch of slack so letter-spacing/caret never clip the last glyph. */
+    @keyframes vl-typewriter-loop {
+        from { width: 0; }
+        75%, to { width: min(var(--vl-type-chars, 36ch), 100%); }
+    }
+
+    @supports (width: calc-size(max-content, size)) {
+        @keyframes vl-typewriter-loop {
+            from { width: 0; }
+            75%, to { width: var(--vl-type-chars, calc-size(max-content, size + 1ch)); }
+        }
+    }
+
     @keyframes vl-blink-caret {
         0%, 100% { border-right-color: var(--vl-type-caret-color, var(--vl-color-primary)); }
         50%      { border-right-color: transparent; }
@@ -497,11 +525,11 @@
 
     @keyframes vl-text-highlight-sweep {
         from {
-            background-size: 0% 100%;
+            background-size: 0% var(--vl-highlight-height, 100%);
             color: color-mix(in oklch, var(--vl-text-primary) 82%, transparent);
         }
         to {
-            background-size: 100% 100%;
+            background-size: 100% var(--vl-highlight-height, 100%);
             color: var(--vl-text-primary);
         }
     }
@@ -667,10 +695,30 @@
         --vl-scroll-range: entry 5% cover 55%;
     }
 
+    /* text-highlight paints its own marker: a one-colour gradient whose background-size the animation sweeps.
+       Layered, so an author's own background-image (or background shorthand) wins and the sweep still drives
+       background-size. Parameters: --vl-highlight-color (default: the accent at 35%), --vl-highlight-height
+       (default 100%, e.g. 0.4em for an underline marker). At rest, and with reduced motion, the marker is full.
+       The timeline is view(block): the previous view(inline) never advanced on a vertically scrolling page, so
+       the sweep was stuck at one fixed progress. The sweep now completes about mid-viewport; --vl-range overrides. */
     :is([vl-scroll~="text-highlight"], [vl-effect~="text-highlight"]) {
         --vl-scroll-name: vl-text-highlight-sweep;
-        --vl-scroll-timeline: view(inline);
-        --vl-scroll-range: entry 0% cover 100%;
+        --vl-scroll-timeline: view(block);
+        --vl-scroll-range: var(--vl-range, entry 10% cover 45%);
+        --_hl: var(--vl-highlight-color, color-mix(in oklch, var(--vl-color-accent, var(--vl-color-primary, currentColor)) 35%, transparent));
+        /* At rest the text has the colour the sweep ends on (so a <mark> is not left with the UA marktext). */
+        color: var(--vl-text-primary);
+        background-color: transparent;
+        background-image: linear-gradient(var(--_hl), var(--_hl));
+        background-repeat: no-repeat;
+        background-position: left bottom;
+        background-size: 100% var(--vl-highlight-height, 100%);
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        :is([vl-scroll~="text-highlight"], [vl-effect~="text-highlight"]) {
+            animation: none;
+        }
     }
 
     [vl-loop],
@@ -682,9 +730,71 @@
         animation-iteration-count: var(--vl-loop-count, infinite);
     }
 
+    /* Channels compose: enter, loop and exit on one element run as separate animations.
+       Each channel sets animation-name, so without these rules the last one in source order
+       replaces the others (the loop used to erase the entrance, the exit the loop).
+       Priority is the list order, later wins on a shared property: enter < loop < exit.
+       Longhand lists stay index-aligned, one entry per animation. cut-reveal is two animations
+       and has its own lists in 03e-cut.css. */
+    [vl-enter]:is([vl-loop], [vl-loop-effect]):not([vl-exit]) {
+        animation-name: var(--vl-enter-name, none), var(--vl-loop-name, none);
+        animation-duration: var(--vl-enter-duration, var(--vl-motion-duration)), var(--vl-loop-duration, var(--vl-motion-duration, 4s));
+        animation-delay: var(--vl-enter-delay, var(--vl-motion-delay, 0s)), 0s;
+        animation-timing-function: var(--vl-enter-ease, var(--vl-motion-ease)), var(--vl-loop-ease, var(--vl-ease-in-out-smooth));
+        animation-direction: var(--vl-enter-direction, var(--vl-motion-direction, normal)), var(--vl-loop-direction, var(--vl-motion-direction, normal));
+        animation-iteration-count: 1, var(--vl-loop-count, infinite);
+        animation-fill-mode: both, none;
+    }
+
+    [vl-enter][vl-exit]:not([vl-loop]):not([vl-loop-effect]) {
+        animation-name: var(--vl-enter-name, none), var(--vl-exit-name, none);
+        animation-duration: var(--vl-enter-duration, var(--vl-motion-duration)), var(--vl-exit-duration, var(--vl-duration-fast));
+        animation-delay: var(--vl-enter-delay, var(--vl-motion-delay, 0s)), var(--vl-exit-delay, var(--vl-motion-delay, 0s));
+        animation-timing-function: var(--vl-enter-ease, var(--vl-motion-ease)), var(--vl-exit-ease, var(--vl-ease-out-soft));
+        animation-direction: var(--vl-enter-direction, var(--vl-motion-direction, normal)), var(--vl-exit-direction, var(--vl-motion-direction, normal));
+        animation-iteration-count: 1, 1;
+        animation-fill-mode: both, forwards;
+    }
+
+    [vl-exit]:is([vl-loop], [vl-loop-effect]):not([vl-enter]) {
+        animation-name: var(--vl-loop-name, none), var(--vl-exit-name, none);
+        animation-duration: var(--vl-loop-duration, var(--vl-motion-duration, 4s)), var(--vl-exit-duration, var(--vl-duration-fast));
+        animation-delay: 0s, var(--vl-exit-delay, var(--vl-motion-delay, 0s));
+        animation-timing-function: var(--vl-loop-ease, var(--vl-ease-in-out-smooth)), var(--vl-exit-ease, var(--vl-ease-out-soft));
+        animation-direction: var(--vl-loop-direction, var(--vl-motion-direction, normal)), var(--vl-exit-direction, var(--vl-motion-direction, normal));
+        animation-iteration-count: var(--vl-loop-count, infinite), 1;
+        animation-fill-mode: none, forwards;
+    }
+
+    [vl-enter][vl-exit]:is([vl-loop], [vl-loop-effect]) {
+        animation-name: var(--vl-enter-name, none), var(--vl-loop-name, none), var(--vl-exit-name, none);
+        animation-duration: var(--vl-enter-duration, var(--vl-motion-duration)), var(--vl-loop-duration, var(--vl-motion-duration, 4s)), var(--vl-exit-duration, var(--vl-duration-fast));
+        animation-delay: var(--vl-enter-delay, var(--vl-motion-delay, 0s)), 0s, var(--vl-exit-delay, var(--vl-motion-delay, 0s));
+        animation-timing-function: var(--vl-enter-ease, var(--vl-motion-ease)), var(--vl-loop-ease, var(--vl-ease-in-out-smooth)), var(--vl-exit-ease, var(--vl-ease-out-soft));
+        animation-direction: var(--vl-enter-direction, var(--vl-motion-direction, normal)), var(--vl-loop-direction, var(--vl-motion-direction, normal)), var(--vl-exit-direction, var(--vl-motion-direction, normal));
+        animation-iteration-count: 1, var(--vl-loop-count, infinite), 1;
+        animation-fill-mode: both, none, forwards;
+    }
+
+    /* shimmer and aurora-drift paint their own gradient, so they work on any element with no author CSS.
+       The gradient is declared in @layer velora.motion: an author background-image or background shorthand wins and
+       is still moved by the same animation. Both animate background-position (paint only: no layout, no compositor
+       layer). Parameters: --vl-shimmer-color (the moving band, default the accent at 30%); --vl-aurora-from and
+       --vl-aurora-to (the two drifting glows, default primary and accent at 45%). Reduced motion: shimmer shows the plain
+       element, aurora-drift keeps its gradient at rest. */
     :is([vl-loop~="shimmer"], [vl-loop-effect~="shimmer"], [vl-effect~="shimmer"]) {
         --vl-loop-name: vl-shimmer;
         --vl-loop-duration: 2.5s;
+        --_shimmer: var(--vl-shimmer-color, color-mix(in oklch, var(--vl-color-accent, var(--vl-color-primary, currentColor)) 30%, transparent));
+        background-image: linear-gradient(105deg, transparent 35%, var(--_shimmer) 50%, transparent 65%);
+        background-size: 200% 100%;
+        background-repeat: repeat-x;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        :is([vl-loop~="shimmer"], [vl-loop-effect~="shimmer"], [vl-effect~="shimmer"]) {
+            background-image: none;
+        }
     }
 
     :is([vl-loop~="float"], [vl-loop-effect~="float"], [vl-effect~="float"]) {
@@ -705,6 +815,16 @@
     :is([vl-loop~="rock"], [vl-loop-effect~="rock"], [vl-effect~="rock"]) {
         --vl-loop-name: vl-rock;
         --vl-loop-duration: 4s;
+    }
+
+    /* sway: a 3D swing about the Y axis (Experimental). Animates only the individual `rotate`
+       property, so it composes with an author `transform` (a static tilt) and with enter/exit.
+       Needs a perspective ancestor to read as depth (.vl-3d-stage).
+       --vl-sway-angle  half-swing, default 20deg */
+    :is([vl-loop~="sway"], [vl-loop-effect~="sway"]) {
+        --vl-loop-name: vl-sway;
+        --vl-loop-duration: 9s;
+        --vl-loop-direction: alternate;
     }
 
     :is([vl-loop~="morph"], [vl-loop-effect~="morph"], [vl-effect~="morph"]) {
@@ -730,6 +850,13 @@
         --vl-loop-name: vl-aurora-drift;
         --vl-loop-duration: 12s;
         --vl-loop-ease: var(--vl-ease-in-out-smooth);
+        --_aurora-a: color-mix(in oklch, var(--vl-aurora-from, var(--vl-color-primary, currentColor)) 45%, transparent);
+        --_aurora-b: color-mix(in oklch, var(--vl-aurora-to, var(--vl-color-accent, var(--vl-color-primary, currentColor))) 45%, transparent);
+        background-image:
+            radial-gradient(ellipse 60% 80% at 20% 30%, var(--_aurora-a), transparent 70%),
+            radial-gradient(ellipse 55% 70% at 80% 65%, var(--_aurora-b), transparent 70%);
+        background-repeat: no-repeat;
+        background-position: 50% 50%;
         background-size: 300% 300%;
     }
 
@@ -755,11 +882,12 @@
     }
 
     :is([vl-hover~="hover-lift"], [vl-effect~="hover-lift"]) {
-        transition: transform var(--vl-transition-normal), box-shadow var(--vl-transition-normal);
+        /* translate, not transform: transform belongs to enter/exit/loop, so the lift composes with them. */
+        transition: translate var(--vl-transition-normal), box-shadow var(--vl-transition-normal);
     }
 
     :is([vl-hover~="hover-lift"], [vl-effect~="hover-lift"]):hover {
-        transform: translateY(-4px);
+        translate: 0 -4px;
         box-shadow: var(--vl-shadow-float);
     }
 
@@ -883,11 +1011,11 @@
 
     /* --- Interaction effects --- */
     [vl-effect="hover-lift"] {
-        transition: transform var(--vl-transition-normal), box-shadow var(--vl-transition-normal);
+        transition: translate var(--vl-transition-normal), box-shadow var(--vl-transition-normal);
     }
 
     [vl-effect="hover-lift"]:hover {
-        transform: translateY(-4px);
+        translate: 0 -4px;
         box-shadow: var(--vl-shadow-float);
     }
 
@@ -1409,7 +1537,7 @@
     @media (hover: none) {
         [vl-effect="hover-lift"]:hover,
         [vl-effect="hover-glow"]:hover {
-            transform: none;
+            translate: none;
             box-shadow: none;
         }
 
@@ -1535,7 +1663,7 @@
      * repeating indefinitely. Uses alternate direction so step count matches
      * the character count in both directions. Cursor blinks throughout.
      */
-    [vl-effect="typewriter-loop"] {
+    :is([vl-effect="typewriter-loop"], [vl-loop~="typewriter-loop"], [vl-loop-effect~="typewriter-loop"]) {
         overflow: hidden;
         white-space: nowrap;
         --vl-type-caret-color: color-mix(in oklch, var(--vl-color-primary) 60%, transparent);
@@ -1543,11 +1671,24 @@
         width: 0;
         display: inline-block;
         max-width: 100%;
-        animation:
-            vl-typewriter var(--vl-type-duration, 2.6s) steps(var(--vl-type-steps, 36), end) infinite alternate,
-            vl-blink-caret 0.9s step-end infinite alternate;
         font-family: var(--vl-font-family-mono);
         letter-spacing: 0.04em;
+    }
+
+    [vl-effect="typewriter-loop"] {
+        animation:
+            vl-typewriter-loop var(--vl-type-duration, 2.6s) steps(var(--vl-type-steps, 36), end) infinite alternate,
+            vl-blink-caret 0.9s step-end infinite alternate;
+    }
+
+    /* Two animations (type, caret): every --vl-loop-* list has two entries, so the loop also
+       composes after vl-enter (one entry for the entrance, then these two). */
+    :is([vl-loop~="typewriter-loop"], [vl-loop-effect~="typewriter-loop"]) {
+        --vl-loop-name: vl-typewriter-loop, vl-blink-caret;
+        --vl-loop-duration: var(--vl-type-duration, 2.6s), 0.9s;
+        --vl-loop-ease: steps(var(--vl-type-steps, 36), end), step-end;
+        --vl-loop-direction: alternate, alternate;
+        --vl-loop-count: infinite, infinite;
     }
 
     [vl-effect="text-line-reveal"] {
@@ -1746,64 +1887,90 @@
     /* =========================================================================
        CHILD CHOREOGRAPHY  [vl-children="<mode>"]
        ========================================================================= */
-    [vl-children="stagger"] > :not([vl-effect]):not([vl-enter]):not([vl-exit]) {
+    [vl-children="stagger"] > :where(:not([vl-effect]):not([vl-enter]):not([vl-exit])) {
         animation: vl-fade-up var(--vl-motion-duration, var(--vl-duration-slow)) var(--vl-motion-ease, var(--vl-ease-cinematic)) both;
     }
 
-    [vl-children="stagger"] > *:nth-child(1)  { animation-delay: calc(0  * var(--vl-stagger-step)); }
-    [vl-children="stagger"] > *:nth-child(2)  { animation-delay: calc(1  * var(--vl-stagger-step)); }
-    [vl-children="stagger"] > *:nth-child(3)  { animation-delay: calc(2  * var(--vl-stagger-step)); }
-    [vl-children="stagger"] > *:nth-child(4)  { animation-delay: calc(3  * var(--vl-stagger-step)); }
-    [vl-children="stagger"] > *:nth-child(5)  { animation-delay: calc(4  * var(--vl-stagger-step)); }
-    [vl-children="stagger"] > *:nth-child(6)  { animation-delay: calc(5  * var(--vl-stagger-step)); }
-    [vl-children="stagger"] > *:nth-child(7)  { animation-delay: calc(6  * var(--vl-stagger-step)); }
-    [vl-children="stagger"] > *:nth-child(8)  { animation-delay: calc(7  * var(--vl-stagger-step)); }
-    [vl-children="stagger"] > *:nth-child(9)  { animation-delay: calc(8  * var(--vl-stagger-step)); }
-    [vl-children="stagger"] > *:nth-child(10) { animation-delay: calc(9  * var(--vl-stagger-step)); }
-    [vl-children="stagger"] > *:nth-child(11) { animation-delay: calc(10 * var(--vl-stagger-step)); }
-    [vl-children="stagger"] > *:nth-child(12) { animation-delay: calc(11 * var(--vl-stagger-step)); }
 
-    [vl-children="cascade"] > :not([vl-effect]):not([vl-enter]):not([vl-exit]) {
+    [vl-children="cascade"] > :where(:not([vl-effect]):not([vl-enter]):not([vl-exit])) {
         animation: vl-flow-in var(--vl-duration-slower) var(--vl-ease-out-soft) both;
     }
 
-    [vl-children="cascade"] > *:nth-child(1)  { animation-delay: calc(0  * var(--vl-stagger-step)); }
-    [vl-children="cascade"] > *:nth-child(2)  { animation-delay: calc(1  * var(--vl-stagger-step)); }
-    [vl-children="cascade"] > *:nth-child(3)  { animation-delay: calc(2  * var(--vl-stagger-step)); }
-    [vl-children="cascade"] > *:nth-child(4)  { animation-delay: calc(3  * var(--vl-stagger-step)); }
-    [vl-children="cascade"] > *:nth-child(5)  { animation-delay: calc(4  * var(--vl-stagger-step)); }
-    [vl-children="cascade"] > *:nth-child(6)  { animation-delay: calc(5  * var(--vl-stagger-step)); }
-    [vl-children="cascade"] > *:nth-child(7)  { animation-delay: calc(6  * var(--vl-stagger-step)); }
-    [vl-children="cascade"] > *:nth-child(8)  { animation-delay: calc(7  * var(--vl-stagger-step)); }
 
-    [vl-children="sequence"] > :not([vl-effect]):not([vl-enter]):not([vl-exit]) {
+    [vl-children="sequence"] > :where(:not([vl-effect]):not([vl-enter]):not([vl-exit])) {
         --vl-seq-duration: var(--vl-motion-duration, var(--vl-duration-slow));
         animation: vl-fade-up var(--vl-seq-duration) var(--vl-motion-ease, var(--vl-ease-cinematic)) both;
     }
 
-    [vl-children="sequence"] > *:nth-child(1)  { animation-delay: calc(0 * var(--vl-seq-duration)); }
-    [vl-children="sequence"] > *:nth-child(2)  { animation-delay: calc(1 * var(--vl-seq-duration)); }
-    [vl-children="sequence"] > *:nth-child(3)  { animation-delay: calc(2 * var(--vl-seq-duration)); }
-    [vl-children="sequence"] > *:nth-child(4)  { animation-delay: calc(3 * var(--vl-seq-duration)); }
-    [vl-children="sequence"] > *:nth-child(5)  { animation-delay: calc(4 * var(--vl-seq-duration)); }
-    [vl-children="sequence"] > *:nth-child(6)  { animation-delay: calc(5 * var(--vl-seq-duration)); }
 
-    [vl-children="orchestrate"] > :not([vl-effect]):not([vl-enter]):not([vl-exit]) {
+    [vl-children="orchestrate"] > :where(:not([vl-effect]):not([vl-enter]):not([vl-exit])) {
         animation: vl-flow-in var(--vl-motion-duration, var(--vl-duration-slow)) var(--vl-motion-ease, var(--vl-ease-cinematic)) both;
     }
 
-    [vl-children="orchestrate"] > :not([vl-effect]):not([vl-enter]):not([vl-exit]):nth-child(odd) {
+    [vl-children="orchestrate"] > :where(:not([vl-effect]):not([vl-enter]):not([vl-exit])):nth-child(odd) {
         animation-name: vl-fade-up;
     }
 
-    [vl-children="orchestrate"] > *:nth-child(1)  { animation-delay: calc(0  * var(--vl-stagger-step)); }
-    [vl-children="orchestrate"] > *:nth-child(2)  { animation-delay: calc(1  * var(--vl-stagger-step)); }
-    [vl-children="orchestrate"] > *:nth-child(3)  { animation-delay: calc(2  * var(--vl-stagger-step)); }
-    [vl-children="orchestrate"] > *:nth-child(4)  { animation-delay: calc(3  * var(--vl-stagger-step)); }
-    [vl-children="orchestrate"] > *:nth-child(5)  { animation-delay: calc(4  * var(--vl-stagger-step)); }
-    [vl-children="orchestrate"] > *:nth-child(6)  { animation-delay: calc(5  * var(--vl-stagger-step)); }
-    [vl-children="orchestrate"] > *:nth-child(7)  { animation-delay: calc(6  * var(--vl-stagger-step)); }
-    [vl-children="orchestrate"] > *:nth-child(8)  { animation-delay: calc(7  * var(--vl-stagger-step)); }
+
+    /* Stagger with no child limit. Index and count come from the tree (sibling-index / sibling-count), so any number of
+       children keeps its order. The step is --vl-stagger-step (vl-stagger sets it); the whole sequence never takes
+       longer than --vl-stagger-fit (default 2s), so a long list tightens instead of dragging. sequence waits for the
+       previous child to finish (its step is that duration) and fits within 10s; grid-wave keeps its 80ms step. */
+    @supports (width: calc(sibling-index() * 1px)) {
+        :is([vl-children="stagger"], [vl-children="cascade"], [vl-children="orchestrate"], [vl-children="wave"],
+            [vl-children="blur-cascade"], [vl-children="zoom-stagger"], [vl-children="cinema-stagger"],
+            [vl-children="spiral-stagger"]) > * {
+            --_stagger-delay: calc((sibling-index() - 1) * min(var(--vl-stagger-step), var(--vl-stagger-fit, 2s) / max(sibling-count() - 1, 1)));
+            animation-delay: var(--_stagger-delay);
+        }
+
+        [vl-children="grid-wave"] > * {
+            --_stagger-delay: calc((sibling-index() - 1) * min(80ms, var(--vl-stagger-fit, 2s) / max(sibling-count() - 1, 1)));
+            animation-delay: var(--_stagger-delay);
+        }
+
+        [vl-children="sequence"] > * {
+            animation-delay: calc((sibling-index() - 1) * min(var(--vl-seq-duration), var(--vl-stagger-fit, 10s) / max(sibling-count() - 1, 1)));
+        }
+    }
+
+    /* Fallback without sibling-index(): a fixed ladder for the first children. */
+    @supports not (width: calc(sibling-index() * 1px)) {
+        [vl-children="stagger"] > *:nth-child(1)  { animation-delay: calc(0  * var(--vl-stagger-step)); }
+        [vl-children="stagger"] > *:nth-child(2)  { animation-delay: calc(1  * var(--vl-stagger-step)); }
+        [vl-children="stagger"] > *:nth-child(3)  { animation-delay: calc(2  * var(--vl-stagger-step)); }
+        [vl-children="stagger"] > *:nth-child(4)  { animation-delay: calc(3  * var(--vl-stagger-step)); }
+        [vl-children="stagger"] > *:nth-child(5)  { animation-delay: calc(4  * var(--vl-stagger-step)); }
+        [vl-children="stagger"] > *:nth-child(6)  { animation-delay: calc(5  * var(--vl-stagger-step)); }
+        [vl-children="stagger"] > *:nth-child(7)  { animation-delay: calc(6  * var(--vl-stagger-step)); }
+        [vl-children="stagger"] > *:nth-child(8)  { animation-delay: calc(7  * var(--vl-stagger-step)); }
+        [vl-children="stagger"] > *:nth-child(9)  { animation-delay: calc(8  * var(--vl-stagger-step)); }
+        [vl-children="stagger"] > *:nth-child(10) { animation-delay: calc(9  * var(--vl-stagger-step)); }
+        [vl-children="stagger"] > *:nth-child(11) { animation-delay: calc(10 * var(--vl-stagger-step)); }
+        [vl-children="stagger"] > *:nth-child(12) { animation-delay: calc(11 * var(--vl-stagger-step)); }
+        [vl-children="cascade"] > *:nth-child(1)  { animation-delay: calc(0  * var(--vl-stagger-step)); }
+        [vl-children="cascade"] > *:nth-child(2)  { animation-delay: calc(1  * var(--vl-stagger-step)); }
+        [vl-children="cascade"] > *:nth-child(3)  { animation-delay: calc(2  * var(--vl-stagger-step)); }
+        [vl-children="cascade"] > *:nth-child(4)  { animation-delay: calc(3  * var(--vl-stagger-step)); }
+        [vl-children="cascade"] > *:nth-child(5)  { animation-delay: calc(4  * var(--vl-stagger-step)); }
+        [vl-children="cascade"] > *:nth-child(6)  { animation-delay: calc(5  * var(--vl-stagger-step)); }
+        [vl-children="cascade"] > *:nth-child(7)  { animation-delay: calc(6  * var(--vl-stagger-step)); }
+        [vl-children="cascade"] > *:nth-child(8)  { animation-delay: calc(7  * var(--vl-stagger-step)); }
+        [vl-children="sequence"] > *:nth-child(1)  { animation-delay: calc(0 * var(--vl-seq-duration)); }
+        [vl-children="sequence"] > *:nth-child(2)  { animation-delay: calc(1 * var(--vl-seq-duration)); }
+        [vl-children="sequence"] > *:nth-child(3)  { animation-delay: calc(2 * var(--vl-seq-duration)); }
+        [vl-children="sequence"] > *:nth-child(4)  { animation-delay: calc(3 * var(--vl-seq-duration)); }
+        [vl-children="sequence"] > *:nth-child(5)  { animation-delay: calc(4 * var(--vl-seq-duration)); }
+        [vl-children="sequence"] > *:nth-child(6)  { animation-delay: calc(5 * var(--vl-seq-duration)); }
+        [vl-children="orchestrate"] > *:nth-child(1)  { animation-delay: calc(0  * var(--vl-stagger-step)); }
+        [vl-children="orchestrate"] > *:nth-child(2)  { animation-delay: calc(1  * var(--vl-stagger-step)); }
+        [vl-children="orchestrate"] > *:nth-child(3)  { animation-delay: calc(2  * var(--vl-stagger-step)); }
+        [vl-children="orchestrate"] > *:nth-child(4)  { animation-delay: calc(3  * var(--vl-stagger-step)); }
+        [vl-children="orchestrate"] > *:nth-child(5)  { animation-delay: calc(4  * var(--vl-stagger-step)); }
+        [vl-children="orchestrate"] > *:nth-child(6)  { animation-delay: calc(5  * var(--vl-stagger-step)); }
+        [vl-children="orchestrate"] > *:nth-child(7)  { animation-delay: calc(6  * var(--vl-stagger-step)); }
+        [vl-children="orchestrate"] > *:nth-child(8)  { animation-delay: calc(7  * var(--vl-stagger-step)); }
+    }
 
     [vl-stagger="60ms"]  { --vl-stagger-step: 60ms; }
     [vl-stagger="80ms"]  { --vl-stagger-step: 80ms; }
@@ -2311,8 +2478,27 @@
                 color-mix(in oklch, var(--vl-color-primary) 38%, transparent)
             ) border-box;
         opacity: 0;
+        z-index: -1; /* behind the element's own content: the label stays readable in every state */
         transition: opacity var(--vl-transition-normal) var(--vl-ease-cinematic);
         pointer-events: none;
+    }
+
+    /* Ring only: mask out the interior, so the trace never paints over the element's background or text. */
+    @supports (mask-composite: exclude) or (-webkit-mask-composite: xor) {
+        :is([vl-hover~="border-trace"], [vl-effect~="border-trace"])::after {
+            border: 0;
+            padding: 2px;
+            background: linear-gradient(
+                135deg,
+                color-mix(in oklch, var(--vl-color-primary) 72%, transparent),
+                color-mix(in oklch, var(--vl-color-accent, var(--vl-color-primary)) 56%, transparent),
+                color-mix(in oklch, var(--vl-color-primary) 38%, transparent)
+            );
+            -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+            -webkit-mask-composite: xor;
+            mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+            mask-composite: exclude;
+        }
     }
 
     :is([vl-hover~="border-trace"], [vl-effect~="border-trace"]):hover::after,
@@ -2345,7 +2531,7 @@
 
         [vl-effect="hover-lift"]:hover,
         [vl-effect="hover-glow"]:hover {
-            transform: none;
+            translate: none;
             box-shadow: none;
         }
 
@@ -2367,7 +2553,7 @@
             animation: none;
         }
 
-        [vl-effect="typewriter-loop"] {
+        :is([vl-effect="typewriter-loop"], [vl-loop~="typewriter-loop"], [vl-loop-effect~="typewriter-loop"]) {
             width: auto;
             border-right: none;
             white-space: normal;

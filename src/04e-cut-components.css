@@ -1,0 +1,855 @@
+/* Registered so the cut position can transition. Outside the layer: @property is global. */
+@property --vl-cut-x {
+    syntax: "<percentage>";
+    inherits: false;
+    initial-value: -30%;
+}
+
+@property --vl-cut-progress {
+    syntax: "<percentage>";
+    inherits: false;
+    initial-value: 0%;
+}
+
+/* Footer wordmark light: registered so the glow glides between hover cells. */
+@property --vl-footer-glow-x {
+    syntax: "<percentage>";
+    inherits: true;
+    initial-value: 50%;
+}
+
+@layer velora.components {
+    /*
+     * Cut components (RFC #114): components whose shape follows the structure tokens.
+     * They read --vl-cut-angle; at 0deg the cut is a straight wipe, so every Skin can use them.
+     * No JavaScript. Hover/focus and current-page states are plain CSS.
+     */
+
+    /* =========================================================================
+       Cut Nav — .vl-nav--cut
+       A flat row of links. Hover and keyboard focus sweep an accent fill across the link along
+       the cut axis; the current page keeps the fill in the text colour.
+       Without trigonometric functions it falls back to a 2px underline.
+       ========================================================================= */
+
+    .vl-nav--cut {
+        --vl-nav-cut-h: 40px;
+        --vl-nav-cut-skew: calc(tan(var(--vl-cut-angle)) * var(--vl-nav-cut-h));
+        flex-wrap: wrap;
+        gap: 2px 4px;
+    }
+
+    .vl-nav--cut .vl-nav__link {
+        position: relative;
+        isolation: isolate;
+        display: inline-flex;
+        align-items: center;
+        height: var(--vl-nav-cut-h);
+        padding: 0 14px;
+        color: inherit;
+        font: 600 0.95rem var(--vl-font-family-display);
+        transition: none;
+    }
+
+    .vl-nav--cut .vl-nav__link::after {
+        display: none;
+    }
+
+    .vl-nav--cut .vl-nav__link::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        z-index: -1;
+        background: var(--vl-color-accent);
+        opacity: 0;
+    }
+
+    .vl-nav--cut .vl-nav__link:hover,
+    .vl-nav--cut .vl-nav__link:focus-visible {
+        color: inherit;
+        border-bottom: 2px solid var(--vl-color-accent);
+    }
+
+    .vl-nav--cut .vl-nav__link[aria-current="page"],
+    .vl-nav--cut .vl-nav__link--active {
+        border-bottom: 2px solid var(--vl-text-primary);
+    }
+
+    @supports (width: calc(tan(18deg) * 1px)) {
+        .vl-nav--cut .vl-nav__link:hover,
+        .vl-nav--cut .vl-nav__link:focus-visible,
+        .vl-nav--cut .vl-nav__link[aria-current="page"],
+        .vl-nav--cut .vl-nav__link--active {
+            border-bottom: 0;
+        }
+
+        .vl-nav--cut .vl-nav__link::before {
+            opacity: 1;
+            --vl-cut-x: -30%;
+            clip-path: polygon(
+                0 0,
+                calc(var(--vl-cut-x) + var(--vl-nav-cut-skew)) 0,
+                var(--vl-cut-x) 100%,
+                0 100%
+            );
+            transition: --vl-cut-x 0.55s var(--vl-ease-cinematic);
+        }
+
+        .vl-nav--cut .vl-nav__link:hover::before,
+        .vl-nav--cut .vl-nav__link:focus-visible::before {
+            --vl-cut-x: 120%;
+        }
+
+        .vl-nav--cut .vl-nav__link:hover,
+        .vl-nav--cut .vl-nav__link:focus-visible {
+            color: var(--vl-bg-main);
+        }
+
+        .vl-nav--cut .vl-nav__link[aria-current="page"]::before,
+        .vl-nav--cut .vl-nav__link--active::before {
+            --vl-cut-x: 120%;
+            background: var(--vl-text-primary);
+        }
+
+        .vl-nav--cut .vl-nav__link[aria-current="page"],
+        .vl-nav--cut .vl-nav__link--active {
+            color: var(--vl-bg-main);
+        }
+    }
+
+    /* =========================================================================
+       Cut Progress — .vl-cut-progress
+       A hatched track on the cut axis that fills as the page scrolls. Static (not fixed), so it
+       sits inside a header. Needs scroll-driven animations; everywhere else it stays hidden.
+       Markup: <div class="vl-cut-progress" aria-hidden="true"><i class="vl-cut-progress__fill"></i></div>
+       ========================================================================= */
+
+    .vl-cut-progress {
+        --vl-cut-progress-axis: calc(90deg + var(--vl-cut-angle));
+        --vl-cut-progress-hair: calc(var(--vl-skin-border-width, 1px) * 1.2);
+        --vl-cut-progress-pitch: calc(var(--vl-cut-pitch) * 2 / 3);
+        display: none;
+        height: 10px;
+        background: repeating-linear-gradient(
+            var(--vl-cut-progress-axis),
+            var(--vl-border-subtle) 0 var(--vl-cut-progress-hair),
+            transparent calc(var(--vl-cut-progress-hair) + 0.7px) var(--vl-cut-progress-pitch)
+        );
+    }
+
+    .vl-cut-progress__fill {
+        display: block;
+        height: 100%;
+        background: var(--vl-color-accent);
+        --vl-cut-progress: 0%;
+        -webkit-mask-image:
+            linear-gradient(90deg, #000 var(--vl-cut-progress), transparent var(--vl-cut-progress)),
+            repeating-linear-gradient(
+                var(--vl-cut-progress-axis),
+                #000 0 var(--vl-cut-progress-hair),
+                transparent calc(var(--vl-cut-progress-hair) + 0.7px) var(--vl-cut-progress-pitch)
+            );
+        mask-image:
+            linear-gradient(90deg, #000 var(--vl-cut-progress), transparent var(--vl-cut-progress)),
+            repeating-linear-gradient(
+                var(--vl-cut-progress-axis),
+                #000 0 var(--vl-cut-progress-hair),
+                transparent calc(var(--vl-cut-progress-hair) + 0.7px) var(--vl-cut-progress-pitch)
+            );
+        -webkit-mask-composite: source-in;
+        mask-composite: intersect;
+    }
+
+    @keyframes vl-cut-progress-fill {
+        to {
+            --vl-cut-progress: 100%;
+        }
+    }
+
+    @supports (animation-timeline: scroll()) {
+        @media (prefers-reduced-motion: no-preference) {
+            .vl-cut-progress {
+                display: block;
+            }
+
+            .vl-cut-progress__fill {
+                animation: vl-cut-progress-fill linear both;
+                animation-timeline: scroll(root);
+            }
+        }
+    }
+
+    /* =========================================================================
+       Cut Header — .vl-header--cut
+       A sticky header for the .vl-header anatomy: hairline border, frosted paper, a brand on the
+       left, a Cut Nav, actions on the right, and a Cut Progress strip at the bottom.
+       Below 60rem the nav folds into a native-popover drawer (.vl-header__drawer[popover]); the
+       button is <button popovertarget>, so open, close, Esc and light dismiss are the browser's.
+       --vl-header-offset is the single source of the header height for everything that sits
+       under it (the drawer today; pins and anchors should read it too).
+       The core 48rem rules hide the button and drawer with !important, so the range between 48rem and
+       60rem is restated here with !important as well.
+       ========================================================================= */
+
+    .vl-header--cut {
+        --vl-header-gutter: clamp(16px, 4vw, 48px);
+        --vl-header-max: 1280px;
+        --vl-header-z: 20;
+        --vl-header-offset: calc(env(safe-area-inset-top, 0px) + 57px);
+        top: env(safe-area-inset-top, 0px);
+        z-index: var(--vl-header-z);
+        padding-block: 0;
+        background: color-mix(in oklab, var(--vl-bg-main) 90%, transparent);
+        -webkit-backdrop-filter: blur(10px);
+        backdrop-filter: blur(10px);
+        border-bottom: 1px solid var(--vl-border-subtle);
+        transition: none;
+    }
+
+    .vl-header--cut .vl-header__inner {
+        flex-wrap: wrap;
+        justify-content: flex-start;
+        gap: 8px 20px;
+        max-width: var(--vl-header-max);
+        padding-block: 8px;
+        padding-inline: max(var(--vl-header-gutter), env(safe-area-inset-left, 0px))
+            max(var(--vl-header-gutter), env(safe-area-inset-right, 0px));
+    }
+
+    .vl-header--cut .vl-header__brand {
+        display: block;
+        width: 104px;
+        font: inherit;
+        color: var(--vl-text-primary);
+        background: none;
+        -webkit-text-fill-color: currentcolor;
+    }
+
+    .vl-header--cut .vl-header__brand svg {
+        display: block;
+        width: 100%;
+        height: auto;
+        fill: currentcolor;
+    }
+
+    .vl-header--cut .vl-nav {
+        margin-inline-end: auto;
+    }
+
+    .vl-header--cut .vl-header__actions {
+        flex-wrap: wrap;
+        gap: 8px 14px;
+    }
+
+    .vl-header--cut .vl-header__menu-btn,
+    .vl-header--cut .vl-header__drawer {
+        display: none;
+    }
+
+    @media (max-width: 60rem) {
+        .vl-header--cut {
+            position: sticky;
+        }
+
+        .vl-header--cut .vl-header__inner {
+            flex-wrap: nowrap;
+            gap: 12px;
+            min-height: 56px;
+            padding-block: 0;
+        }
+
+        .vl-header--cut .vl-nav {
+            display: none;
+        }
+
+        .vl-header--cut .vl-header__brand {
+            margin-inline-end: auto;
+        }
+
+        .vl-header--cut .vl-header__actions {
+            flex-wrap: nowrap;
+            order: 1;
+        }
+
+        .vl-header--cut .vl-header__menu-btn {
+            display: inline-grid !important;
+            place-content: center;
+            gap: 7px;
+            width: 44px;
+            height: 44px;
+            padding: 0;
+            order: 2;
+            border: 1px solid var(--vl-border-subtle);
+            border-radius: 0;
+            background: transparent;
+            color: var(--vl-text-primary);
+            cursor: pointer;
+            transition: none;
+        }
+
+        .vl-header--cut .vl-header__menu-btn:hover {
+            background: transparent;
+            border-color: var(--vl-border-subtle);
+        }
+
+        .vl-header--cut .vl-header__menu-btn:focus-visible {
+            outline: 2px solid var(--vl-color-accent);
+            outline-offset: 2px;
+        }
+
+        .vl-header--cut .vl-header__menu-btn i {
+            display: block;
+            width: 20px;
+            height: 1.5px;
+            background: currentcolor;
+            transition: transform 0.3s var(--vl-ease-cinematic);
+        }
+
+        /* The two bars cross along the cut angle while the drawer is open. */
+        .vl-header--cut:has(.vl-header__drawer:popover-open) .vl-header__menu-btn i:first-child {
+            transform: translateY(4.25px) rotate(var(--vl-cut-angle));
+        }
+
+        .vl-header--cut:has(.vl-header__drawer:popover-open) .vl-header__menu-btn i:last-child {
+            transform: translateY(-4.25px) rotate(calc(var(--vl-cut-angle) * -1));
+        }
+
+        .vl-header--cut .vl-header__drawer[popover]:popover-open {
+            display: flex !important;
+            flex-direction: column;
+            position: fixed;
+            inset: var(--vl-header-offset) 0 0 0;
+            width: auto;
+            max-width: none;
+            height: auto;
+            max-height: none;
+            margin: 0;
+            padding: 8px var(--vl-header-gutter) calc(24px + env(safe-area-inset-bottom, 0px));
+            border: 0;
+            background: var(--vl-bg-main);
+            color: var(--vl-text-primary);
+            overflow-y: auto;
+            overscroll-behavior: contain;
+            animation: none;
+            transition:
+                opacity 0.3s var(--vl-ease-cinematic),
+                transform 0.3s var(--vl-ease-cinematic),
+                display 0.3s allow-discrete,
+                overlay 0.3s allow-discrete;
+        }
+
+        .vl-header--cut .vl-header__drawer[popover]:not(:popover-open) {
+            opacity: 0;
+            transform: translateY(-10px);
+        }
+
+        .vl-header--cut .vl-header__drawer[popover]::backdrop {
+            background: transparent;
+        }
+
+        @starting-style {
+            .vl-header--cut .vl-header__drawer[popover]:popover-open {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+        }
+
+        .vl-header--cut .vl-header__mobile-nav {
+            display: grid;
+            margin: 0;
+        }
+
+        .vl-header--cut .vl-header__mobile-link {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            min-height: 56px;
+            padding: 0;
+            color: inherit;
+            border-bottom: 1px solid var(--vl-border-subtle);
+            font: 600 1.35rem var(--vl-font-family-display);
+            letter-spacing: -0.01em;
+            transition: none;
+        }
+
+        .vl-header--cut .vl-header__mobile-link:last-child {
+            border-bottom: 1px solid var(--vl-border-subtle);
+        }
+
+        .vl-header--cut .vl-header__mobile-link::after {
+            content: "";
+            width: 8px;
+            height: 22px;
+            background: var(--vl-color-accent);
+            transform: skewX(calc(var(--vl-cut-angle) * -1));
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+
+        .vl-header--cut .vl-header__mobile-link:hover {
+            color: inherit;
+        }
+
+        .vl-header--cut .vl-header__mobile-link[aria-current="page"] {
+            color: var(--vl-color-accent);
+        }
+
+        .vl-header--cut .vl-header__mobile-link[aria-current="page"]::after,
+        .vl-header--cut .vl-header__mobile-link:focus-visible::after {
+            opacity: 1;
+        }
+
+        .vl-header--cut .vl-header__mobile-link:active {
+            background: color-mix(in oklab, var(--vl-color-accent) 14%, transparent);
+        }
+
+        .vl-header--cut .vl-header__mobile-link:focus-visible {
+            outline: 2px solid var(--vl-color-accent);
+            outline-offset: -2px;
+        }
+    }
+
+    @media (max-width: 60rem) and (prefers-reduced-motion: reduce) {
+        .vl-header--cut .vl-header__drawer[popover]:popover-open,
+        .vl-header--cut .vl-header__menu-btn i {
+            transition: none;
+        }
+    }
+
+    /* No Popover API: keep the nav visible instead of a button that cannot open anything. */
+    @supports not selector(:popover-open) {
+        @media (max-width: 60rem) {
+            .vl-header--cut .vl-header__menu-btn {
+                display: none !important;
+            }
+
+            .vl-header--cut .vl-header__inner {
+                flex-wrap: wrap;
+            }
+
+            .vl-header--cut .vl-nav {
+                display: flex;
+            }
+        }
+    }
+
+    /* -------------------------------------------------------------------------
+       Cut CTA: flat, square, ink-filled. A variant of .vl-cta, so other skins keep
+       the default pill. Reads only --vl-* tokens.
+       ------------------------------------------------------------------------- */
+    .vl-cta--cut {
+        min-height: 0;
+        min-width: 0;
+        gap: 0;
+        padding: 8px 16px;
+        border: none;
+        border-radius: 0;
+        background: var(--vl-text-primary);
+        color: var(--vl-text-inverse);
+        box-shadow: none;
+        font-family: var(--vl-font-family-display);
+        font-size: 0.9rem;
+        font-weight: var(--vl-font-weight-semibold);
+        line-height: normal;
+        letter-spacing: inherit;
+        transition: none;
+    }
+
+    .vl-cta--cut::after {
+        content: none;
+    }
+
+    .vl-cta--cut:hover,
+    .vl-cta--cut:active {
+        transform: none;
+        box-shadow: none;
+        background: var(--vl-color-accent);
+        border-color: var(--vl-color-accent);
+        color: var(--vl-text-inverse);
+    }
+
+    .vl-cta--cut.vl-cta--ghost {
+        background: transparent;
+        border: 1px solid var(--vl-text-primary);
+        color: var(--vl-text-primary);
+        -webkit-backdrop-filter: none;
+        backdrop-filter: none;
+    }
+
+    .vl-cta--cut.vl-cta--ghost:hover {
+        background: var(--vl-color-accent);
+        border-color: var(--vl-color-accent);
+        color: var(--vl-text-inverse);
+    }
+
+    /* -------------------------------------------------------------------------
+       Segmented control: radio inputs + labels, state from :checked. No JavaScript.
+       Markup: <div class="vl-segmented" role="radiogroup"> (input + label)* </div>
+       ------------------------------------------------------------------------- */
+    .vl-segmented {
+        --vl-segmented-pad-x: 10px;
+        display: inline-flex;
+        border: 1px solid var(--vl-border-subtle);
+    }
+
+    .vl-segmented--roomy {
+        --vl-segmented-pad-x: 12px;
+    }
+
+    .vl-segmented label {
+        padding: 5px var(--vl-segmented-pad-x);
+        cursor: pointer;
+        color: var(--vl-text-muted);
+    }
+
+    .vl-segmented input:checked + label {
+        background: var(--vl-text-primary);
+        color: var(--vl-text-inverse);
+    }
+
+    .vl-segmented input:focus-visible + label {
+        outline: 2px solid var(--vl-color-accent);
+        outline-offset: 2px;
+    }
+
+    /* -------------------------------------------------------------------------
+       Swatch group: round colour choices. Colour comes from --vl-swatch on each label.
+       ------------------------------------------------------------------------- */
+    .vl-swatches {
+        display: inline-flex;
+        gap: 6px;
+    }
+
+    .vl-swatches label {
+        display: block;
+        width: 16px;
+        height: 16px;
+        border: 1px solid var(--vl-border-subtle);
+        border-radius: 50%;
+        background: var(--vl-swatch, currentColor);
+        cursor: pointer;
+    }
+
+    .vl-swatches input:checked + label {
+        outline: 2px solid var(--vl-text-primary);
+        outline-offset: 2px;
+    }
+
+    .vl-swatches input:focus-visible + label {
+        outline: 2px solid var(--vl-color-accent);
+        outline-offset: 2px;
+    }
+
+    /* Drawer settings block (theme + accent + CTA at phone width). Layout only here;
+       the :checked state is wired by the host page until the accent contract (A9). */
+    .vl-header__settings {
+        display: grid;
+        grid-template-columns: auto 1fr;
+        align-items: center;
+        gap: 14px 18px;
+        margin-top: 22px;
+        color: var(--vl-text-muted);
+        font-size: 0.8rem;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+    }
+
+    .vl-header__settings > div {
+        display: flex;
+        gap: 8px;
+    }
+
+    .vl-header__settings label {
+        padding: 8px 12px;
+        border: 1px solid var(--vl-border-subtle);
+        cursor: pointer;
+    }
+
+    .vl-header__settings .vl-header__swatches label {
+        width: 28px;
+        height: 28px;
+        padding: 0;
+        border-radius: 50%;
+        background: var(--vl-swatch, currentColor);
+    }
+
+    @media (max-width: 60rem) {
+        .vl-header--cut .vl-header__drawer-cta {
+            justify-content: center;
+            min-height: 48px;
+            margin-top: 22px;
+            font-size: 1rem;
+        }
+    }
+
+    /* Bare links read as text in the Velora skin (the core default colours them with the
+       primary). Scoped to the skin so other skins keep the core behaviour. */
+    html[data-editorial-theme="velora"] a:not([class]) {
+        color: inherit;
+    }
+
+    /* -------------------------------------------------------------------------
+       Cut Footer: tagline + links, a wordmark that scales to the page width, a legal line.
+       The wordmark glow follows the pointer through 32 hover cells (no JavaScript):
+       each cell sets --vl-footer-glow-x through :has(). The mask comes from the Skin
+       (--vl-footer-mark). Experimental.
+       Markup: .vl-footer.vl-footer--cut > .vl-footer__top, .vl-footer__mark, .vl-footer__legal
+       ------------------------------------------------------------------------- */
+    .vl-footer--cut {
+        padding-block: 48px 0;
+        overflow: hidden;
+        background: transparent;
+        border-top: 0;
+    }
+
+    .vl-footer--cut .vl-footer__top {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        gap: 20px 40px;
+        padding-bottom: 28px;
+    }
+
+    .vl-footer--cut .vl-footer__tagline {
+        max-width: 60ch;
+        color: var(--vl-text-muted);
+    }
+
+    .vl-footer--cut .vl-footer__nav {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px 22px;
+    }
+
+    .vl-footer--cut .vl-footer__nav a {
+        text-decoration: none;
+    }
+
+    .vl-footer--cut .vl-footer__nav a:hover {
+        color: var(--vl-color-accent);
+    }
+
+    .vl-footer--cut .vl-footer__legal {
+        padding-block: 18px 28px;
+        color: var(--vl-text-muted);
+    }
+
+    .vl-footer__mark {
+        position: relative;
+        overflow: hidden;
+        aspect-ratio: 218.79 / 36;
+        margin-inline: var(--vl-footer-gutter, clamp(16px, 4vw, 48px));
+        color: var(--vl-text-primary);
+        --vl-footer-glow-x: 50%;
+        transition: --vl-footer-glow-x 0.45s var(--vl-ease-cinematic);
+    }
+
+    .vl-footer__mark svg {
+        display: block;
+        width: 100%;
+        height: auto;
+        fill: currentColor;
+    }
+
+    .vl-footer__mark::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        opacity: 0;
+        transition: opacity 0.6s var(--vl-ease-cinematic);
+        background:
+            radial-gradient(
+                ellipse 14% 90% at var(--vl-footer-glow-x) 50%,
+                color-mix(in oklab, var(--vl-color-accent) 82%, #fff) 0,
+                var(--vl-color-accent) 45%,
+                transparent 100%
+            ),
+            radial-gradient(
+                ellipse 34% 120% at var(--vl-footer-glow-x) 50%,
+                var(--vl-color-accent) 0,
+                transparent 100%
+            );
+        -webkit-mask: var(--vl-footer-mark) 0 0 / 100% auto no-repeat;
+        mask: var(--vl-footer-mark) 0 0 / 100% auto no-repeat;
+    }
+
+    .vl-footer__mark:has(.vl-footer__cells i:hover)::after {
+        opacity: 1;
+    }
+
+    .vl-footer__cells {
+        position: absolute;
+        inset: 0;
+        z-index: 2;
+        display: grid;
+        grid-template-columns: repeat(32, 1fr);
+    }
+
+    .vl-footer__cells i {
+        display: block;
+    }
+
+    .vl-footer__mark:has(.vl-footer__cells i:nth-child(1):hover) {
+        --vl-footer-glow-x: 1.56%;
+    }
+
+    .vl-footer__mark:has(.vl-footer__cells i:nth-child(2):hover) {
+        --vl-footer-glow-x: 4.69%;
+    }
+
+    .vl-footer__mark:has(.vl-footer__cells i:nth-child(3):hover) {
+        --vl-footer-glow-x: 7.81%;
+    }
+
+    .vl-footer__mark:has(.vl-footer__cells i:nth-child(4):hover) {
+        --vl-footer-glow-x: 10.94%;
+    }
+
+    .vl-footer__mark:has(.vl-footer__cells i:nth-child(5):hover) {
+        --vl-footer-glow-x: 14.06%;
+    }
+
+    .vl-footer__mark:has(.vl-footer__cells i:nth-child(6):hover) {
+        --vl-footer-glow-x: 17.19%;
+    }
+
+    .vl-footer__mark:has(.vl-footer__cells i:nth-child(7):hover) {
+        --vl-footer-glow-x: 20.31%;
+    }
+
+    .vl-footer__mark:has(.vl-footer__cells i:nth-child(8):hover) {
+        --vl-footer-glow-x: 23.44%;
+    }
+
+    .vl-footer__mark:has(.vl-footer__cells i:nth-child(9):hover) {
+        --vl-footer-glow-x: 26.56%;
+    }
+
+    .vl-footer__mark:has(.vl-footer__cells i:nth-child(10):hover) {
+        --vl-footer-glow-x: 29.69%;
+    }
+
+    .vl-footer__mark:has(.vl-footer__cells i:nth-child(11):hover) {
+        --vl-footer-glow-x: 32.81%;
+    }
+
+    .vl-footer__mark:has(.vl-footer__cells i:nth-child(12):hover) {
+        --vl-footer-glow-x: 35.94%;
+    }
+
+    .vl-footer__mark:has(.vl-footer__cells i:nth-child(13):hover) {
+        --vl-footer-glow-x: 39.06%;
+    }
+
+    .vl-footer__mark:has(.vl-footer__cells i:nth-child(14):hover) {
+        --vl-footer-glow-x: 42.19%;
+    }
+
+    .vl-footer__mark:has(.vl-footer__cells i:nth-child(15):hover) {
+        --vl-footer-glow-x: 45.31%;
+    }
+
+    .vl-footer__mark:has(.vl-footer__cells i:nth-child(16):hover) {
+        --vl-footer-glow-x: 48.44%;
+    }
+
+    .vl-footer__mark:has(.vl-footer__cells i:nth-child(17):hover) {
+        --vl-footer-glow-x: 51.56%;
+    }
+
+    .vl-footer__mark:has(.vl-footer__cells i:nth-child(18):hover) {
+        --vl-footer-glow-x: 54.69%;
+    }
+
+    .vl-footer__mark:has(.vl-footer__cells i:nth-child(19):hover) {
+        --vl-footer-glow-x: 57.81%;
+    }
+
+    .vl-footer__mark:has(.vl-footer__cells i:nth-child(20):hover) {
+        --vl-footer-glow-x: 60.94%;
+    }
+
+    .vl-footer__mark:has(.vl-footer__cells i:nth-child(21):hover) {
+        --vl-footer-glow-x: 64.06%;
+    }
+
+    .vl-footer__mark:has(.vl-footer__cells i:nth-child(22):hover) {
+        --vl-footer-glow-x: 67.19%;
+    }
+
+    .vl-footer__mark:has(.vl-footer__cells i:nth-child(23):hover) {
+        --vl-footer-glow-x: 70.31%;
+    }
+
+    .vl-footer__mark:has(.vl-footer__cells i:nth-child(24):hover) {
+        --vl-footer-glow-x: 73.44%;
+    }
+
+    .vl-footer__mark:has(.vl-footer__cells i:nth-child(25):hover) {
+        --vl-footer-glow-x: 76.56%;
+    }
+
+    .vl-footer__mark:has(.vl-footer__cells i:nth-child(26):hover) {
+        --vl-footer-glow-x: 79.69%;
+    }
+
+    .vl-footer__mark:has(.vl-footer__cells i:nth-child(27):hover) {
+        --vl-footer-glow-x: 82.81%;
+    }
+
+    .vl-footer__mark:has(.vl-footer__cells i:nth-child(28):hover) {
+        --vl-footer-glow-x: 85.94%;
+    }
+
+    .vl-footer__mark:has(.vl-footer__cells i:nth-child(29):hover) {
+        --vl-footer-glow-x: 89.06%;
+    }
+
+    .vl-footer__mark:has(.vl-footer__cells i:nth-child(30):hover) {
+        --vl-footer-glow-x: 92.19%;
+    }
+
+    .vl-footer__mark:has(.vl-footer__cells i:nth-child(31):hover) {
+        --vl-footer-glow-x: 95.31%;
+    }
+
+    .vl-footer__mark:has(.vl-footer__cells i:nth-child(32):hover) {
+        --vl-footer-glow-x: 98.44%;
+    }
+
+    .vl-footer__mark {
+        -webkit-mask-image: linear-gradient(to bottom, #000 0%, #000 52%, transparent 100%);
+        mask-image: linear-gradient(to bottom, #000 0%, #000 52%, transparent 100%);
+    }
+
+    /* No hover (touch): the glow stays on and sweeps slowly across the wordmark. */
+    @media (hover: none) {
+        .vl-footer__mark::after {
+            opacity: 0.9;
+        }
+
+        @media (prefers-reduced-motion: no-preference) {
+            .vl-footer__mark::after {
+                animation: vl-footer-sweep 7s ease-in-out infinite alternate;
+            }
+        }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .vl-footer__mark,
+        .vl-footer__mark::after {
+            transition: none;
+        }
+    }
+
+    @keyframes vl-footer-sweep {
+        from {
+            --vl-footer-glow-x: 8%;
+        }
+
+        to {
+            --vl-footer-glow-x: 92%;
+        }
+    }
+}

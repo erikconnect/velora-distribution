@@ -338,18 +338,25 @@
     /* -------------------------------------------------------------------------
        Marquee — faixa de logos / tech (HTML: repetir conteúdo dentro do track)
        ------------------------------------------------------------------------- */
+    /* Parameters (set on .vl-marquee or an ancestor):
+       --vl-marquee-duration   one full loop, default 32s
+       --vl-marquee-gap        space between items, default var(--vl-space-xl)
+       --vl-marquee-direction  normal | reverse, default normal
+       Modifiers: .vl-marquee--vertical (column track; give the box a height),
+                  .vl-marquee--pause (pauses on hover and focus-within). */
     .vl-marquee {
         position: relative;
         overflow: hidden;
+        --_marquee-mask: 90deg;
         -webkit-mask-image: linear-gradient(
-            90deg,
+            var(--_marquee-mask),
             transparent,
             black 10%,
             black 90%,
             transparent
         );
         mask-image: linear-gradient(
-            90deg,
+            var(--_marquee-mask),
             transparent,
             black 10%,
             black 90%,
@@ -357,22 +364,50 @@
         );
     }
 
+    .vl-marquee--vertical {
+        --_marquee-mask: 180deg;
+        block-size: var(--vl-marquee-height, clamp(18rem, 60svh, 40rem));
+    }
+
     .vl-marquee__track {
         display: flex;
         width: max-content;
-        gap: var(--vl-space-xl);
+        gap: var(--vl-marquee-gap, var(--vl-space-xl));
         align-items: center;
+    }
+
+    .vl-marquee--vertical .vl-marquee__track {
+        flex-direction: column;
+        align-items: stretch;
+        width: auto;
     }
 
     @media (prefers-reduced-motion: no-preference) {
         .vl-marquee__track {
-            animation: vl-marquee-scroll 32s linear infinite;
+            animation: vl-marquee-scroll var(--vl-marquee-duration, 32s) linear infinite;
+            animation-direction: var(--vl-marquee-direction, normal);
+        }
+
+        .vl-marquee--vertical .vl-marquee__track {
+            animation-name: vl-marquee-scroll-y;
+        }
+
+        .vl-marquee--pause:is(:hover, :focus-within) .vl-marquee__track {
+            animation-play-state: paused;
         }
     }
 
+    /* The loop distance is half the track plus half a gap: the gap between the two copies
+       is part of one period. */
     @keyframes vl-marquee-scroll {
         to {
-            transform: translate3d(-50%, 0, 0);
+            transform: translate3d(calc(-50% - var(--vl-marquee-gap, var(--vl-space-xl)) / 2), 0, 0);
+        }
+    }
+
+    @keyframes vl-marquee-scroll-y {
+        to {
+            transform: translate3d(0, calc(-50% - var(--vl-marquee-gap, var(--vl-space-xl)) / 2), 0);
         }
     }
 
@@ -799,25 +834,120 @@
         width: 100%;
     }
 
+    /*
+     * Carousel parameters (Experimental). Set them on .vl-carousel or any ancestor of the strip.
+     *   --vl-carousel-slides      number of slides, default 3 (clamps the index; position rules are written up to 8)
+     *   --vl-carousel-visible     slides in view at once, default 1
+     *   --vl-carousel-gap         gap between slides, default 0px
+     *   --vl-carousel-transition  slide | mask, default slide. Read with a style query: a browser without
+     *                             style queries keeps the sliding strip.
+     *   --vl-carousel-duration    default 0.55s (slide), 1s (mask)
+     * The active index is --vl-carousel-index (state radios, below) or --vl-choice-index (.vl-choice),
+     * so one .vl-choice can drive the strip and its labelled controls without ids.
+     * Reduced motion removes the transition.
+     */
     .vl-carousel__strip {
+        --_vl-car-i: min(
+            var(--vl-carousel-index, var(--vl-choice-index, 0)),
+            max(0, calc(var(--vl-carousel-slides, 3) - var(--vl-carousel-visible, 1)))
+        );
         display: flex;
         flex-direction: row;
-        width: 300%;
-        transform: translateX(0);
-        transition: transform 0.55s var(--vl-ease-cinematic);
+        gap: var(--vl-carousel-gap, 0px);
+        width: 100%;
+        transform: translateX(
+            calc(var(--_vl-car-i) * -1 * (100% + var(--vl-carousel-gap, 0px)) / var(--vl-carousel-visible, 1))
+        );
+        transition: transform var(--vl-carousel-duration, 0.55s) var(--vl-ease-cinematic);
         will-change: transform;
     }
 
-    @media (prefers-reduced-motion: reduce) {
+    .vl-carousel__strip > * {
+        box-sizing: border-box;
+        flex: 0 0
+            calc(
+                (100% - (var(--vl-carousel-visible, 1) - 1) * var(--vl-carousel-gap, 0px)) /
+                    var(--vl-carousel-visible, 1)
+            );
+        min-width: 0;
+    }
+
+    /* Mask transition: slides stack in one cell; the active one is uncovered by the Cut mask (same recipe as 03e-cut.css). */
+    @container style(--vl-carousel-transition: mask) {
         .vl-carousel__strip {
-            transition-duration: 0.15s;
+            display: grid;
+            gap: 0;
+            transform: none;
+            transition: none;
+            will-change: auto;
+        }
+
+        .vl-carousel__strip > * {
+            grid-area: 1 / 1;
+            --_on: clamp(0, calc(1 - abs(var(--_vl-car-i) - var(--_pos, 0))), 1);
+            z-index: calc(1 + var(--_on));
+            --vl-cut-t: var(--_on);
+            transition:
+                --vl-cut-t calc(var(--_on) * var(--vl-carousel-duration, 1s)) var(--vl-ease-cinematic)
+                    calc((1 - var(--_on)) * var(--vl-carousel-duration, 1s));
+        }
+
+        .vl-carousel__strip > :nth-child(2) { --_pos: 1; }
+        .vl-carousel__strip > :nth-child(3) { --_pos: 2; }
+        .vl-carousel__strip > :nth-child(4) { --_pos: 3; }
+        .vl-carousel__strip > :nth-child(5) { --_pos: 4; }
+        .vl-carousel__strip > :nth-child(6) { --_pos: 5; }
+        .vl-carousel__strip > :nth-child(7) { --_pos: 6; }
+        .vl-carousel__strip > :nth-child(8) { --_pos: 7; }
+
+        /* Progressive enhancement: no cap on the slide position where sibling-index() exists. */
+        @supports (width: calc(sibling-index() * 1px)) {
+            .vl-carousel__strip > * {
+                --_pos: calc(sibling-index() - 1);
+            }
+        }
+
+        @supports (mask-composite: intersect) or (-webkit-mask-composite: source-in) {
+            .vl-carousel__strip > * {
+                --_ax: calc(90deg + var(--vl-cut-angle, 18.4deg));
+                --_n: var(--vl-cut-count, 8);
+                --_p: clamp(0.04, calc(var(--vl-cut-t) * 1.2 - 0.1), 1.04);
+                --_w: calc(var(--vl-cut-t) * 160% - 10%);
+                -webkit-mask-image:
+                    linear-gradient(var(--_ax), #000 calc(var(--_w) - 28%), transparent var(--_w)),
+                    linear-gradient(var(--_ax), #000 calc(var(--_w) - 70%), transparent calc(var(--_w) - 45%)),
+                    repeating-linear-gradient(
+                        var(--_ax),
+                        #000 0,
+                        #000 calc(var(--_p) * 100% / var(--_n)),
+                        transparent calc(var(--_p) * 100% / var(--_n)),
+                        transparent calc(100% / var(--_n))
+                    );
+                mask-image:
+                    linear-gradient(var(--_ax), #000 calc(var(--_w) - 28%), transparent var(--_w)),
+                    linear-gradient(var(--_ax), #000 calc(var(--_w) - 70%), transparent calc(var(--_w) - 45%)),
+                    repeating-linear-gradient(
+                        var(--_ax),
+                        #000 0,
+                        #000 calc(var(--_p) * 100% / var(--_n)),
+                        transparent calc(var(--_p) * 100% / var(--_n)),
+                        transparent calc(100% / var(--_n))
+                    );
+                -webkit-mask-composite: source-in, source-over, source-over;
+                mask-composite: intersect, add, add;
+            }
+        }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .vl-carousel__strip,
+        .vl-carousel__strip > * {
+            transition: none;
         }
     }
 
     .vl-carousel__slide {
         box-sizing: border-box;
-        flex: 0 0 33.333333%;
-        width: 33.333333%;
         padding: var(--vl-space-lg);
         border-radius: var(--vl-radius-lg);
         background: var(--vl-bg-surface);
@@ -825,17 +955,15 @@
         box-shadow: var(--vl-shadow-sm);
     }
 
-    .vl-carousel:has(.vl-carousel__state:nth-of-type(1):checked) .vl-carousel__strip {
-        transform: translateX(0);
-    }
-
-    .vl-carousel:has(.vl-carousel__state:nth-of-type(2):checked) .vl-carousel__strip {
-        transform: translateX(-33.333333%);
-    }
-
-    .vl-carousel:has(.vl-carousel__state:nth-of-type(3):checked) .vl-carousel__strip {
-        transform: translateX(-66.666666%);
-    }
+    /* State radios set the index once (cap 8). */
+    .vl-carousel:has(.vl-carousel__state:nth-of-type(1):checked) { --vl-carousel-index: 0; }
+    .vl-carousel:has(.vl-carousel__state:nth-of-type(2):checked) { --vl-carousel-index: 1; }
+    .vl-carousel:has(.vl-carousel__state:nth-of-type(3):checked) { --vl-carousel-index: 2; }
+    .vl-carousel:has(.vl-carousel__state:nth-of-type(4):checked) { --vl-carousel-index: 3; }
+    .vl-carousel:has(.vl-carousel__state:nth-of-type(5):checked) { --vl-carousel-index: 4; }
+    .vl-carousel:has(.vl-carousel__state:nth-of-type(6):checked) { --vl-carousel-index: 5; }
+    .vl-carousel:has(.vl-carousel__state:nth-of-type(7):checked) { --vl-carousel-index: 6; }
+    .vl-carousel:has(.vl-carousel__state:nth-of-type(8):checked) { --vl-carousel-index: 7; }
 
     .vl-carousel__arrows {
         position: absolute;
@@ -939,7 +1067,12 @@
 
     .vl-carousel:has(.vl-carousel__state:nth-of-type(1):checked) .vl-slider-dots label:nth-child(1),
     .vl-carousel:has(.vl-carousel__state:nth-of-type(2):checked) .vl-slider-dots label:nth-child(2),
-    .vl-carousel:has(.vl-carousel__state:nth-of-type(3):checked) .vl-slider-dots label:nth-child(3) {
+    .vl-carousel:has(.vl-carousel__state:nth-of-type(3):checked) .vl-slider-dots label:nth-child(3),
+    .vl-carousel:has(.vl-carousel__state:nth-of-type(4):checked) .vl-slider-dots label:nth-child(4),
+    .vl-carousel:has(.vl-carousel__state:nth-of-type(5):checked) .vl-slider-dots label:nth-child(5),
+    .vl-carousel:has(.vl-carousel__state:nth-of-type(6):checked) .vl-slider-dots label:nth-child(6),
+    .vl-carousel:has(.vl-carousel__state:nth-of-type(7):checked) .vl-slider-dots label:nth-child(7),
+    .vl-carousel:has(.vl-carousel__state:nth-of-type(8):checked) .vl-slider-dots label:nth-child(8) {
         background: var(--vl-color-primary);
         border-color: color-mix(in oklch, var(--vl-color-primary) 50%, transparent);
         transform: scale(1.35);
@@ -1259,6 +1392,10 @@
 
     .vl-media--3-4 {
         aspect-ratio: 3 / 4;
+    }
+
+    .vl-media--4-3 {
+        aspect-ratio: 4 / 3;
     }
 
     .vl-media__caption {

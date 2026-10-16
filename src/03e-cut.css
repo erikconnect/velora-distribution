@@ -1,0 +1,142 @@
+/*
+ * Cut Reveal (A2, #120): vl-enter="cut-reveal". Status: Experimental.
+ *
+ * The element resolves through parallel diagonal slices instead of opening from one edge.
+ * One registered number, --vl-cut-t (0 -> 1), drives three mask layers:
+ *
+ *   wave   a soft front that travels across the element         (intersected)
+ *   solid  the area the front has already passed, fully opaque  (added)
+ *   blinds repeating slices that widen with --vl-cut-t         (added)
+ *
+ *   mask = wave x (solid U blinds)   via mask-composite: intersect, add
+ *
+ * Only mask and opacity change. No layout, no transform, no JavaScript.
+ *
+ * Parameters (set on the element or any ancestor):
+ *   --vl-cut-count   number of slices, default 8
+ *   --vl-cut-angle   slice tilt from vertical, default 18.4deg (a Skin may set it; at 0deg the slices are straight)
+ *   --vl-enter-duration / --vl-enter-ease / --vl-enter-delay   the usual enter knobs
+ *
+ * Rest state: --vl-cut-t ends at 1, where every layer is fully opaque (the finished element looks unmasked).
+ * Without mask-composite support the reveal is a plain opacity fade.
+ * Reduced motion is owned by 03-motion.css: all vl-enter animation is removed, the element is shown at once.
+ * Works time-based and with vl-timeline="view" (+ vl-range), where --vl-cut-t is scrubbed by scroll.
+ */
+
+/* Outside the layer: @property is global. */
+@property --vl-cut-t {
+    syntax: "<number>";
+    inherits: false;
+    initial-value: 1;
+}
+
+@property --vl-cut-count {
+    syntax: "<number>";
+    inherits: true;
+    initial-value: 8;
+}
+
+@layer velora.motion {
+    @keyframes vl-cut-fade {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+
+    @keyframes vl-cut-reveal {
+        from { --vl-cut-t: 0; }
+        to { --vl-cut-t: 1; }
+    }
+
+    /* Kept as a second, inert animation so the animation lists below stay aligned with loop and exit.
+       It used to animate mask-image to none at the end, but Chromium resolves that keyframe's implicit start from
+       the base style, where --vl-cut-t is not yet animated, so the mask stayed frozen at "closed" for the whole
+       reveal and the element popped in at the end. The mask now simply ends fully open at --vl-cut-t: 1. */
+    @keyframes vl-cut-settle {
+        to { --vl-cut-settled: 1; }
+    }
+
+    :is([vl-enter~="cut-reveal"], [vl-effect~="cut-reveal"]) {
+        --vl-enter-name: vl-cut-fade;
+        --vl-enter-duration: calc(var(--vl-duration-slower) * 1.75);
+        --vl-enter-ease: var(--vl-ease-cinematic);
+    }
+
+    [vl-effect~="cut-reveal"]:not([vl-enter]) {
+        animation: vl-cut-fade var(--vl-enter-duration) var(--vl-enter-ease) both;
+    }
+
+    @supports (mask-composite: intersect) or (-webkit-mask-composite: source-in) {
+        :is([vl-enter~="cut-reveal"], [vl-effect~="cut-reveal"]) {
+            /* --vl-cut-t keeps its registered initial value 1 (fully open), so without the animation (reduced motion,
+               or no animation support) the element is simply shown. The reveal animation starts from 0. */
+            --_cut-angle: var(--vl-cut-angle, 18.4deg);
+            --_cut-axis: calc(90deg + var(--_cut-angle));
+            --_cut-n: var(--vl-cut-count, 8);
+            --_cut-p: clamp(0.04, calc(var(--vl-cut-t) * 1.2 - 0.1), 1.04);
+            --_cut-w: calc(var(--vl-cut-t) * 160% - 10%);
+            --_cut-wave: linear-gradient(var(--_cut-axis), #000 calc(var(--_cut-w) - 28%), transparent var(--_cut-w));
+            --_cut-solid: linear-gradient(var(--_cut-axis), #000 calc(var(--_cut-w) - 70%), transparent calc(var(--_cut-w) - 45%));
+            --_cut-blinds: repeating-linear-gradient(
+                var(--_cut-axis),
+                #000 0,
+                #000 calc(var(--_cut-p) * 100% / var(--_cut-n)),
+                transparent calc(var(--_cut-p) * 100% / var(--_cut-n)),
+                transparent calc(100% / var(--_cut-n))
+            );
+            --vl-enter-name: vl-cut-reveal, vl-cut-settle;
+            -webkit-mask-image: var(--_cut-wave), var(--_cut-solid), var(--_cut-blinds);
+            mask-image: var(--_cut-wave), var(--_cut-solid), var(--_cut-blinds);
+            -webkit-mask-composite: source-in, source-over, source-over;
+            mask-composite: intersect, add, add;
+            animation-timing-function: var(--vl-enter-ease), steps(1, jump-end);
+        }
+
+        /* cut-reveal is two animations (reveal, settle). With a loop and/or an exit on the same element
+           they are followed by those, in the order enter < loop < exit (see 03-motion.css). */
+        [vl-enter~="cut-reveal"]:is([vl-loop], [vl-loop-effect]):not([vl-exit]) {
+            animation-name: vl-cut-reveal, vl-cut-settle, var(--vl-loop-name, none);
+            animation-duration: var(--vl-enter-duration), var(--vl-enter-duration), var(--vl-loop-duration, var(--vl-motion-duration, 4s));
+            animation-delay: var(--vl-enter-delay, var(--vl-motion-delay, 0s)), var(--vl-enter-delay, var(--vl-motion-delay, 0s)), 0s;
+            animation-timing-function: var(--vl-enter-ease), steps(1, jump-end), var(--vl-loop-ease, var(--vl-ease-in-out-smooth));
+            animation-direction: normal, normal, var(--vl-loop-direction, var(--vl-motion-direction, normal));
+            animation-iteration-count: 1, 1, var(--vl-loop-count, infinite);
+            animation-fill-mode: both, both, none;
+        }
+
+        [vl-enter~="cut-reveal"][vl-exit]:not([vl-loop]):not([vl-loop-effect]) {
+            animation-name: vl-cut-reveal, vl-cut-settle, var(--vl-exit-name, none);
+            animation-duration: var(--vl-enter-duration), var(--vl-enter-duration), var(--vl-exit-duration, var(--vl-duration-fast));
+            animation-delay: var(--vl-enter-delay, var(--vl-motion-delay, 0s)), var(--vl-enter-delay, var(--vl-motion-delay, 0s)), var(--vl-exit-delay, var(--vl-motion-delay, 0s));
+            animation-timing-function: var(--vl-enter-ease), steps(1, jump-end), var(--vl-exit-ease, var(--vl-ease-out-soft));
+            animation-direction: normal, normal, var(--vl-exit-direction, var(--vl-motion-direction, normal));
+            animation-iteration-count: 1, 1, 1;
+            animation-fill-mode: both, both, forwards;
+        }
+
+        [vl-enter~="cut-reveal"][vl-exit]:is([vl-loop], [vl-loop-effect]) {
+            animation-name: vl-cut-reveal, vl-cut-settle, var(--vl-loop-name, none), var(--vl-exit-name, none);
+            animation-duration: var(--vl-enter-duration), var(--vl-enter-duration), var(--vl-loop-duration, var(--vl-motion-duration, 4s)), var(--vl-exit-duration, var(--vl-duration-fast));
+            animation-delay: var(--vl-enter-delay, var(--vl-motion-delay, 0s)), var(--vl-enter-delay, var(--vl-motion-delay, 0s)), 0s, var(--vl-exit-delay, var(--vl-motion-delay, 0s));
+            animation-timing-function: var(--vl-enter-ease), steps(1, jump-end), var(--vl-loop-ease, var(--vl-ease-in-out-smooth)), var(--vl-exit-ease, var(--vl-ease-out-soft));
+            animation-direction: normal, normal, var(--vl-loop-direction, var(--vl-motion-direction, normal)), var(--vl-exit-direction, var(--vl-motion-direction, normal));
+            animation-iteration-count: 1, 1, var(--vl-loop-count, infinite), 1;
+            animation-fill-mode: both, both, none, forwards;
+        }
+
+        [vl-effect~="cut-reveal"]:not([vl-enter]) {
+            animation: vl-cut-reveal var(--vl-enter-duration) var(--vl-enter-ease) both,
+                vl-cut-settle var(--vl-enter-duration) steps(1, jump-end) both;
+        }
+
+        [vl-timeline="view"]:is([vl-enter~="cut-reveal"], [vl-effect~="cut-reveal"]) {
+            animation-timing-function: linear, steps(1, jump-end);
+        }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        :is([vl-enter~="cut-reveal"], [vl-effect~="cut-reveal"]) {
+            -webkit-mask-image: none;
+            mask-image: none;
+        }
+    }
+}

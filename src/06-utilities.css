@@ -17,6 +17,29 @@
         border: 0;
     }
 
+    /* Skip link: first focusable element, visible only on keyboard focus.
+       Markup: <a class="vl-skip-link" href="#main">Skip to content</a> */
+    .vl-skip-link {
+        position: absolute;
+        left: 12px;
+        top: -80px;
+        z-index: 30;
+        padding: 10px 16px;
+        background: var(--vl-text-primary);
+        color: var(--vl-text-inverse);
+        font-family: var(--vl-font-family-display, inherit);
+        font-size: 0.9rem;
+        font-weight: var(--vl-font-weight-semibold);
+        line-height: normal;
+        text-decoration: none;
+    }
+
+    .vl-skip-link:focus-visible {
+        top: 8px;
+        outline: 2px solid var(--vl-color-accent);
+        outline-offset: 2px;
+    }
+
     /* --- Texto gradiente — ângulo: --vl-text-grad-angle (ex.: 120deg) --- */
     .vl-text-gradient {
         background: linear-gradient(
@@ -472,5 +495,156 @@
     .vl-content-auto {
         content-visibility: auto;
         contain-intrinsic-size: auto 400px;
+    }
+}
+
+/*
+ * Cut corner consumer: .vl-cut (Experimental, RFC #114 open question 2, work package A10).
+ * The one place that turns --vl-corner-style into geometry. Components add the class and set
+ * colours; they never write a polygon. @property is global, so it sits outside the layer.
+ */
+@property --vl-cut-grow {
+    syntax: "<length>";
+    inherits: true;
+    initial-value: 0px;
+}
+
+/* --vl-radius-* tokens may be a bare 0; registering a length makes max()/calc() safe. */
+@property --vl-cut-r {
+    syntax: "<length>";
+    inherits: true;
+    initial-value: 0px;
+}
+
+@layer velora.utilities {
+    /*
+     * Markup: <a class="vl-cut" href="..."> ... </a>
+     * Reads:  --vl-corner-style, --vl-cut-angle, --vl-cut-pitch, --vl-radius-lg, --vl-skin-border-width
+     * Public overrides (all optional): --vl-cut-size (vertical leg of the cut), --vl-cut-border-width,
+     *   --vl-cut-border, --vl-cut-fill (any <background> layer list), --vl-cut-ring, --vl-cut-hover-grow,
+     *   --vl-cut-edge (angle for this element only; defaults to --vl-cut-angle).
+     *
+     * Fallback (everything below the @supports block): a plain box with a border and the radius from
+     * --vl-radius-lg, so round and square Skins, and engines without if(), trig or clip-path, render
+     * the ordinary component. Only corner-style: cut draws the cut.
+     *
+     * Cut drawing (top-right corner): the element has no layout border, is clipped to the cut polygon
+     * and painted in the border colour (the border is drawn, so fractional widths stay exact); ::before is the fill, inset by the border width on the same polygon, so the
+     * border follows the diagonal at a constant width. Both pseudo-elements sit at z-index -1 inside
+     * an isolated stacking context (below content) and never take pointer events. clip-path also
+     * clips outline and box-shadow, so the focus ring is drawn inside as a third polygon layer.
+     */
+    .vl-cut {
+        --vl-cut-bw: var(--vl-cut-border-width, var(--vl-skin-border-width, 1px));
+        --vl-cut-rw: var(--vl-focus-ring-width, 2px);
+        position: relative;
+        isolation: isolate;
+        border: var(--vl-cut-bw) solid var(--vl-cut-border, var(--vl-text-muted));
+        border-radius: var(--vl-radius-lg);
+        background: var(--vl-cut-fill, var(--vl-bg-surface));
+        --vl-cut-grow: 0px;
+        transition: --vl-cut-grow 0.5s var(--vl-ease-cinematic, ease);
+    }
+
+    .vl-cut:is(:hover, :focus-visible) {
+        --vl-cut-grow: var(--vl-cut-hover-grow, 0px);
+    }
+
+    /* Inner focus indicator for the fallback box (a plain outline is not clipped there). */
+    .vl-cut:focus-visible {
+        outline: var(--vl-cut-rw) solid var(--vl-cut-ring, var(--vl-color-accent));
+        outline-offset: calc(0px - var(--vl-cut-bw) - var(--vl-cut-rw));
+    }
+
+    @supports (clip-path: polygon(0 0)) and (width: calc(tan(1deg) * 1px)) and
+        (width: if(style(--a: b): 1px; else: 2px)) {
+        .vl-cut {
+            /* Geometry: y is the vertical leg, x = y * tan(angle). Angle 0deg degenerates to a square corner. */
+            --vl-cut-r: var(--vl-radius-lg);
+            --vl-cut-y: calc(
+                var(--vl-cut-size, max(var(--vl-cut-r) * 3, var(--vl-cut-pitch) * 6)) + var(--vl-cut-grow)
+            );
+            --vl-cut-tan: tan(var(--vl-cut-edge, var(--vl-cut-angle)));
+            --vl-cut-sec: calc(1 / cos(var(--vl-cut-edge, var(--vl-cut-angle))));
+            --vl-cut-dx: calc(var(--vl-cut-y) * var(--vl-cut-tan));
+            border-width: if(style(--vl-corner-style: cut): 0; else: var(--vl-cut-bw));
+            border-radius: if(style(--vl-corner-style: cut): 0; else: var(--vl-radius-lg));
+            background: if(
+                style(--vl-corner-style: cut): var(--vl-cut-border, var(--vl-text-muted));
+                else: var(--vl-cut-fill, var(--vl-bg-surface))
+            );
+            clip-path: if(
+                style(--vl-corner-style: cut):
+                    polygon(0 0, calc(100% - var(--vl-cut-dx)) 0, 100% var(--vl-cut-y), 100% 100%, 0 100%);
+                else: none
+            );
+        }
+
+        .vl-cut:focus-visible {
+            outline-style: if(style(--vl-corner-style: cut): none; else: solid);
+        }
+
+        .vl-cut::before,
+        .vl-cut::after {
+            /* --vl-cut-i: distance of this layer from the outer edge; the polygon is the cut shifted inwards by it. */
+            --vl-cut-i: var(--vl-cut-bw);
+            content: if(style(--vl-corner-style: cut): ""; else: none);
+            position: absolute;
+            inset: var(--vl-cut-i);
+            z-index: -1;
+            pointer-events: none;
+            background: var(--vl-cut-fill, var(--vl-bg-surface));
+            clip-path: polygon(
+                0 0,
+                calc(
+                        100% - var(--vl-cut-dx) + var(--vl-cut-i) *
+                            (1 - var(--vl-cut-sec) + var(--vl-cut-tan))
+                    )
+                    0,
+                100%
+                    calc(
+                        var(--vl-cut-y) + var(--vl-cut-i) * var(--vl-cut-tan) / (var(--vl-cut-sec) + 1) -
+                            var(--vl-cut-i)
+                    ),
+                100% 100%,
+                0 100%
+            );
+        }
+
+        /* Focus: ::before turns into the ring colour, ::after repaints the fill inside it. */
+        .vl-cut:focus-visible::before {
+            background: var(--vl-cut-ring, var(--vl-color-accent));
+        }
+
+        .vl-cut:focus-visible::after {
+            --vl-cut-i: calc(var(--vl-cut-bw) + var(--vl-cut-rw));
+        }
+
+        .vl-cut:not(:focus-visible)::after {
+            content: none;
+        }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .vl-cut {
+            transition: none;
+        }
+    }
+
+    /* Forced colours drop backgrounds: show the plain bordered box and a system-colour ring. */
+    @media (forced-colors: active) {
+        .vl-cut {
+            clip-path: none;
+            border-color: CanvasText;
+        }
+
+        .vl-cut:focus-visible {
+            outline-style: solid;
+        }
+
+        .vl-cut::before,
+        .vl-cut::after {
+            content: none;
+        }
     }
 }

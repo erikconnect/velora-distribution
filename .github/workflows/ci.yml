@@ -16,6 +16,8 @@ jobs:
         with:
           node-version: '24'
           package-manager-cache: false
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - run: npm run check:min
       - run: node verify.mjs
       - run: node --test .github/scripts/verify-release.test.mjs
       - run: node consumer-test.mjs

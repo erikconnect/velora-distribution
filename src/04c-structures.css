@@ -723,6 +723,56 @@
             display: block;
             animation: vl-fade-down var(--vl-duration-normal) var(--vl-ease-cinematic) forwards;
         }
+
+        /* No-JS drawer: <button popovertarget="id"> + <div id="id" popover class="vl-header__drawer">.
+           The browser owns open/close, Esc, outside-click dismissal and aria-expanded.
+           Additive: without the popover attribute the [data-menu-open] path above is unchanged. */
+        .vl-header__drawer[popover] {
+            position: fixed;
+            inset: var(--vl-header-offset, 4rem) 0 0 0;
+            width: auto;
+            max-width: none;
+            height: auto;
+            max-height: none;
+            margin: 0;
+            overflow-y: auto;
+            border: 0;
+            border-top: 1px solid color-mix(in oklch, var(--vl-color-primary) 14%, transparent);
+            background: var(--vl-bg-main);
+            color: var(--vl-text-primary);
+            opacity: 0;
+            transform: translateY(calc(var(--vl-state-distance, 0.6rem) * -1));
+            transition:
+                opacity var(--vl-duration-normal) var(--vl-ease-cinematic),
+                transform var(--vl-duration-normal) var(--vl-ease-cinematic),
+                display var(--vl-duration-normal) allow-discrete,
+                overlay var(--vl-duration-normal) allow-discrete;
+        }
+
+        .vl-header__drawer[popover]::backdrop {
+            background: transparent;
+        }
+
+        .vl-header__drawer[popover]:popover-open {
+            display: block;
+            opacity: 1;
+            transform: none;
+        }
+
+        @starting-style {
+            .vl-header__drawer[popover]:popover-open {
+                opacity: 0;
+                transform: translateY(calc(var(--vl-state-distance, 0.6rem) * -1));
+            }
+        }
+    }
+
+    /* Browsers without the Popover API ignore the attribute: keep the drawer out of the way
+       (the [data-menu-open] path, or a visible nav, remains the fallback). */
+    @supports not selector(:popover-open) {
+        .vl-header__drawer[popover] {
+            display: none;
+        }
     }
 
     /* ── Desktop: always hide mobile-only elements ── */
@@ -764,6 +814,119 @@
     }
 
     /* =========================================================================
+       CHOICE — .vl-choice (Experimental)
+       One no-JS selection group on native radios. Panels are mapped by position, never by id.
+
+       <div class="vl-choice" role="radiogroup" aria-label="Where Velora runs">
+         <div class="vl-choice__options">
+           <label class="vl-choice__option"><input type="radio" name="where" checked> Intent</label>
+           <label class="vl-choice__option"><input type="radio" name="where"> Primitive</label>
+         </div>
+         <div class="vl-choice__panels">
+           <div class="vl-choice__panel" role="group" aria-label="Intent">...</div>
+           <div class="vl-choice__panel" role="group" aria-label="Primitive">...</div>
+         </div>
+       </div>
+
+       - The input sits inside its label (no id/for pair) and must be the label's direct child.
+         All radios of one group share a name (native grouping; this is not an instance id).
+       - Option N shows panel N (same position). Options must be direct children of one container;
+         panels must be direct children of one container. Do not nest one .vl-choice in another.
+       - The core sets --vl-choice-index (0-based) once on the root with :has(), for up to 8 options
+         (the cap). Other components may read it (the carousel does). Beyond 8 options, use more
+         than one group or write your own rules.
+       - Keyboard: native radio behaviour. Tab focuses the checked radio, Arrow keys move and select.
+       - ARIA: this is a choice group, not tabs. The root is a radiogroup, each radio keeps its
+         native role, and each panel is a labelled group (role="group" + aria-label). Do not add
+         role="tablist" / "tab" / "tabpanel": there is no roving tabindex and no aria-selected.
+         Hidden panels use visibility: hidden, so they leave the accessibility tree and tab order.
+       - Without :has() support, every panel stays visible and stacked (content first, no loss).
+       - sibling-index() is not used here (panel position uses :nth-child()); the carousel mask mode uses it as an enhancement.
+       - vl-enter: do not put vl-enter / vl-effect on .vl-choice__panel itself. The panel owns
+         opacity, translate, visibility and their transition; an enter animation with fill-mode
+         "both" on the same element would override the hidden state or be cut by it.
+         Put vl-enter on a child of the panel.
+       - Parameters: --vl-choice-duration (0.4s), --vl-choice-shift (1rem).
+       - Reduced motion removes the panel transition (state changes at once).
+       ========================================================================= */
+
+    .vl-choice {
+        --vl-choice-index: 0;
+    }
+
+    .vl-choice__option {
+        position: relative;
+        cursor: pointer;
+    }
+
+    .vl-choice__option > input {
+        position: absolute;
+        inline-size: 1px;
+        block-size: 1px;
+        margin: -1px;
+        padding: 0;
+        overflow: hidden;
+        clip-path: inset(50%);
+        white-space: nowrap;
+        border: 0;
+        opacity: 0;
+    }
+
+    @supports selector(:has(*)) {
+        .vl-choice__option:has(> input:checked) {
+            color: var(--vl-color-primary);
+        }
+
+        .vl-choice__option:has(> input:focus-visible) {
+            outline: var(--vl-focus-ring-width) solid var(--vl-focus-ring-color);
+            outline-offset: var(--vl-focus-ring-offset);
+        }
+
+        .vl-choice:has(.vl-choice__option:nth-child(2) > input:checked) { --vl-choice-index: 1; }
+        .vl-choice:has(.vl-choice__option:nth-child(3) > input:checked) { --vl-choice-index: 2; }
+        .vl-choice:has(.vl-choice__option:nth-child(4) > input:checked) { --vl-choice-index: 3; }
+        .vl-choice:has(.vl-choice__option:nth-child(5) > input:checked) { --vl-choice-index: 4; }
+        .vl-choice:has(.vl-choice__option:nth-child(6) > input:checked) { --vl-choice-index: 5; }
+        .vl-choice:has(.vl-choice__option:nth-child(7) > input:checked) { --vl-choice-index: 6; }
+        .vl-choice:has(.vl-choice__option:nth-child(8) > input:checked) { --vl-choice-index: 7; }
+
+        .vl-choice__panels {
+            display: grid;
+        }
+
+        .vl-choice__panel {
+            grid-area: 1 / 1;
+            opacity: 0;
+            visibility: hidden;
+            translate: var(--vl-choice-shift, 1rem) 0;
+            transition:
+                opacity var(--vl-choice-duration, 0.4s) var(--vl-ease-cinematic),
+                translate var(--vl-choice-duration, 0.4s) var(--vl-ease-cinematic),
+                visibility 0s var(--vl-choice-duration, 0.4s);
+        }
+
+        .vl-choice:has(.vl-choice__option:nth-child(1) > input:checked) .vl-choice__panel:nth-child(1),
+        .vl-choice:has(.vl-choice__option:nth-child(2) > input:checked) .vl-choice__panel:nth-child(2),
+        .vl-choice:has(.vl-choice__option:nth-child(3) > input:checked) .vl-choice__panel:nth-child(3),
+        .vl-choice:has(.vl-choice__option:nth-child(4) > input:checked) .vl-choice__panel:nth-child(4),
+        .vl-choice:has(.vl-choice__option:nth-child(5) > input:checked) .vl-choice__panel:nth-child(5),
+        .vl-choice:has(.vl-choice__option:nth-child(6) > input:checked) .vl-choice__panel:nth-child(6),
+        .vl-choice:has(.vl-choice__option:nth-child(7) > input:checked) .vl-choice__panel:nth-child(7),
+        .vl-choice:has(.vl-choice__option:nth-child(8) > input:checked) .vl-choice__panel:nth-child(8) {
+            opacity: 1;
+            visibility: visible;
+            translate: 0 0;
+            transition-delay: 0s;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .vl-choice__panel {
+                transition: none;
+            }
+        }
+    }
+
+    /* =========================================================================
        REDUCED MOTION
        ========================================================================= */
 
@@ -777,6 +940,10 @@
         }
 
         .vl-header__menu-btn {
+            transition: none;
+        }
+
+        .vl-header__drawer[popover] {
             transition: none;
         }
     }

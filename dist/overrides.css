@@ -1,7 +1,0 @@
-/**
- * Velora overrides bundle.
- * Includes last-mile override hooks.
- */
-@layer velora.reset, velora.tokens, velora.layout, velora.motion, velora.components, velora.transitions, velora.utilities, velora.overrides;
-
-@import "./07-overrides.css";

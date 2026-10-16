@@ -6,7 +6,9 @@ import { createRequire } from 'node:module';
 import assert from 'node:assert/strict';
 const temp = mkdtempSync(join(tmpdir(), 'velora-consumer-'));
 const pack = JSON.parse(execFileSync('npm', ['pack', '--json', '--ignore-scripts', '--pack-destination', temp, '--cache', join(temp, 'cache')], {encoding:'utf8'}))[0];
-assert.equal(pack.entryCount, 89);
+const manifest = JSON.parse(readFileSync('distribution-manifest.json'));
+const srcCount = Object.keys(manifest.src).length;
+assert.equal(pack.entryCount, 3 + srcCount + Object.keys(manifest.dist).length);
 assert.ok(pack.files.every(({path}) => ['LICENSE','README.md','package.json'].includes(path) || /^(src|dist)\/[\w.-]+\.css$/.test(path)));
 execFileSync('npm', ['install', join(temp, pack.filename), '--prefix', temp, '--ignore-scripts', '--no-audit', '--no-fund', '--cache', join(temp,'cache')], {stdio:'pipe'});
 const require = createRequire(join(temp, 'consumer.cjs'));
@@ -14,5 +16,5 @@ const pkg = JSON.parse(readFileSync('package.json'));
 for (const [entry, path] of Object.entries(pkg.exports)) {
   assert.equal(require.resolve(entry === '.' ? '@veloracss.io/css' : '@veloracss.io/css/' + entry.slice(2)), realpathSync(resolve(temp,'node_modules/@veloracss.io/css',path)));
 }
-assert.equal(readdirSync(join(temp,'node_modules/@veloracss.io/css/src')).length, 43);
-console.log('Isolated tarball installation and all 10 entrypoints passed.');
+assert.equal(readdirSync(join(temp,'node_modules/@veloracss.io/css/src')).length, srcCount);
+console.log(`Isolated tarball installation and all ${Object.keys(pkg.exports).length} entrypoints passed.`);

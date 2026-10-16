@@ -6,30 +6,36 @@ Declarative motion for modern HTML and CSS interfaces, with **zero animation run
 
 ## Release status
 
-The operational package version in this repository is `1.0.1`. Check the [npm versions](https://www.npmjs.com/package/@veloracss.io/css?activeTab=versions) for publication availability. The `0.0.0-stage` placeholder is **not a usable CSS release**; the bootstrap `1.0.0` remains staged and is not the release targeted here.
+`0.9.0` is the first public release: a **launch preview** on the `0.x` line, so the API can still change before `1.0`. Check the [npm versions](https://www.npmjs.com/package/@veloracss.io/css?activeTab=versions) for what is published.
 
 ## Install
 
-For the operational release (after registry publication):
-
 ```sh
-npm install @veloracss.io/css@1.0.1
+npm install @veloracss.io/css
 ```
 
-Use a bundler that resolves package CSS imports:
+With a bundler that resolves package CSS imports:
 
 ```css
 /* Motion only: keep your existing visual design. */
 @import "@veloracss.io/css/motion-core";
 ```
 
-Or use the full bundle:
+Or the full bundle:
 
 ```css
 @import "@veloracss.io/css";
 ```
 
-For plain HTML without a bundler, copy the selected CSS entrypoint **and its imported files** from the package to your static assets. Do not copy only `motion-core.css`: it imports other CSS files.
+Plain HTML, no build step: link the single minified motion bundle from a CDN. It has no `@import` chain.
+
+```html
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@veloracss.io/css@0.9.0/dist/motion-core.min.css">
+```
+
+```html
+<h1 vl-enter="fade-up">Hello, motion.</h1>
+```
 
 ## Choose an entrypoint
 
@@ -38,6 +44,7 @@ For plain HTML without a bundler, copy the selected CSS entrypoint **and its imp
 | `@veloracss.io/css` / `full` | Full bundle |
 | `@veloracss.io/css/base` | Base layer |
 | `@veloracss.io/css/motion-core` | Host-agnostic motion |
+| `@veloracss.io/css/motion-core.min` | Same as `motion-core`, as one minified file (`dist/motion-core.min.css`) |
 | `@veloracss.io/css/motion-extended` | Extended motion recipes |
 | `@veloracss.io/css/theme` | Optional Skins and theme layer |
 | `@veloracss.io/css/components-core` | Core components |
@@ -62,7 +69,7 @@ Modern CSS features are progressive enhancements, not a promise of identical beh
 This public repository contains reviewed CSS snapshots. Canonical development remains separate; no private development history is included here.
 
 - `src/`: distributed CSS sources.
-- `dist/`: matching CSS copies for direct asset consumption.
+- `dist/motion-core.min.css`: `motion-core` bundled and minified for CDN use, built by `scripts/build-min.mjs` (esbuild).
 - `distribution-manifest.json`: version and SHA-256 checksums.
 - `verify.mjs`: checks hashes, CSS imports and entrypoints.
 - `consumer-test.mjs`: packs and installs the package in an isolated consumer.
@@ -70,6 +77,8 @@ This public repository contains reviewed CSS snapshots. Canonical development re
 With Node.js 24 and npm installed:
 
 ```sh
+npm ci
+npm run check:min
 node verify.mjs
 node --test .github/scripts/verify-release.test.mjs
 node consumer-test.mjs

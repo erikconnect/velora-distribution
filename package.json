@@ -1,10 +1,10 @@
 {
   "name": "@veloracss.io/css",
-  "version": "1.0.1",
+  "version": "0.9.0",
   "description": "Declarative CSS motion engine (host-agnostic) with optional Velora theme skin",
   "license": "ISC",
-  "unpkg": "./dist/motion-core.css",
-  "jsdelivr": "./dist/motion-core.css",
+  "unpkg": "./dist/motion-core.min.css",
+  "jsdelivr": "./dist/motion-core.min.css",
   "main": "./src/velora.css",
   "exports": {
     ".": "./src/velora.css",
@@ -16,12 +16,21 @@
     "./transitions": "./src/transitions.css",
     "./premium": "./src/premium.css",
     "./overrides": "./src/overrides.css",
-    "./full": "./src/velora.css"
+    "./full": "./src/velora.css",
+    "./motion-core.min": "./dist/motion-core.min.css"
   },
   "files": [
     "src",
-    "dist"
+    "dist/motion-core.min.css"
   ],
+  "scripts": {
+    "build:min": "node scripts/build-min.mjs",
+    "check:min": "node scripts/build-min.mjs --check",
+    "verify": "node verify.mjs && node consumer-test.mjs"
+  },
+  "devDependencies": {
+    "esbuild": "0.28.2"
+  },
   "homepage": "https://veloracss.io",
   "repository": {
     "type": "git",

@@ -15,6 +15,9 @@
     :is([vl-state~="smooth"], [vl-state="smooth"]) {
         transition:
             transform var(--vl-state-duration) var(--vl-state-ease),
+            translate var(--vl-state-duration) var(--vl-state-ease),
+            rotate var(--vl-state-duration) var(--vl-state-ease),
+            scale var(--vl-state-duration) var(--vl-state-ease),
             opacity var(--vl-state-duration) var(--vl-state-ease),
             background-color var(--vl-state-duration) var(--vl-state-ease),
             color var(--vl-state-duration) var(--vl-state-ease),
@@ -22,6 +25,21 @@
             border-color var(--vl-state-duration) var(--vl-state-ease);
     }
 
+    /*
+     * vl-state="enter-exit": discrete display / content-visibility entry and exit.
+     *
+     * Triggers (no JavaScript is needed for the last two; the first stays for authors who already toggle it):
+     *   [hidden]                          toggle the attribute from any script (unchanged)
+     *   popover + popovertarget           the open state is :popover-open; overlay keeps it in the top layer while it leaves
+     *   "enter-exit on-checked" after a   shown while a preceding sibling checkbox or radio is :checked, e.g.
+     *   checkbox or radio                 <input type="checkbox" id="t"> <label for="t">Toggle</label> <div vl-state="enter-exit on-checked">
+     * Decision: the popover trigger is the default behaviour of the existing value (a popover is unambiguous); the checkbox
+     * trigger needs the one modifier token on-checked, because a checkbox sibling cannot be detected from the element alone
+     * without hijacking [hidden]-driven users. :target is not supported (it moves the URL and the scroll position).
+     * Limit: the exited state is display: none from this layer, so an author rule that sets display on the element (a class
+     * with display: grid) beats it, exactly as it beats [hidden]; on-checked also sets visibility: hidden, so the element stays
+     * out of the accessibility tree and the tab order even then.
+     */
     [vl-state~="enter-exit"] {
         opacity: 1;
         transform: translate3d(0, 0, 0) scale(1);
@@ -30,19 +48,42 @@
             opacity var(--vl-state-duration) var(--vl-state-ease),
             transform var(--vl-state-duration) var(--vl-state-ease),
             content-visibility var(--vl-state-duration) allow-discrete,
-            display var(--vl-state-duration) allow-discrete;
+            display var(--vl-state-duration) allow-discrete,
+            overlay var(--vl-state-duration) allow-discrete,
+            visibility var(--vl-state-duration) allow-discrete;
         transition-behavior: allow-discrete;
     }
 
-    [vl-state~="enter-exit"][hidden] {
+    [vl-state~="enter-exit"][hidden],
+    [vl-state~="enter-exit"][vl-state~="on-checked"] {
         display: none;
         opacity: 0;
         transform: translate3d(0, var(--vl-state-distance), 0) scale(var(--vl-state-exit-scale));
         content-visibility: hidden;
     }
 
+    [vl-state~="enter-exit"][vl-state~="on-checked"] {
+        visibility: hidden;
+    }
+
+    :is(input[type="checkbox"], input[type="radio"]):checked ~ [vl-state~="enter-exit"][vl-state~="on-checked"] {
+        display: revert-layer;
+        opacity: 1;
+        transform: translate3d(0, 0, 0) scale(1);
+        content-visibility: visible;
+        visibility: visible;
+    }
+
+    /* A popover is display: none from the UA while closed; only the leaving values are needed. */
+    [popover][vl-state~="enter-exit"]:not(:popover-open) {
+        opacity: 0;
+        transform: translate3d(0, var(--vl-state-distance), 0) scale(var(--vl-state-exit-scale));
+    }
+
+    /* The checked rule outranks the plain one, so its entry values are repeated at its own specificity. */
     @starting-style {
-        [vl-state~="enter-exit"]:not([hidden]) {
+        [vl-state~="enter-exit"]:not([hidden]),
+        :is(input[type="checkbox"], input[type="radio"]):checked ~ [vl-state~="enter-exit"][vl-state~="on-checked"] {
             opacity: 0;
             transform: translate3d(0, var(--vl-state-distance), 0) scale(var(--vl-state-exit-scale));
         }
@@ -127,18 +168,29 @@
         transform: none;
     }
 
-    details[open][vl-state~="expand"] > :not(summary):nth-child(2) { transition-delay: calc(0 * var(--vl-stagger-step)); }
-    details[open][vl-state~="expand"] > :not(summary):nth-child(3) { transition-delay: calc(1 * var(--vl-stagger-step)); }
-    details[open][vl-state~="expand"] > :not(summary):nth-child(4) { transition-delay: calc(2 * var(--vl-stagger-step)); }
-    details[open][vl-state~="expand"] > :not(summary):nth-child(5) { transition-delay: calc(3 * var(--vl-stagger-step)); }
-    details[open][vl-state~="expand"] > :not(summary):nth-child(6) { transition-delay: calc(4 * var(--vl-stagger-step)); }
-    details[open][vl-state~="expand"] > :not(summary):nth-child(7) { transition-delay: calc(5 * var(--vl-stagger-step)); }
-    details[open][vl-state~="expand"] > :not(summary):nth-child(8) { transition-delay: calc(6 * var(--vl-stagger-step)); }
-    details[open][vl-state~="expand"] > :not(summary):nth-child(9) { transition-delay: calc(7 * var(--vl-stagger-step)); }
-    details[open][vl-state~="expand"] > :not(summary):nth-child(10) { transition-delay: calc(8 * var(--vl-stagger-step)); }
-    details[open][vl-state~="expand"] > :not(summary):nth-child(11) { transition-delay: calc(9 * var(--vl-stagger-step)); }
-    details[open][vl-state~="expand"] > :not(summary):nth-child(12) { transition-delay: calc(10 * var(--vl-stagger-step)); }
-    details[open][vl-state~="expand"] > :not(summary):nth-child(13) { transition-delay: calc(11 * var(--vl-stagger-step)); }
+    /* Expand stagger with no child limit: the first child after the summary starts at 0. Same fit as vl-children. */
+    @supports (width: calc(sibling-index() * 1px)) {
+        details[open][vl-state~="expand"] > :not(summary) {
+            transition-delay: calc(max(sibling-index() - 2, 0) * min(var(--vl-stagger-step), var(--vl-stagger-fit, 2s) / max(sibling-count() - 2, 1)));
+        }
+    }
+
+    /* Fallback without sibling-index(): a fixed ladder for the first children. */
+    @supports not (width: calc(sibling-index() * 1px)) {
+        details[open][vl-state~="expand"] > :not(summary):nth-child(2) { transition-delay: calc(0 * var(--vl-stagger-step)); }
+        details[open][vl-state~="expand"] > :not(summary):nth-child(3) { transition-delay: calc(1 * var(--vl-stagger-step)); }
+        details[open][vl-state~="expand"] > :not(summary):nth-child(4) { transition-delay: calc(2 * var(--vl-stagger-step)); }
+        details[open][vl-state~="expand"] > :not(summary):nth-child(5) { transition-delay: calc(3 * var(--vl-stagger-step)); }
+        details[open][vl-state~="expand"] > :not(summary):nth-child(6) { transition-delay: calc(4 * var(--vl-stagger-step)); }
+        details[open][vl-state~="expand"] > :not(summary):nth-child(7) { transition-delay: calc(5 * var(--vl-stagger-step)); }
+        details[open][vl-state~="expand"] > :not(summary):nth-child(8) { transition-delay: calc(6 * var(--vl-stagger-step)); }
+        details[open][vl-state~="expand"] > :not(summary):nth-child(9) { transition-delay: calc(7 * var(--vl-stagger-step)); }
+        details[open][vl-state~="expand"] > :not(summary):nth-child(10) { transition-delay: calc(8 * var(--vl-stagger-step)); }
+        details[open][vl-state~="expand"] > :not(summary):nth-child(11) { transition-delay: calc(9 * var(--vl-stagger-step)); }
+        details[open][vl-state~="expand"] > :not(summary):nth-child(12) { transition-delay: calc(10 * var(--vl-stagger-step)); }
+        details[open][vl-state~="expand"] > :not(summary):nth-child(13) { transition-delay: calc(11 * var(--vl-stagger-step)); }
+    }
+
 
     @starting-style {
         details[open][vl-state~="expand"]::details-content {
@@ -288,16 +340,31 @@
         animation-range: var(--vl-range, entry 0% exit 100%);
     }
 
+    /* One selector list per engine-specific pseudo-element: an engine that does not know one drops the whole rule,
+       and a combined list here stopped the [vl-state] reset from applying in Firefox (500ms transitions under
+       prefers-reduced-motion). */
     @media (prefers-reduced-motion: reduce) {
         [vl-state],
         :is(dialog, [popover])[vl-state],
         :is(dialog, [popover])[vl-state]::backdrop,
+        details[vl-state] > :not(summary),
+        details[vl-state] > summary::marker {
+            transition-duration: 0.01ms;
+            transition-delay: 0ms;
+        }
+
         select[vl-state]::picker(select),
         select[vl-state] option,
-        select[vl-state]::picker-icon,
-        details[vl-state]::details-content,
-        details[vl-state] > :not(summary),
-        details[vl-state] > summary::marker,
+        select[vl-state]::picker-icon {
+            transition-duration: 0.01ms;
+            transition-delay: 0ms;
+        }
+
+        details[vl-state]::details-content {
+            transition-duration: 0.01ms;
+            transition-delay: 0ms;
+        }
+
         details[vl-state] > summary::-webkit-details-marker {
             transition-duration: 0.01ms;
             transition-delay: 0ms;

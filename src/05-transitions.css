@@ -3,7 +3,7 @@
      * View Transitions (MPA) — estilização de ::view-transition-*.
      * navigation: auto está em velora.css (fora de @layer).
      *
-     * Presets no <html>: vl-page-transition="velora" | "wipe" | "glide" | "iris" | "cinema" | "snap"
+     * Presets no <html>: vl-page-transition="velora" (persianas, default) | "wipe" | "glide" | "iris" | "cinema" | "snap"
      * Omisso ou valor desconhecido → "velora" (assinatura padrão).
      */
 
@@ -43,31 +43,37 @@
     /* -------------------------------------------------------------------------
        Keyframes — raiz (documento inteiro)
        ------------------------------------------------------------------------- */
-    @keyframes vl-vt-velora-old {
-        from {
-            opacity: 1;
-            filter: blur(0);
-            transform: scale(1) translate3d(0, 0, 0);
-        }
+    /* velora: the old page holds while the new one opens through diagonal blinds (the Cut geometry). */
+    @property --vl-vt-n {
+        syntax: "<number>";
+        inherits: false;
+        initial-value: 0;
+    }
 
+    @keyframes vl-vt-velora-hold {
+        from,
         to {
-            opacity: 0;
-            filter: blur(6px);
-            transform: scale(0.96) translate3d(0, 1.5%, 0);
+            opacity: 1;
         }
     }
 
-    @keyframes vl-vt-velora-new {
+    @keyframes vl-vt-velora-open {
+        from {
+            --vl-vt-n: 0;
+        }
+
+        to {
+            --vl-vt-n: 1;
+        }
+    }
+
+    @keyframes vl-vt-velora-fade {
         from {
             opacity: 0;
-            filter: blur(8px);
-            transform: scale(1.04) translate3d(0, -2%, 0);
         }
 
         to {
             opacity: 1;
-            filter: blur(0);
-            transform: scale(1) translate3d(0, 0, 0);
         }
     }
 
@@ -243,7 +249,10 @@
     }
 
     /* -------------------------------------------------------------------------
-       Preset default: Velora (blur assimétrico + escala)
+       Preset default: velora (persianas na geometria do Cut)
+       Parameters: --vl-cut-angle (default 18.4deg), --vl-vt-slice (default 40px),
+                   --vl-vt-root-duration (default 0.7s)
+       Aplica-se sem atributo, com vl-page-transition="velora" ou com valor desconhecido.
        ------------------------------------------------------------------------- */
     ::view-transition-old(root),
     ::view-transition-new(root) {
@@ -252,12 +261,34 @@
         animation-fill-mode: both;
     }
 
-    ::view-transition-old(root) {
-        animation-name: vl-vt-velora-old;
+    :root:not([vl-page-transition="wipe"], [vl-page-transition="glide"], [vl-page-transition="iris"], [vl-page-transition="cinema"], [vl-page-transition="snap"])::view-transition-old(root),
+    :root:not([vl-page-transition="wipe"], [vl-page-transition="glide"], [vl-page-transition="iris"], [vl-page-transition="cinema"], [vl-page-transition="snap"])::view-transition-new(root) {
+        animation-duration: var(--vl-vt-root-duration, 0.7s);
+        animation-timing-function: var(--vl-ease-in-out-smooth);
+        animation-fill-mode: both;
+        mix-blend-mode: normal;
     }
 
-    ::view-transition-new(root) {
-        animation-name: vl-vt-velora-new;
+    :root:not([vl-page-transition="wipe"], [vl-page-transition="glide"], [vl-page-transition="iris"], [vl-page-transition="cinema"], [vl-page-transition="snap"])::view-transition-old(root) {
+        animation-name: vl-vt-velora-hold;
+    }
+
+    :root:not([vl-page-transition="wipe"], [vl-page-transition="glide"], [vl-page-transition="iris"], [vl-page-transition="cinema"], [vl-page-transition="snap"])::view-transition-new(root) {
+        animation-name: vl-vt-velora-open;
+        -webkit-mask-image: repeating-linear-gradient(
+            calc(90deg + var(--vl-cut-angle, 18.4deg)),
+            #000 0,
+            #000 calc(var(--vl-vt-n) * var(--vl-vt-slice, 40px)),
+            transparent calc(var(--vl-vt-n) * var(--vl-vt-slice, 40px)),
+            transparent var(--vl-vt-slice, 40px)
+        );
+        mask-image: repeating-linear-gradient(
+            calc(90deg + var(--vl-cut-angle, 18.4deg)),
+            #000 0,
+            #000 calc(var(--vl-vt-n) * var(--vl-vt-slice, 40px)),
+            transparent calc(var(--vl-vt-n) * var(--vl-vt-slice, 40px)),
+            transparent var(--vl-vt-slice, 40px)
+        );
     }
 
     /* -------------------------------------------------------------------------
@@ -432,6 +463,16 @@
        Acessibilidade
        ------------------------------------------------------------------------- */
     @media (prefers-reduced-motion: reduce) {
+        :root:not([vl-page-transition="wipe"], [vl-page-transition="glide"], [vl-page-transition="iris"], [vl-page-transition="cinema"], [vl-page-transition="snap"])::view-transition-old(root) {
+            animation-name: vl-vt-velora-hold;
+        }
+
+        :root:not([vl-page-transition="wipe"], [vl-page-transition="glide"], [vl-page-transition="iris"], [vl-page-transition="cinema"], [vl-page-transition="snap"])::view-transition-new(root) {
+            animation-name: vl-vt-velora-fade;
+            -webkit-mask-image: none;
+            mask-image: none;
+        }
+
         ::view-transition-old(root),
         ::view-transition-new(root),
         ::view-transition-old(hero-title),
