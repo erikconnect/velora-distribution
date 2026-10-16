@@ -1,0 +1,654 @@
+/*
+ * World (3D set) — vl-world. Status: Experimental. Chromium is the only engine checked so far.
+ *
+ * A page can be a sequence of locations: ordinary 2D sections and sections that are a 3D set.
+ * A set has a width, a height and a depth in world units, children placed in that space,
+ * and a camera that moves with the page scroll through scroll-driven animations (no JavaScript).
+ *
+ * Structure (classes name the three structural elements; everything else is attributes):
+ *   <section vl-world vl-cam-1="foreground" vl-cam-2="midground left" ...>
+ *     <div class="vl-world__stage">          sticky viewport, owns the perspective
+ *       <div class="vl-world__rig">          the camera runs on this element
+ *         <div class="vl-world__floor"></div> ...optional room planes...
+ *         <h2 vl-at="top left" vl-plane="foreground" vl-in="1" vl-out="2">...</h2>
+ *       </div>
+ *       ...2D overlays (title, controls) as siblings of the rig: they must not flatten the 3D context...
+ *     </div>
+ *   </section>
+ *
+ * Coordinates: 1 world unit = 1 CSS px at the lens plane. Origin = centre of the room.
+ * x in [-W/2, W/2], y in [-H/2, H/2] (down is positive), z from 0 to -D (negative = away).
+ *
+ * Parameters (set on the set or an ancestor; unitless unless noted):
+ *   --vl-world-w / -h / -d     room size, default 1400 / 800 / 3300
+ *   --vl-world-perspective     lens, a length, default 900px
+ *   --vl-world-act-length      scroll length of one act, a length, default 650px (520px on narrow screens)
+ *   --vl-world-standoff        distance the camera stops in front of a plane it frames, default 600
+ *   --vl-world-weave           1 = the camera yaws 3deg between acts, 0 = straight path
+ *   --vl-world-budget          plane-area budget in M u2, default 24 (8 on narrow or dense screens)
+ * Per object (on the child):
+ *   --vl-x / --vl-y / --vl-z   position; the numbers win over words (an inline style beats the layer)
+ *   --vl-dx / --vl-dy / --vl-dz   fine offset added to the result
+ *   --vl-ry                    yaw, an angle
+ *   vl-at     words: top | bottom | left | right | center   (x = -/+32% of W, y = -/+25% of H)
+ *   vl-plane  word: foreground (16% of D) | midground (40%) | background (64%) | end (back wall - 300)
+ *   vl-in="N" / vl-out="N"     the object appears when act N begins / is gone when act N begins
+ * On the set:
+ *   vl-world="full" | "lite"   force the mode; without a value the safety rule decides
+ *   vl-cam-1 .. vl-cam-4       framing of each act: a plane word plus an optional at word.
+ *                              An unset act keeps the framing of the previous one. Four acts, fixed
+ *                              timing (each act is a quarter of the stretch the stage is pinned).
+ *
+ * Safety rule (part of the contract): plane area A = 2WD + 2HD + WH (in M u2) against the budget.
+ * Above it the set goes "lite" by itself: no ceiling or side walls, a narrow floor. The numbers
+ * are provisional and need calibration on real devices.
+ *
+ * Without scroll-driven animation, and with reduced motion: no camera path. The camera rests on the
+ * framing of act 2, objects that belong to act 2 show (vl-out="2" and vl-in="3"/"4" are hidden).
+ */
+
+/* The fade of vl-solid. Animating opacity on a preserve-3d group would flatten it, so the fade runs on
+   this number and lands as opacity on the planes themselves (the object, or the planes inside a group). */
+@property --vl-lights-a {
+    syntax: "<number>";
+    inherits: false;
+    initial-value: 1;
+}
+
+@property --vl-solid-a {
+    syntax: "<number>";
+    inherits: true;
+    initial-value: 1;
+}
+
+@property --vl-world-progress {
+    syntax: "<number>";
+    inherits: false;
+    initial-value: 0;
+}
+
+@property --vl-world-in {
+    syntax: "<number>";
+    inherits: false;
+    initial-value: 1;
+}
+
+@property --vl-world-out {
+    syntax: "<number>";
+    inherits: false;
+    initial-value: 1;
+}
+
+@layer velora.motion {
+    [vl-world] {
+        --_w-w: var(--vl-world-w, 1400);
+        --_w-h: var(--vl-world-h, 800);
+        --_w-d: var(--vl-world-d, 3300);
+        --_w-stop: 800;
+        --_w-travel-n: calc(var(--_w-d) - var(--_w-stop));
+        --_w-weave: var(--vl-world-weave, 1);
+        --_w-area: calc((2 * var(--_w-w) * var(--_w-d) + 2 * var(--_w-h) * var(--_w-d) + var(--_w-w) * var(--_w-h)) / 1000000);
+        --_w-lite: clamp(0, calc((var(--_w-area) - var(--vl-world-budget, 24)) * 1000), 1);
+        --_w-keep: calc(1 - var(--_w-lite));
+        position: relative;
+        block-size: calc(100svh + var(--vl-world-act-length, 650px) * 4);
+        view-timeline: --vl-world block;
+    }
+
+    /* Composed with vl-scene: the scene owns the height (vl-pin) and the clock (--vl-scene). */
+    [vl-world][vl-scene] {
+        block-size: auto;
+        view-timeline-name: --vl-scene;   /* keep the scene clock: the shorthand above would replace it */
+        view-timeline-axis: block;
+    }
+
+    [vl-world="full"] { --_w-lite: 0; }
+    [vl-world="lite"] { --_w-lite: 1; }
+
+    /* Quality of the whole set: 1 = lite, 0 = full. Auto (nothing set) is lite on narrow screens.
+       --vl-world-lite on the world or any ancestor (a settings control) or vl-world="lite|full" decide. */
+    [vl-world] { --_w-q: var(--vl-world-lite, 0); }
+    @media (max-width: 820px) { [vl-world] { --_w-q: var(--vl-world-lite, 1); } }
+    [vl-world="lite"] { --_w-q: 1; }
+    [vl-world="full"] { --_w-q: 0; }
+
+    /* A host-level hint (vl-quality="lite" on <html>, written by an optional guard, never by CSS):
+       it only fills in the default. A value the person chose on the world or an ancestor wins. */
+    [vl-quality="lite"] [vl-world] { --vl-world-lite: 1; }
+
+    @media (max-width: 560px), (min-resolution: 2.5dppx) {
+        [vl-world] { --vl-world-budget: 8; }
+    }
+
+    @media (max-width: 560px) {
+        [vl-world] { --vl-world-act-length: 520px; }
+        [vl-world]:not([vl-world-path]) .vl-world__rig { scale: 0.62; }   /* a path keeps its own framing */
+    }
+
+    /* ---- Camera framing per act (words resolve to numbers) ---- */
+    [vl-world] {
+        --_w-c1p: 0;
+        --_w-c1x: 0;
+        --_w-c1y: 0;
+    }
+    [vl-world] { --_w-c1z: min(var(--_w-travel-n), max(0, calc(var(--_w-c1p) * var(--_w-d) - var(--vl-world-standoff, 600)))); }
+    [vl-world][vl-cam-1~="foreground"] { --_w-c1p: 0.16; }
+    [vl-world][vl-cam-1~="midground"] { --_w-c1p: 0.4; }
+    [vl-world][vl-cam-1~="background"] { --_w-c1p: 0.64; }
+    [vl-world][vl-cam-1~="end"] { --_w-c1p: calc(1 - 300 / var(--_w-d)); }
+    [vl-world][vl-cam-1~="left"] { --_w-c1x: calc(var(--_w-w) * -0.32); }
+    [vl-world][vl-cam-1~="right"] { --_w-c1x: calc(var(--_w-w) * 0.32); }
+    [vl-world][vl-cam-1~="top"] { --_w-c1y: calc(var(--_w-h) * -0.25); }
+    [vl-world][vl-cam-1~="bottom"] { --_w-c1y: calc(var(--_w-h) * 0.25); }
+
+    [vl-world] {
+        --_w-c2p: var(--_w-c1p);
+        --_w-c2x: var(--_w-c1x);
+        --_w-c2y: var(--_w-c1y);
+    }
+    [vl-world] { --_w-c2z: min(var(--_w-travel-n), max(0, calc(var(--_w-c2p) * var(--_w-d) - var(--vl-world-standoff, 600)))); }
+    [vl-world][vl-cam-2~="foreground"] { --_w-c2p: 0.16; }
+    [vl-world][vl-cam-2~="midground"] { --_w-c2p: 0.4; }
+    [vl-world][vl-cam-2~="background"] { --_w-c2p: 0.64; }
+    [vl-world][vl-cam-2~="end"] { --_w-c2p: calc(1 - 300 / var(--_w-d)); }
+    [vl-world][vl-cam-2~="left"] { --_w-c2x: calc(var(--_w-w) * -0.32); }
+    [vl-world][vl-cam-2~="right"] { --_w-c2x: calc(var(--_w-w) * 0.32); }
+    [vl-world][vl-cam-2~="top"] { --_w-c2y: calc(var(--_w-h) * -0.25); }
+    [vl-world][vl-cam-2~="bottom"] { --_w-c2y: calc(var(--_w-h) * 0.25); }
+
+    [vl-world] {
+        --_w-c3p: var(--_w-c2p);
+        --_w-c3x: var(--_w-c2x);
+        --_w-c3y: var(--_w-c2y);
+    }
+    [vl-world] { --_w-c3z: min(var(--_w-travel-n), max(0, calc(var(--_w-c3p) * var(--_w-d) - var(--vl-world-standoff, 600)))); }
+    [vl-world][vl-cam-3~="foreground"] { --_w-c3p: 0.16; }
+    [vl-world][vl-cam-3~="midground"] { --_w-c3p: 0.4; }
+    [vl-world][vl-cam-3~="background"] { --_w-c3p: 0.64; }
+    [vl-world][vl-cam-3~="end"] { --_w-c3p: calc(1 - 300 / var(--_w-d)); }
+    [vl-world][vl-cam-3~="left"] { --_w-c3x: calc(var(--_w-w) * -0.32); }
+    [vl-world][vl-cam-3~="right"] { --_w-c3x: calc(var(--_w-w) * 0.32); }
+    [vl-world][vl-cam-3~="top"] { --_w-c3y: calc(var(--_w-h) * -0.25); }
+    [vl-world][vl-cam-3~="bottom"] { --_w-c3y: calc(var(--_w-h) * 0.25); }
+
+    [vl-world] {
+        --_w-c4p: var(--_w-c3p);
+        --_w-c4x: var(--_w-c3x);
+        --_w-c4y: var(--_w-c3y);
+    }
+    [vl-world] { --_w-c4z: min(var(--_w-travel-n), max(0, calc(var(--_w-c4p) * var(--_w-d) - var(--vl-world-standoff, 600)))); }
+    [vl-world][vl-cam-4~="foreground"] { --_w-c4p: 0.16; }
+    [vl-world][vl-cam-4~="midground"] { --_w-c4p: 0.4; }
+    [vl-world][vl-cam-4~="background"] { --_w-c4p: 0.64; }
+    [vl-world][vl-cam-4~="end"] { --_w-c4p: calc(1 - 300 / var(--_w-d)); }
+    [vl-world][vl-cam-4~="left"] { --_w-c4x: calc(var(--_w-w) * -0.32); }
+    [vl-world][vl-cam-4~="right"] { --_w-c4x: calc(var(--_w-w) * 0.32); }
+    [vl-world][vl-cam-4~="top"] { --_w-c4y: calc(var(--_w-h) * -0.25); }
+    [vl-world][vl-cam-4~="bottom"] { --_w-c4y: calc(var(--_w-h) * 0.25); }
+
+    /* ---- Stage and camera ---- */
+    .vl-world__stage {
+        position: sticky;
+        top: 0;
+        block-size: 100svh;
+        overflow: hidden;
+        perspective: var(--vl-world-perspective, 900px);
+        perspective-origin: 50% var(--vl-world-horizon, 48%);
+    }
+
+    /* Inside a scene the stage is already pinned by [vl-stage]: fill it, do not pin twice. */
+    [vl-world][vl-scene] .vl-world__stage {
+        position: absolute;
+        inset: 0;
+        block-size: auto;
+    }
+
+    .vl-world__rig {
+        position: absolute;
+        inset: 0;
+        transform-style: preserve-3d;
+    }
+
+    @supports (animation-timeline: view()) {
+        @media (prefers-reduced-motion: no-preference) {
+            .vl-world__rig {
+                animation: vl-world-dolly linear both;
+                animation-timeline: --vl-world;
+                animation-range: contain;
+            }
+        }
+    }
+
+    @keyframes vl-world-dolly {
+        0% { transform: rotateY(0deg) translate3d(calc(var(--_w-c1x) * -1px), calc(var(--_w-c1y) * -1px), calc(var(--_w-c1z) * 1px)); }
+        25% { transform: rotateY(0deg) translate3d(calc(var(--_w-c1x) * -1px), calc(var(--_w-c1y) * -1px), calc(var(--_w-c1z) * 1px)); animation-timing-function: ease-in; }
+        29.75% { transform: rotateY(calc(var(--_w-weave) * +3deg)) translate3d(calc((var(--_w-c1x) + 0.85 * (var(--_w-c2x) - var(--_w-c1x))) * -1px), calc((var(--_w-c1y) + 0.85 * (var(--_w-c2y) - var(--_w-c1y))) * -1px), calc((var(--_w-c1z) + 0.2 * (var(--_w-c2z) - var(--_w-c1z))) * 1px)); animation-timing-function: ease-out; }
+        34.5% { transform: rotateY(0deg) translate3d(calc(var(--_w-c2x) * -1px), calc(var(--_w-c2y) * -1px), calc(var(--_w-c2z) * 1px)); }
+        50% { transform: rotateY(0deg) translate3d(calc(var(--_w-c2x) * -1px), calc(var(--_w-c2y) * -1px), calc(var(--_w-c2z) * 1px)); animation-timing-function: ease-in; }
+        54.75% { transform: rotateY(calc(var(--_w-weave) * -3deg)) translate3d(calc((var(--_w-c2x) + 0.85 * (var(--_w-c3x) - var(--_w-c2x))) * -1px), calc((var(--_w-c2y) + 0.85 * (var(--_w-c3y) - var(--_w-c2y))) * -1px), calc((var(--_w-c2z) + 0.2 * (var(--_w-c3z) - var(--_w-c2z))) * 1px)); animation-timing-function: ease-out; }
+        59.5% { transform: rotateY(0deg) translate3d(calc(var(--_w-c3x) * -1px), calc(var(--_w-c3y) * -1px), calc(var(--_w-c3z) * 1px)); }
+        75% { transform: rotateY(0deg) translate3d(calc(var(--_w-c3x) * -1px), calc(var(--_w-c3y) * -1px), calc(var(--_w-c3z) * 1px)); animation-timing-function: ease-in; }
+        79.75% { transform: rotateY(calc(var(--_w-weave) * +3deg)) translate3d(calc((var(--_w-c3x) + 0.85 * (var(--_w-c4x) - var(--_w-c3x))) * -1px), calc((var(--_w-c3y) + 0.85 * (var(--_w-c4y) - var(--_w-c3y))) * -1px), calc((var(--_w-c3z) + 0.2 * (var(--_w-c4z) - var(--_w-c3z))) * 1px)); animation-timing-function: ease-out; }
+        84.5% { transform: rotateY(0deg) translate3d(calc(var(--_w-c4x) * -1px), calc(var(--_w-c4y) * -1px), calc(var(--_w-c4z) * 1px)); }
+        100% { transform: rotateY(0deg) translate3d(calc(var(--_w-c4x) * -1px), calc(var(--_w-c4y) * -1px), calc(var(--_w-c4z) * 1px)); }
+    }
+
+    /* ---- Objects ---- */
+    [vl-world] :is([vl-at], [vl-plane], [vl-in], [vl-out]) {
+        position: absolute;
+        inset: 0;
+        margin: auto;
+        inline-size: fit-content;
+        block-size: fit-content;
+        transform:
+            translate3d(
+                calc((var(--vl-x, 0) + var(--vl-dx, 0)) * 1px),
+                calc((var(--vl-y, 0) + var(--vl-dy, 0)) * 1px),
+                calc((var(--vl-z, 0) + var(--vl-dz, 0)) * 1px)
+            )
+            rotateX(var(--vl-rx, 0deg))
+            rotateY(var(--vl-ry, 0deg))
+            rotateZ(var(--vl-rz, 0deg));
+    }
+
+    /* Position variables inherit, so every object resets them: a group's --vl-z or --vl-ry must not
+       be applied a second time to the objects inside it. */
+    [vl-world] :is([vl-at], [vl-plane]) {
+        --vl-x: 0;
+        --vl-y: 0;
+        --vl-z: 0;
+        --vl-rx: 0deg;
+        --vl-ry: 0deg;
+        --vl-rz: 0deg;
+        --vl-dx: 0;
+        --vl-dy: 0;
+        --vl-dz: 0;
+    }
+    [vl-world] [vl-at~="left"] { --vl-x: calc(var(--_w-w) * -0.32); }
+    [vl-world] [vl-at~="right"] { --vl-x: calc(var(--_w-w) * 0.32); }
+    [vl-world] [vl-at~="top"] { --vl-y: calc(var(--_w-h) * -0.25); }
+    [vl-world] [vl-at~="bottom"] { --vl-y: calc(var(--_w-h) * 0.25); }
+    [vl-world] [vl-plane="foreground"] { --vl-z: calc(var(--_w-d) * -0.16); }
+    [vl-world] [vl-plane="midground"] { --vl-z: calc(var(--_w-d) * -0.4); }
+    [vl-world] [vl-plane="background"] { --vl-z: calc(var(--_w-d) * -0.64); }
+    [vl-world] [vl-plane="end"] { --vl-z: calc(var(--_w-d) * -1 + 300); }
+
+    /* ---- Entering and leaving per act ----
+       Two registered numbers are animated on the set's timeline; opacity is their product. */
+    [vl-world] :is([vl-in], [vl-out]) {
+        opacity: calc(var(--vl-world-in, 1) * var(--vl-world-out, 1));
+        translate: 0 calc((1 - var(--vl-world-in, 1)) * 70px);
+        scale: calc(0.94 + 0.06 * var(--vl-world-in, 1));
+    }
+
+    @supports (animation-timeline: view()) {
+        @media (prefers-reduced-motion: no-preference) {
+            [vl-world] :is([vl-in], [vl-out]) {
+                animation: var(--_w-ain, none) linear both, var(--_w-aout, none) linear both;
+                animation-timeline: --vl-world, --vl-world;
+                animation-range: contain, contain;
+            }
+
+            [vl-world] [vl-in="2"] { --_w-ain: vl-world-in-2; }
+            [vl-world] [vl-in="3"] { --_w-ain: vl-world-in-3; }
+            [vl-world] [vl-in="4"] { --_w-ain: vl-world-in-4; }
+            [vl-world] [vl-out="2"] { --_w-aout: vl-world-out-2; }
+            [vl-world] [vl-out="3"] { --_w-aout: vl-world-out-3; }
+            [vl-world] [vl-out="4"] { --_w-aout: vl-world-out-4; }
+        }
+    }
+
+    @keyframes vl-world-in-2 { 0%, 21% { --vl-world-in: 0; } 29%, 100% { --vl-world-in: 1; } }
+    @keyframes vl-world-in-3 { 0%, 46% { --vl-world-in: 0; } 54%, 100% { --vl-world-in: 1; } }
+    @keyframes vl-world-in-4 { 0%, 71% { --vl-world-in: 0; } 79%, 100% { --vl-world-in: 1; } }
+    @keyframes vl-world-out-2 { 0%, 25% { --vl-world-out: 1; } 31%, 100% { --vl-world-out: 0; } }
+    @keyframes vl-world-out-3 { 0%, 50% { --vl-world-out: 1; } 56%, 100% { --vl-world-out: 0; } }
+    @keyframes vl-world-out-4 { 0%, 75% { --vl-world-out: 1; } 81%, 100% { --vl-world-out: 0; } }
+
+    /* ---- Optional room: planes sized by the declared world ---- */
+    :is(.vl-world__floor, .vl-world__ceiling, .vl-world__wall-left, .vl-world__wall-right, .vl-world__wall-back) {
+        --_w-zc: calc((var(--_w-travel-n) * 1px) / -2 - 200px);
+        --_w-len: calc(var(--_w-travel-n) * 1px + 1200px);
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        inline-size: var(--_pw);
+        block-size: var(--_ph);
+        margin: calc(var(--_ph) / -2) 0 0 calc(var(--_pw) / -2);
+        background: var(--vl-world-plane, color-mix(in oklab, currentColor 6%, transparent));
+        outline: 1px solid color-mix(in oklab, currentColor 18%, transparent);
+        outline-offset: -1px;
+    }
+
+    .vl-world__floor {
+        --_pw: calc(var(--_w-w) * 1px - (var(--_w-w) * 1px - min(var(--_w-w) * 0.5px, 700px)) * var(--_w-lite));
+        --_ph: var(--_w-len);
+        transform: translate3d(0, calc(var(--_w-h) * 0.5px), var(--_w-zc)) rotateX(90deg);
+    }
+
+    .vl-world__ceiling {
+        --_pw: calc(var(--_w-w) * 1px);
+        --_ph: calc(var(--_w-len) * var(--_w-keep));
+        transform: translate3d(0, calc(var(--_w-h) * -0.5px), var(--_w-zc)) rotateX(90deg);
+    }
+
+    .vl-world__wall-left,
+    .vl-world__wall-right {
+        --_pw: var(--_w-len);
+        --_ph: calc(var(--_w-h) * 1px * var(--_w-keep));
+    }
+
+    .vl-world__wall-left { transform: translate3d(calc(var(--_w-w) * -0.5px), 0, var(--_w-zc)) rotateY(90deg); }
+    .vl-world__wall-right { transform: translate3d(calc(var(--_w-w) * 0.5px), 0, var(--_w-zc)) rotateY(90deg); }
+
+    .vl-world__wall-back {
+        --_pw: calc(var(--_w-w) * 1px);
+        --_ph: calc(var(--_w-h) * 1px);
+        transform: translate3d(0, 0, calc(var(--_w-d) * -1px));
+    }
+
+    /* ---- Free objects: placed by numbers, sized by --vl-w / --vl-h (world units) ----
+       vl-plane="free" has no depth word: position comes from --vl-x/-y/-z, orientation from
+       --vl-rx/-ry/-rz. An object can hold other free objects (a group); a 0 x 0 group is a pivot. */
+    [vl-world] [vl-plane="free"] {
+        position: absolute;
+        inset: auto;
+        left: 50%;
+        top: 50%;
+        inline-size: calc(var(--vl-w, 0) * 1px);
+        block-size: calc(var(--vl-h, 0) * 1px);
+        margin: calc(var(--vl-h, 0) * -0.5px) 0 0 calc(var(--vl-w, 0) * -0.5px);
+        transform-style: preserve-3d;
+    }
+
+    /* ---- Camera paths: one continuous move instead of four acts ----
+       vl-world-path="dolly"  the rig travels --vl-world-travel units toward the lens (with a slight sway)
+       vl-world-path="orbit"  the rig turns --vl-world-turn degrees around the camera (pivot --vl-world-pivot)
+       The move runs on the set's own timeline, or on the --vl-scene clock when the set is also a vl-scene.
+       --vl-world-from / --vl-world-to  part of that timeline the move uses, in percent (default 0 and 100). */
+    [vl-world] {
+        --_w-tl: --vl-world;
+        --_w-rp: contain;
+        --_w-pf: var(--vl-world-from, 0);
+        --_w-pt: var(--vl-world-to, 100);
+        --_w-travel: var(--vl-world-travel, 3000);
+        --_w-turn: var(--vl-world-turn, 360);
+        --_w-pivot: var(--vl-world-pivot, 900);
+        --_w-far: var(--vl-world-far, 5700);
+        --_w-near: var(--vl-world-near, 1600);
+        --_w-rest: var(--vl-world-rest, 0);
+        --_w-fov: var(--vl-world-fov, 78);
+    }
+
+    [vl-world][vl-scene] {
+        --_w-tl: --vl-scene;
+        --_w-rp: cover;
+    }
+
+    @media (max-width: 820px) {
+        [vl-world] {
+            --_w-far: var(--vl-world-far, 3900);
+            --_w-fov: var(--vl-world-fov, 48);
+        }
+    }
+
+    /* Detail that a small screen can do without: dropped on narrow screens and in lite mode. */
+    @media (max-width: 820px) {
+        @container not style(--vl-world-lite: 0) {
+            [vl-world]:not([vl-world="full"]) [vl-lod~="detail"] { display: none; }
+        }
+    }
+
+    @container style(--vl-world-lite: 1) {
+        [vl-world]:not([vl-world="full"]) [vl-lod~="detail"] { display: none; }
+    }
+
+    [vl-world="lite"] [vl-lod~="detail"] { display: none; }
+
+    /* Lite thins a drawn grid: every second line is dropped, so a big floor or wall costs half the layers. */
+    @container style(--vl-world-lite: 1) {
+        [vl-world]:not([vl-world="full"]) [vl-grid] > i:nth-child(even) { display: none; }
+    }
+
+    [vl-world="lite"] [vl-grid] > i:nth-child(even) { display: none; }
+
+    /* A grid drawn as thin lines. Lines are tiny compositor layers; one big plane with a gradient
+       costs the memory of its whole area. Children are <i style="--k: N">: the first cols are the
+       lines along the height, the rest the lines along the width. */
+    [vl-world] [vl-grid] {
+        --_g-step: var(--vl-grid-step, 70);
+        --_g-cols: round(up, calc(var(--vl-w, 0) / var(--_g-step)), 1);
+        --_g-rows: round(up, calc(var(--vl-h, 0) / var(--_g-step)), 1);
+        transform-style: preserve-3d;
+    }
+
+    [vl-world] [vl-grid] > i {
+        --_g-v: clamp(0, calc(var(--_g-cols) - var(--k, 1) + 1), 1);
+        position: absolute;
+        display: block;
+        left: calc(var(--_g-v) * (var(--k, 1) - 1) * var(--_g-step) * 1px);
+        top: calc((1 - var(--_g-v)) * (var(--k, 1) - var(--_g-cols) - 1) * var(--_g-step) * 1px);
+        --_g-on: clamp(0, calc(var(--_g-cols) + var(--_g-rows) - var(--k, 1) + 1), 1);   /* spare lines collapse */
+        inline-size: calc(var(--_g-on) * (var(--_g-v) * 1px + (1 - var(--_g-v)) * var(--vl-w, 0) * 1px));
+        block-size: calc(var(--_g-on) * (var(--_g-v) * var(--vl-h, 0) * 1px + (1 - var(--_g-v)) * 1px));
+        background: var(--vl-world-line, currentColor);
+    }
+
+    @supports (animation-timeline: view()) {
+        @media (prefers-reduced-motion: no-preference) {
+            /* Only an element that asks (vl-world-readout) animates the progress: an inherited registered
+               property would restyle every object of the set on every scroll frame. */
+            [vl-world-path] [vl-world-readout] {
+                animation: vl-world-progress linear both;
+                animation-duration: 1ms;
+                animation-timeline: var(--_w-tl);
+                animation-range: var(--_w-rp) calc(var(--_w-pf) * 1%) var(--_w-rp) calc(var(--_w-pt) * 1%);
+            }
+
+            [vl-world-path] .vl-world__rig {
+                animation-duration: 1ms;
+                animation-timeline: var(--_w-tl);
+                animation-range: var(--_w-rp) calc(var(--_w-pf) * 1%) var(--_w-rp) calc(var(--_w-pt) * 1%);
+            }
+
+            [vl-world-path="dolly"] .vl-world__rig { animation-name: vl-world-path-dolly; animation-timing-function: linear; animation-fill-mode: both; }
+
+            [vl-world-path="orbit"] .vl-world__rig {
+                transform-origin: 50% 50% calc(var(--_w-pivot) * 1px);
+                animation-name: vl-world-path-orbit;
+                animation-timing-function: linear;
+                animation-fill-mode: both;
+            }
+
+            @media (min-width: 821px) {
+                [vl-world-path] .vl-world__rig { will-change: transform; }
+            }
+
+            /* Off screen, the whole set paints nothing. Fail open: the base state is visible. */
+            [vl-world-path] .vl-world__stage {
+                animation: vl-world-stage-visibility linear both;
+                animation-duration: 1ms;
+                animation-timeline: var(--_w-tl);
+                animation-range: cover 0% cover 100%;
+            }
+
+            /* Culling: an object exists only while the camera can see it. Fail open: only a browser that
+               runs this animation ever hides anything. A window is a part of the path, in percent.
+               dolly  the window comes from the object's depth (--vl-z) and --vl-world-far / --vl-world-near.
+               orbit  the window comes from the object's heading (--vl-heading, degrees) and the field of view
+                      --vl-world-fov (half angle) plus the object's own --vl-reach (degrees).
+               --vl-from / --vl-to replace the first window. An orbit window that crosses the start or the
+               end of the turn is cut into three pieces, so there are three animations. */
+            [vl-world-path] .vl-world__rig > [vl-plane] {
+                --_w-z: calc(var(--vl-z, 0) + var(--vl-dz, 0));
+                --_w-s1: var(--vl-from, clamp(0, calc((-1 * var(--vl-far, var(--_w-far)) - var(--_w-z)) / var(--_w-travel) * 100), 100));
+                --_w-e1: var(--vl-to, clamp(0, calc((var(--vl-near, var(--_w-near)) - var(--_w-z)) / var(--_w-travel) * 100), 100));
+                --_w-s2: 0;
+                --_w-e2: 0;
+                --_w-s3: 0;
+                --_w-e3: 0;
+                visibility: hidden;
+                animation: vl-world-show linear, vl-world-show linear, vl-world-show linear;
+                animation-duration: 1ms, 1ms, 1ms;
+                animation-timeline: var(--_w-tl), var(--_w-tl), var(--_w-tl);
+                animation-range:
+                    var(--_w-rp) calc((var(--_w-pf) + (var(--_w-pt) - var(--_w-pf)) * var(--_w-s1) / 100) * 1%)
+                    var(--_w-rp) calc((var(--_w-pf) + (var(--_w-pt) - var(--_w-pf)) * var(--_w-e1) / 100 + round(down, calc(var(--_w-e1) / 100), 1) * round(up, calc((100 - var(--_w-s1)) / 100), 1) * (100 - var(--_w-pt))) * 1%),
+                    var(--_w-rp) calc((var(--_w-pf) + (var(--_w-pt) - var(--_w-pf)) * var(--_w-s2) / 100) * 1%)
+                    var(--_w-rp) calc((var(--_w-pf) + (var(--_w-pt) - var(--_w-pf)) * var(--_w-e2) / 100 + round(down, calc(var(--_w-e2) / 100), 1) * round(up, calc((100 - var(--_w-s2)) / 100), 1) * (100 - var(--_w-pt))) * 1%),
+                    var(--_w-rp) calc((var(--_w-pf) + (var(--_w-pt) - var(--_w-pf)) * var(--_w-s3) / 100) * 1%)
+                    var(--_w-rp) calc((var(--_w-pf) + (var(--_w-pt) - var(--_w-pf)) * var(--_w-e3) / 100 + round(down, calc(var(--_w-e3) / 100), 1) * round(up, calc((100 - var(--_w-s3)) / 100), 1) * (100 - var(--_w-pt))) * 1%);
+            }
+
+            [vl-world-path="orbit"] .vl-world__rig > [vl-plane] {
+                --_w-half: calc(var(--vl-fov, var(--_w-fov)) + var(--vl-reach, 8));
+                --_w-lo: calc(var(--vl-heading, 0) - var(--_w-half));
+                --_w-hi: calc(var(--vl-heading, 0) + var(--_w-half));
+                --_w-s1: var(--vl-from, calc(clamp(0, var(--_w-lo), var(--_w-turn)) / var(--_w-turn) * 100));
+                --_w-e1: var(--vl-to, calc(clamp(0, var(--_w-hi), var(--_w-turn)) / var(--_w-turn) * 100));
+                --_w-s2: calc(clamp(0, var(--_w-lo) + var(--_w-turn), var(--_w-turn)) / var(--_w-turn) * 100);
+                --_w-e2: calc(clamp(0, var(--_w-hi) + var(--_w-turn), var(--_w-turn)) / var(--_w-turn) * 100);
+                --_w-s3: calc(clamp(0, var(--_w-lo) - var(--_w-turn), var(--_w-turn)) / var(--_w-turn) * 100);
+                --_w-e3: calc(clamp(0, var(--_w-hi) - var(--_w-turn), var(--_w-turn)) / var(--_w-turn) * 100);
+            }
+
+            /* A solid face has no 3D children: keep it out of the 3D sorting of the set. Big textured faces in the
+               shared context are split by the compositor and lose tiles (holes) on high-density screens. */
+            [vl-world-path] [vl-solid][vl-plane]:not(:has(> :is([vl-plane], [vl-at]))),
+            [vl-world-path] [vl-solid] > [vl-plane]:not(:has(> :is([vl-plane], [vl-at]))) { transform-style: flat; }
+
+            [vl-world-path] [vl-solid]:not(:has(> [vl-plane])),
+            [vl-world-path] [vl-solid] > [vl-plane] { opacity: var(--vl-solid-a); }
+
+            /* vl-solid: matter that exists only close to the camera. A narrower window (--vl-solid-far /
+               --vl-solid-near on a dolly, a narrower --vl-fov on an orbit) and a fade at each end
+               (--vl-solid-fade, percent of the path). --vl-solid-from / --vl-solid-to replace both fades
+               with one fade-in that then holds (the build-up of an orbit). */
+            [vl-world-path] .vl-world__rig > [vl-solid] {
+                --_w-fade: var(--vl-solid-fade, 4);
+                --vl-far: var(--vl-solid-far, calc(2400 - 1000 * var(--_w-q)));
+                --vl-near: var(--vl-solid-near, calc(600 - 200 * var(--_w-q)));
+                --vl-fov: var(--vl-solid-fov, calc(50 - 10 * var(--_w-q)));
+                --_w-fi-s: var(--vl-solid-from, var(--_w-s1));
+                --_w-fi-e: var(--vl-solid-to, min(var(--_w-e1), calc(var(--_w-s1) + var(--_w-fade))));
+                --_w-hold: round(down, calc(var(--_w-e1) / 100), 1);
+                --_w-fo-s: calc(max(var(--_w-s1), var(--_w-e1) - var(--_w-fade)) + var(--_w-hold) * 1000);
+                --_w-fo-e: calc(var(--_w-e1) + var(--_w-hold) * 1000);
+                animation:
+                    vl-world-show linear, vl-world-show linear, vl-world-show linear,
+                    vl-world-solid-in linear, vl-world-solid-out linear;
+                animation-duration: 1ms, 1ms, 1ms, 1ms, 1ms;
+                animation-fill-mode: none, none, none, backwards, forwards;
+                animation-timeline: var(--_w-tl), var(--_w-tl), var(--_w-tl), var(--_w-tl), var(--_w-tl);
+                animation-range:
+                    var(--_w-rp) calc((var(--_w-pf) + (var(--_w-pt) - var(--_w-pf)) * var(--_w-s1) / 100) * 1%)
+                    var(--_w-rp) calc((var(--_w-pf) + (var(--_w-pt) - var(--_w-pf)) * var(--_w-e1) / 100 + round(down, calc(var(--_w-e1) / 100), 1) * round(up, calc((100 - var(--_w-s1)) / 100), 1) * (100 - var(--_w-pt))) * 1%),
+                    var(--_w-rp) calc((var(--_w-pf) + (var(--_w-pt) - var(--_w-pf)) * var(--_w-s2) / 100) * 1%)
+                    var(--_w-rp) calc((var(--_w-pf) + (var(--_w-pt) - var(--_w-pf)) * var(--_w-e2) / 100 + round(down, calc(var(--_w-e2) / 100), 1) * round(up, calc((100 - var(--_w-s2)) / 100), 1) * (100 - var(--_w-pt))) * 1%),
+                    var(--_w-rp) calc((var(--_w-pf) + (var(--_w-pt) - var(--_w-pf)) * var(--_w-s3) / 100) * 1%)
+                    var(--_w-rp) calc((var(--_w-pf) + (var(--_w-pt) - var(--_w-pf)) * var(--_w-e3) / 100 + round(down, calc(var(--_w-e3) / 100), 1) * round(up, calc((100 - var(--_w-s3)) / 100), 1) * (100 - var(--_w-pt))) * 1%),
+                    var(--_w-rp) calc((var(--_w-pf) + (var(--_w-pt) - var(--_w-pf)) * var(--_w-fi-s) / 100) * 1%)
+                    var(--_w-rp) calc((var(--_w-pf) + (var(--_w-pt) - var(--_w-pf)) * var(--_w-fi-e) / 100) * 1%),
+                    var(--_w-rp) calc((var(--_w-pf) + (var(--_w-pt) - var(--_w-pf)) * var(--_w-fo-s) / 100) * 1%)
+                    var(--_w-rp) calc((var(--_w-pf) + (var(--_w-pt) - var(--_w-pf)) * var(--_w-fo-e) / 100) * 1%);
+            }
+        }
+    }
+
+    @keyframes vl-world-progress { from { --vl-world-progress: 0; } to { --vl-world-progress: 1; } }
+    @keyframes vl-world-show { from, to { visibility: visible; } }
+    @keyframes vl-world-solid-in { from { --vl-solid-a: 0; } to { --vl-solid-a: 1; } }
+    @keyframes vl-world-solid-out { from { --vl-solid-a: 1; } to { --vl-solid-a: 0; } }
+    @keyframes vl-world-stage-visibility {
+        0% { content-visibility: hidden; }
+        0.1%, 99.9% { content-visibility: visible; }
+        100% { content-visibility: hidden; }
+    }
+
+    @keyframes vl-world-path-dolly {
+        0% { transform: rotateY(calc(var(--_w-weave) * -3deg)) rotateZ(0deg) translate3d(0, 0, 0); }
+        30% { transform: rotateY(calc(var(--_w-weave) * 2.5deg)) rotateZ(calc(var(--_w-weave) * 0.8deg)) translate3d(0, 0, calc(var(--_w-travel) * 0.3px)); }
+        62% { transform: rotateY(calc(var(--_w-weave) * -2deg)) rotateZ(calc(var(--_w-weave) * -0.6deg)) translate3d(0, 0, calc(var(--_w-travel) * 0.62px)); }
+        100% { transform: rotateY(0deg) rotateZ(0deg) translate3d(0, 0, calc(var(--_w-travel) * 1px)); }
+    }
+
+    @keyframes vl-world-path-orbit {
+        from { transform: rotateY(0deg); }
+        to { transform: rotateY(calc(var(--_w-turn) * 1deg)); }
+    }
+
+    /* ---- vl-lights (Experimental): the set's lights, as one overlay on the stage ----
+       vl-lights="on|off" on the world. CSS has no 3D lighting, so this is not light: it is one layer over the stage
+       (a warm glow plus a dark vignette), drawn by the stage's ::after. It adds no objects and no 3D layers.
+       on   lit (default amount 1). With --vl-lights-from / --vl-lights-to (percent of the world's clock) the set is
+            dark before that window and the lights come up inside it, then hold.
+       off  dark. With a window the set is lit before it and the lights go down inside it, then hold.
+       --vl-lights-dark colour of the dark (#000)   --vl-lights-dim how dark "off" is, 0..1 (.85)
+       --vl-lights-color glow colour (#ffd9a0)       --vl-lights-glow glow strength, percent (22)
+       --vl-lights-x / --vl-lights-y glow centre (50%, 52%)   --vl-lights-vignette edge darkness, percent (0)
+       Reduced motion: no animation; the lights sit in the state the attribute names (on = lit). */
+    [vl-world][vl-lights] .vl-world__stage::after {
+        --_l-d: calc((1 - var(--vl-lights-a)) * var(--vl-lights-dim, 0.85) * 100);
+        --_l-dark: var(--vl-lights-dark, #000);
+        content: "";
+        position: absolute;
+        inset: 0;
+        z-index: 2;
+        pointer-events: none;
+        background:
+            radial-gradient(ellipse 60% 65% at var(--vl-lights-x, 50%) var(--vl-lights-y, 52%),
+                color-mix(in oklab, var(--vl-lights-color, #ffd9a0) calc(var(--vl-lights-a) * var(--vl-lights-glow, 22) * 1%), transparent), transparent 75%),
+            radial-gradient(ellipse 80% 75% at var(--vl-lights-x, 50%) var(--vl-lights-y, 52%),
+                color-mix(in oklab, var(--_l-dark) calc(var(--_l-d) * 1%), transparent) 40%,
+                color-mix(in oklab, var(--_l-dark) calc(max(var(--vl-lights-vignette, 0), var(--_l-d)) * 1%), transparent) 100%);
+    }
+
+    [vl-world][vl-lights="off"] .vl-world__stage::after { --vl-lights-a: 0; }
+
+    @keyframes vl-lights-on { from { --vl-lights-a: 0; } to { --vl-lights-a: 1; } }
+    @keyframes vl-lights-off { from { --vl-lights-a: 1; } to { --vl-lights-a: 0; } }
+
+    @supports (animation-timeline: view()) {
+        @media (prefers-reduced-motion: no-preference) {
+            [vl-world][vl-lights] .vl-world__stage::after {
+                animation-duration: 1ms;
+                animation-timing-function: linear;
+                animation-fill-mode: both;
+                animation-timeline: var(--_w-tl);
+                animation-range:
+                    var(--_w-rp) calc(var(--vl-lights-from, -100) * 1%)
+                    var(--_w-rp) calc(var(--vl-lights-to, -100) * 1%);
+            }
+            [vl-world][vl-lights="on"] .vl-world__stage::after { animation-name: vl-lights-on; }
+            [vl-world][vl-lights="off"] .vl-world__stage::after { animation-name: vl-lights-off; }
+        }
+    }
+
+    /* ---- No camera path: reduced motion, or no scroll-driven animation ---- */
+    @media (prefers-reduced-motion: reduce) {
+        [vl-world] { block-size: auto; }
+        .vl-world__rig {
+            animation: none;
+            transform: translate3d(calc(var(--_w-c2x) * -1px), calc(var(--_w-c2y) * -1px), calc(var(--_w-c2z) * 1px));
+        }
+        [vl-world] :is([vl-in], [vl-out]) { animation: none; }
+        [vl-world] :is([vl-in="3"], [vl-in="4"]) { --vl-world-in: 0; }
+        [vl-world] [vl-out="2"] { --vl-world-out: 0; }
+        [vl-world-path] [vl-world-readout] { --vl-world-progress: var(--_w-rest); }
+        [vl-world-path="dolly"] .vl-world__rig { transform: translate3d(0, 0, calc(var(--_w-travel) * var(--_w-rest) * 1px)); }
+        [vl-world-path="orbit"] .vl-world__rig { transform-origin: 50% 50% calc(var(--_w-pivot) * 1px); transform: rotateY(calc(var(--_w-turn) * var(--_w-rest) * 1deg)); }
+        /* At rest only the objects marked vl-rest are drawn: a set must never paint everything at once. */
+        [vl-world-path] .vl-world__rig > [vl-plane]:not([vl-rest]) { display: none; }
+    }
+
+    @supports not (animation-timeline: view()) {
+        [vl-world] { block-size: auto; }
+        .vl-world__rig { transform: translate3d(calc(var(--_w-c2x) * -1px), calc(var(--_w-c2y) * -1px), calc(var(--_w-c2z) * 1px)); }
+        [vl-world] :is([vl-in="3"], [vl-in="4"]) { --vl-world-in: 0; }
+        [vl-world] [vl-out="2"] { --vl-world-out: 0; }
+        [vl-world-path] [vl-world-readout] { --vl-world-progress: var(--_w-rest); }
+        [vl-world-path="dolly"] .vl-world__rig { transform: translate3d(0, 0, calc(var(--_w-travel) * var(--_w-rest) * 1px)); }
+        [vl-world-path="orbit"] .vl-world__rig { transform-origin: 50% 50% calc(var(--_w-pivot) * 1px); transform: rotateY(calc(var(--_w-turn) * var(--_w-rest) * 1deg)); }
+        [vl-world-path] .vl-world__rig > [vl-plane]:not([vl-rest]) { display: none; }
+    }
+}

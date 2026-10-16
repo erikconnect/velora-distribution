@@ -1,0 +1,38 @@
+/**
+ * Accent selection for Skins (RFC #114, work package A9). Experimental.
+ *
+ * A Skin that supports accent selection declares --vl-color-accent-primary and optionally
+ * --vl-color-accent-alt-1 / --vl-color-accent-alt-2, and reads the choice made here:
+ *
+ *   --vl-color-accent: var(--vl-skin-accent-choice, var(--vl-color-accent-primary));
+ *
+ * A page picks a member without writing component CSS and without JavaScript:
+ *
+ *   <html data-skin-accent="alt-1">                    on <html> or on any ancestor
+ *   <input type="radio" name="vl-skin-accent" value="alt-1">   checked radio anywhere in the page
+ *
+ * Values: primary | alt-1 | alt-2. This file only writes --vl-skin-accent-choice, so a Skin
+ * that does not read it (every Skin that predates A9) is untouched: its accent is its primary.
+ * A Skin that reads it re-declares --vl-color-accent, and the tokens derived from the accent,
+ * on [data-skin-accent] descendants so they re-resolve there (see 01d-skin-velora.css).
+ *
+ * Unlayered on purpose, like the Skin files.
+ */
+
+:root:has(input[name="vl-skin-accent"][value="primary"]:checked),
+:root[data-skin-accent="primary"],
+[data-skin-accent="primary"] {
+  --vl-skin-accent-choice: var(--vl-color-accent-primary);
+}
+
+:root:has(input[name="vl-skin-accent"][value="alt-1"]:checked),
+:root[data-skin-accent="alt-1"],
+[data-skin-accent="alt-1"] {
+  --vl-skin-accent-choice: var(--vl-color-accent-alt-1);
+}
+
+:root:has(input[name="vl-skin-accent"][value="alt-2"]:checked),
+:root[data-skin-accent="alt-2"],
+[data-skin-accent="alt-2"] {
+  --vl-skin-accent-choice: var(--vl-color-accent-alt-2);
+}

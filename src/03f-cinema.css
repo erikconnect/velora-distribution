@@ -1,0 +1,516 @@
+/*
+ * Cinema primitives (A14, #141). Status: Experimental. One file, one section per primitive.
+ *
+ * Section 1: vl-scroll="ring-scroll"
+ *   A cylindrical 3D ring (a turntable) turned about the Y axis by scroll.
+ *   Decision: a new vl-scroll value, not a parameter on rotate-scroll. rotate-scroll writes
+ *   `transform: rotate()` on one element; a ring is a container contract (preserve-3d, faces
+ *   placed on a circle, radius derived from the face count). rotate-scroll, text-ring-orbit and
+ *   circle-text-scroll are untouched.
+ *
+ *   The drum rotates with the individual `rotate` property (rotate: y <angle>). Each face is
+ *   placed with the individual `rotate` and `translate` properties, so author `transform`
+ *   values on drum or faces keep working. Only `rotate` animates (compositor friendly).
+ *   The individual properties apply translate before rotate, so a face is moved to its point on
+ *   the circle explicitly (x = r sin a, z = r cos a) instead of rotateY(a) translateZ(r).
+ *
+ *   radius = (width + gap) / (2 * tan(pi / count))     (faces touch edge to edge when gap is 0)
+ *
+ * Parameters (set on the drum or any ancestor):
+ *   --vl-ring-count   number of faces, default 8
+ *   --vl-ring-width   face width as a length, default clamp(9rem, 20vw, 15rem)
+ *   --vl-ring-gap     extra space between neighbouring faces as a length, default 0px
+ *   --vl-ring-turn    total rotation across the scroll range, default 360deg (negative reverses)
+ *   --vl-ring-i       per-face index (0 based), overrides the automatic index
+ *   --vl-perspective  perspective of the wrapper, default 1600px
+ *   --vl-scroll-timeline / --vl-range   the usual scroll channel knobs (use a named timeline from a tall
+ *                     parent when the drum sits in a sticky stage)
+ *
+ * Face index: sibling-index() where supported, otherwise :nth-child for the first 12 faces
+ * (set --vl-ring-i on a face to go beyond 12 in older engines).
+ * Fallback: without scroll-driven animations the ring is static, first face to the front.
+ * Reduced motion: no animation, the ring rests at its first face.
+ *
+ * Section 2: vl-hover="hover-slice"
+ *   Diagonal slices open in the SAME element on hover. No cloned content, no extra DOM.
+ *   Decision: a new vl-hover value (nothing in the hover channel masks), reusing the cut geometry
+ *   parameters of cut-reveal (--vl-cut-count, --vl-cut-angle) so the whole system cuts the same way.
+ *   mask = solid minus gaps (mask-composite: subtract). A registered number, --vl-slice-open (0 -> 1),
+ *   widens the gaps; a transition on that number runs the hover. Only mask changes (no layout, no transform).
+ *
+ *   --vl-cut-count     number of slices, default 8
+ *   --vl-cut-angle     slice tilt from vertical, default 18.4deg
+ *   --vl-slice-gap     share of each slice pitch that opens on hover, 0 to 1, default 0.22
+ *   --vl-slice-duration / --vl-slice-ease   default --vl-duration-normal / --vl-ease-out-soft
+ *   Triggers: :hover and :focus-within, so keyboard users get the same state.
+ *   Cost: an opted-in element always carries a mask layer (it is fully opaque at rest); use it on a few cards, not on lists.
+ *   Fallback: without mask-composite the element simply does not slice. Without @property the state changes at once.
+ *   Reduced motion: no mask at all, the element stays whole.
+ *
+ * Section 3: vl-scroll="text-scrub"
+ *   Words (or a whole line) go from a light to a heavy font-weight as the text scrolls into view.
+ *   Decision: a new vl-scroll value; the knobs are --vl-scrub-* parameters. Word-by-word needs the words as
+ *   direct child elements (author-wrapped <span>s: the same text, nothing is duplicated). Without child
+ *   elements the element itself scrubs.
+ *   The element is a named view timeline (--vl-scrub-t); each word reads it with its own animation-range,
+ *   offset by its index.
+ *
+ *   --vl-scrub-from      start weight, a number, default 200
+ *   --vl-scrub-to        end weight, a number, default 800
+ *   --vl-scrub-rest      the static weight shown without scroll-driven animation and with reduced motion,
+ *                        default = --vl-scrub-to
+ *   --vl-scrub-fit       how much of the range the whole text takes, default 60%; the offset between words is
+ *                        derived from it and the word count, so any length fits (needs sibling-index())
+ *   --vl-scrub-stagger   explicit offset between words as a percentage of the range; overrides --vl-scrub-fit.
+ *                        Without sibling-index() it is the only spacing, default 3%
+ *   --vl-scrub-span      how much of the range one word takes, default 35%
+ *   --vl-scrub-phase     the view range phase (entry | contain | cover), default cover
+ *
+ *   Cost, honestly: font-weight is NOT compositor friendly. Changing weight changes glyph advance widths, so
+ *   every frame of the scrub re-runs style and layout for the text (and it can re-wrap lines). It is the one
+ *   documented exception to "only compositor friendly properties animate". Keep it to a headline or a short
+ *   paragraph, and give the block a stable size (min-height) so reflow does not move the page.
+ *   Variable fonts: weights between the faces of a static font cannot be interpolated. The browser snaps to
+ *   the nearest available face; CSS cannot detect whether a loaded font is variable. font-synthesis-weight is
+ *   set to none so a font with a single face stays at that weight (the static fallback) instead of being
+ *   faux-bolded. Declare the weight range in your @font-face (font-weight: 100 900).
+ *   Word index: sibling-index() where supported, otherwise :nth-child for the first 24 words.
+ *   Fallback: without scroll-driven animations the text is shown at --vl-scrub-rest. Reduced motion: same.
+ *
+ * Section 4: vl-scroll-markers="buttons"
+ *   Previous / next buttons on a scroll-marker carousel, from ::scroll-button().
+ *   Decision: a value (parameter) on the existing vl-scroll-markers attribute, not a new attribute or class:
+ *   the boolean form is unchanged, "buttons" adds the buttons to the same scroller that already owns the markers.
+ *   The element must be the scroll container; the core now declares that contract at zero specificity, so an author
+ *   rule replaces any part of it: overflow-x: auto, overscroll-behavior-inline: contain and scroll-snap-type: x mandatory
+ *   on every vl-scroll-markers (boolean form included), scroll-snap-align on its children, and, for "buttons", the
+ *   children as one row of columns (grid), smooth scrolling unless reduced motion, and a focus ring. The browser scrolls
+ *   the element by one page when a button is activated, and disables a button at either end. The buttons are real,
+ *   focusable controls with an accessible name given by the alternative text of `content`.
+ *
+ *   --vl-scroll-item      column width of a child, default 100% of the scroller ("buttons" only)
+ *   --vl-scroll-gap       gap between children, default 0px ("buttons" only)
+ *   --vl-scroll-snap-align   snap alignment of the children, default start
+ *   --vl-sbtn-size        button size, default 2.5rem
+ *   --vl-sbtn-inset       distance from the scroller edge, default 0.5rem
+ *   --vl-sbtn-prev / --vl-sbtn-next   accessible names, defaults "Previous" and "Next" (string values)
+ *
+ *   Behind @supports (selector(::scroll-button(inline-start)) and anchor positioning). Without them there are no buttons:
+ *   the scrollbar stays visible (it is hidden only where the buttons exist), the scroller stays keyboard scrollable
+ *   and the markers, where supported, still work. Keyboard: Chromium makes a scroller focusable by itself; elsewhere
+ *   give it tabindex="0" and an aria-label (HTML, CSS cannot add it). The generated buttons are focusable themselves.
+ *   Reduced motion: scroll-behavior stays auto, the buttons keep working (they are navigation); only their hover
+ *   transition is removed.
+ *
+ * Section 5: vl-scroll="ink-scrub"
+ *   Words fill with colour, one after the other, as the text scrolls through the viewport (a "reading" sweep).
+ *   Decision: a new vl-scroll value, not a mode of text-scrub. text-scrub animates font-weight; a colour pair on it
+ *   would either also reflow the text (the default weight 200 to 800 would still run) or need a "no weight"
+ *   switch. ink-scrub animates colour only (paint, no layout) and shares the structure and the timing knobs:
+ *   author-wrapped word <span>s (the same text, nothing duplicated), a named view timeline (--vl-ink-t), each word
+ *   with its own animation-range offset by its index, --vl-scrub-stagger / --vl-scrub-span / --vl-scrub-phase.
+ *
+ *   --vl-ink-from        colour before the fill, default currentColor at 30% (a dim of the text colour)
+ *   --vl-ink-to          colour after the fill, default currentColor (the text colour)
+ *   --vl-ink-rest        the static colour without scroll-driven animation and with reduced motion,
+ *                        default = --vl-ink-to
+ *   --vl-scrub-fit / --vl-scrub-stagger / --vl-scrub-span / --vl-scrub-phase   as text-scrub (60%, derived, 35%, cover)
+ *   Cost: colour is a paint-only property (no layout, no reflow); it is not compositor-only, so keep it to text blocks.
+ *   Accessibility: the unfilled colour is a dim of the text. Choose --vl-ink-from with enough contrast for text that
+ *   is read before it fills; the final colour is the normal text colour. Word index as text-scrub (24 words without
+ *   sibling-index()). Without wrappers the element fills as one (needs :has()).
+ *   Fallback: without scroll-driven animations the text shows --vl-ink-rest. Reduced motion: same.
+ */
+
+/* Outside the layer: @property is global. */
+@property --vl-slice-open {
+    syntax: "<number>";
+    inherits: false;
+    initial-value: 0;
+}
+
+@layer velora.motion {
+    @keyframes vl-ring-spin {
+        from { rotate: y 0deg; }
+        to { rotate: y var(--vl-ring-turn, 360deg); }
+    }
+
+    :is([vl-scroll~="ring-scroll"], [vl-effect~="ring-scroll"]) {
+        --_ring-w: var(--vl-ring-width, clamp(9rem, 20vw, 15rem));
+        --_ring-n: var(--vl-ring-count, 8);
+        --_ring-r: calc((var(--_ring-w) + var(--vl-ring-gap, 0px)) / (2 * tan(pi / var(--_ring-n))));
+        position: relative;
+        inline-size: var(--_ring-w);
+        aspect-ratio: var(--vl-ring-aspect, 3 / 4);
+        margin-inline: auto;
+        transform-style: preserve-3d;
+    }
+
+    /* The perspective belongs on the parent: perspective on the rotating element would be rotated with it. */
+    :where(:has(> :is([vl-scroll~="ring-scroll"], [vl-effect~="ring-scroll"]))) {
+        perspective: var(--vl-perspective, 1600px);
+    }
+
+    :is([vl-scroll~="ring-scroll"], [vl-effect~="ring-scroll"]) > * {
+        --_ring-i: var(--vl-ring-i, var(--_ring-nth, 0));
+        position: absolute;
+        inset: 0;
+        --_ring-a: calc(var(--_ring-i) * 360deg / var(--_ring-n));
+        rotate: y var(--_ring-a);
+        translate: calc(var(--_ring-r) * sin(var(--_ring-a))) 0 calc(var(--_ring-r) * cos(var(--_ring-a)));
+        backface-visibility: hidden;
+    }
+
+    @supports not (width: calc(sibling-index() * 1px)) {
+        :is([vl-scroll~="ring-scroll"], [vl-effect~="ring-scroll"]) > :nth-child(1) { --_ring-nth: 0; }
+        :is([vl-scroll~="ring-scroll"], [vl-effect~="ring-scroll"]) > :nth-child(2) { --_ring-nth: 1; }
+        :is([vl-scroll~="ring-scroll"], [vl-effect~="ring-scroll"]) > :nth-child(3) { --_ring-nth: 2; }
+        :is([vl-scroll~="ring-scroll"], [vl-effect~="ring-scroll"]) > :nth-child(4) { --_ring-nth: 3; }
+        :is([vl-scroll~="ring-scroll"], [vl-effect~="ring-scroll"]) > :nth-child(5) { --_ring-nth: 4; }
+        :is([vl-scroll~="ring-scroll"], [vl-effect~="ring-scroll"]) > :nth-child(6) { --_ring-nth: 5; }
+        :is([vl-scroll~="ring-scroll"], [vl-effect~="ring-scroll"]) > :nth-child(7) { --_ring-nth: 6; }
+        :is([vl-scroll~="ring-scroll"], [vl-effect~="ring-scroll"]) > :nth-child(8) { --_ring-nth: 7; }
+        :is([vl-scroll~="ring-scroll"], [vl-effect~="ring-scroll"]) > :nth-child(9) { --_ring-nth: 8; }
+        :is([vl-scroll~="ring-scroll"], [vl-effect~="ring-scroll"]) > :nth-child(10) { --_ring-nth: 9; }
+        :is([vl-scroll~="ring-scroll"], [vl-effect~="ring-scroll"]) > :nth-child(11) { --_ring-nth: 10; }
+        :is([vl-scroll~="ring-scroll"], [vl-effect~="ring-scroll"]) > :nth-child(12) { --_ring-nth: 11; }
+    }
+
+    @supports (width: calc(sibling-index() * 1px)) {
+        :is([vl-scroll~="ring-scroll"], [vl-effect~="ring-scroll"]) > * {
+            --_ring-nth: calc(sibling-index() - 1);
+        }
+    }
+
+    @supports (animation-timeline: view()) {
+        :is([vl-scroll~="ring-scroll"], [vl-effect~="ring-scroll"]) {
+            --vl-scroll-name: vl-ring-spin;
+            --vl-scroll-timeline: view(block);
+            --vl-scroll-range: var(--vl-range, cover 0% cover 100%);
+        }
+
+        [vl-effect~="ring-scroll"]:not([vl-scroll]) {
+            animation: vl-ring-spin linear both;
+            animation-timeline: var(--vl-scroll-timeline);
+            animation-range: var(--vl-scroll-range);
+        }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        :is([vl-scroll~="ring-scroll"], [vl-effect~="ring-scroll"]) {
+            animation: none;
+            rotate: none;
+        }
+    }
+
+    @supports (mask-composite: subtract) or (-webkit-mask-composite: source-out) {
+        :is([vl-hover~="hover-slice"], [vl-effect~="hover-slice"]) {
+            --_slice-n: var(--vl-cut-count, 8);
+            --_slice-axis: calc(90deg + var(--vl-cut-angle, 18.4deg));
+            --_slice-a: calc((1 - var(--vl-slice-gap, 0.22) * var(--vl-slice-open)) * 100% / var(--_slice-n));
+            --_slice-gaps: repeating-linear-gradient(
+                var(--_slice-axis),
+                transparent 0,
+                transparent var(--_slice-a),
+                #000 var(--_slice-a),
+                #000 calc(100% / var(--_slice-n))
+            );
+            -webkit-mask-image: linear-gradient(#000, #000), var(--_slice-gaps);
+            mask-image: linear-gradient(#000, #000), var(--_slice-gaps);
+            -webkit-mask-composite: source-out;
+            mask-composite: subtract;
+            transition: --vl-slice-open var(--vl-slice-duration, var(--vl-duration-normal)) var(--vl-slice-ease, var(--vl-ease-out-soft));
+        }
+
+        :is([vl-hover~="hover-slice"], [vl-effect~="hover-slice"]):is(:hover, :focus-within) {
+            --vl-slice-open: 1;
+        }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        :is([vl-hover~="hover-slice"], [vl-effect~="hover-slice"]) {
+            -webkit-mask-image: none;
+            mask-image: none;
+            transition: none;
+        }
+    }
+
+    @keyframes vl-scrub-weight {
+        from { font-weight: var(--vl-scrub-from, 200); }
+        to { font-weight: var(--vl-scrub-to, 800); }
+    }
+
+    :is([vl-scroll~="text-scrub"], [vl-effect~="text-scrub"]) {
+        font-weight: var(--vl-scrub-rest, var(--vl-scrub-to, 800));
+        font-synthesis-weight: none;
+    }
+
+    @supports (animation-timeline: view()) {
+        :is([vl-scroll~="text-scrub"], [vl-effect~="text-scrub"]) {
+            view-timeline: --vl-scrub-t block;
+        }
+
+        :is([vl-scroll~="text-scrub"], [vl-effect~="text-scrub"]) > * {
+            animation: vl-scrub-weight linear both;
+            animation-timeline: --vl-scrub-t;
+            animation-range:
+                var(--vl-scrub-phase, cover) calc(var(--_scrub-i, 0) * var(--_scrub-step, var(--vl-scrub-stagger, 3%)))
+                var(--vl-scrub-phase, cover) calc(var(--_scrub-i, 0) * var(--_scrub-step, var(--vl-scrub-stagger, 3%)) + var(--vl-scrub-span, 35%));
+        }
+
+        /* No word wrappers: the element scrubs as one. Needs :has(); without it only wrapped words scrub. */
+        @supports selector(:has(*)) {
+            :is([vl-scroll~="text-scrub"], [vl-effect~="text-scrub"]):not(:has(> *)) {
+                --vl-scroll-name: vl-scrub-weight;
+                --vl-scroll-timeline: view(block);
+                --vl-scroll-range: var(--vl-range, cover 0% cover 40%);
+            }
+
+            [vl-effect~="text-scrub"]:not([vl-scroll]):not(:has(> *)) {
+                animation: vl-scrub-weight linear both;
+                animation-timeline: view(block);
+                animation-range: var(--vl-range, cover 0% cover 40%);
+            }
+        }
+    }
+
+    @supports not (width: calc(sibling-index() * 1px)) {
+        :is([vl-scroll~="text-scrub"], [vl-effect~="text-scrub"], [vl-scroll~="ink-scrub"], [vl-effect~="ink-scrub"]) > :nth-child(1) { --_scrub-i: 0; }
+        :is([vl-scroll~="text-scrub"], [vl-effect~="text-scrub"], [vl-scroll~="ink-scrub"], [vl-effect~="ink-scrub"]) > :nth-child(2) { --_scrub-i: 1; }
+        :is([vl-scroll~="text-scrub"], [vl-effect~="text-scrub"], [vl-scroll~="ink-scrub"], [vl-effect~="ink-scrub"]) > :nth-child(3) { --_scrub-i: 2; }
+        :is([vl-scroll~="text-scrub"], [vl-effect~="text-scrub"], [vl-scroll~="ink-scrub"], [vl-effect~="ink-scrub"]) > :nth-child(4) { --_scrub-i: 3; }
+        :is([vl-scroll~="text-scrub"], [vl-effect~="text-scrub"], [vl-scroll~="ink-scrub"], [vl-effect~="ink-scrub"]) > :nth-child(5) { --_scrub-i: 4; }
+        :is([vl-scroll~="text-scrub"], [vl-effect~="text-scrub"], [vl-scroll~="ink-scrub"], [vl-effect~="ink-scrub"]) > :nth-child(6) { --_scrub-i: 5; }
+        :is([vl-scroll~="text-scrub"], [vl-effect~="text-scrub"], [vl-scroll~="ink-scrub"], [vl-effect~="ink-scrub"]) > :nth-child(7) { --_scrub-i: 6; }
+        :is([vl-scroll~="text-scrub"], [vl-effect~="text-scrub"], [vl-scroll~="ink-scrub"], [vl-effect~="ink-scrub"]) > :nth-child(8) { --_scrub-i: 7; }
+        :is([vl-scroll~="text-scrub"], [vl-effect~="text-scrub"], [vl-scroll~="ink-scrub"], [vl-effect~="ink-scrub"]) > :nth-child(9) { --_scrub-i: 8; }
+        :is([vl-scroll~="text-scrub"], [vl-effect~="text-scrub"], [vl-scroll~="ink-scrub"], [vl-effect~="ink-scrub"]) > :nth-child(10) { --_scrub-i: 9; }
+        :is([vl-scroll~="text-scrub"], [vl-effect~="text-scrub"], [vl-scroll~="ink-scrub"], [vl-effect~="ink-scrub"]) > :nth-child(11) { --_scrub-i: 10; }
+        :is([vl-scroll~="text-scrub"], [vl-effect~="text-scrub"], [vl-scroll~="ink-scrub"], [vl-effect~="ink-scrub"]) > :nth-child(12) { --_scrub-i: 11; }
+        :is([vl-scroll~="text-scrub"], [vl-effect~="text-scrub"], [vl-scroll~="ink-scrub"], [vl-effect~="ink-scrub"]) > :nth-child(13) { --_scrub-i: 12; }
+        :is([vl-scroll~="text-scrub"], [vl-effect~="text-scrub"], [vl-scroll~="ink-scrub"], [vl-effect~="ink-scrub"]) > :nth-child(14) { --_scrub-i: 13; }
+        :is([vl-scroll~="text-scrub"], [vl-effect~="text-scrub"], [vl-scroll~="ink-scrub"], [vl-effect~="ink-scrub"]) > :nth-child(15) { --_scrub-i: 14; }
+        :is([vl-scroll~="text-scrub"], [vl-effect~="text-scrub"], [vl-scroll~="ink-scrub"], [vl-effect~="ink-scrub"]) > :nth-child(16) { --_scrub-i: 15; }
+        :is([vl-scroll~="text-scrub"], [vl-effect~="text-scrub"], [vl-scroll~="ink-scrub"], [vl-effect~="ink-scrub"]) > :nth-child(17) { --_scrub-i: 16; }
+        :is([vl-scroll~="text-scrub"], [vl-effect~="text-scrub"], [vl-scroll~="ink-scrub"], [vl-effect~="ink-scrub"]) > :nth-child(18) { --_scrub-i: 17; }
+        :is([vl-scroll~="text-scrub"], [vl-effect~="text-scrub"], [vl-scroll~="ink-scrub"], [vl-effect~="ink-scrub"]) > :nth-child(19) { --_scrub-i: 18; }
+        :is([vl-scroll~="text-scrub"], [vl-effect~="text-scrub"], [vl-scroll~="ink-scrub"], [vl-effect~="ink-scrub"]) > :nth-child(20) { --_scrub-i: 19; }
+        :is([vl-scroll~="text-scrub"], [vl-effect~="text-scrub"], [vl-scroll~="ink-scrub"], [vl-effect~="ink-scrub"]) > :nth-child(21) { --_scrub-i: 20; }
+        :is([vl-scroll~="text-scrub"], [vl-effect~="text-scrub"], [vl-scroll~="ink-scrub"], [vl-effect~="ink-scrub"]) > :nth-child(22) { --_scrub-i: 21; }
+        :is([vl-scroll~="text-scrub"], [vl-effect~="text-scrub"], [vl-scroll~="ink-scrub"], [vl-effect~="ink-scrub"]) > :nth-child(23) { --_scrub-i: 22; }
+        :is([vl-scroll~="text-scrub"], [vl-effect~="text-scrub"], [vl-scroll~="ink-scrub"], [vl-effect~="ink-scrub"]) > :nth-child(24) { --_scrub-i: 23; }
+    }
+
+    @supports (width: calc(sibling-index() * 1px)) {
+        /* Index and step come from the tree, so a paragraph of any length fits: the whole text takes --vl-scrub-fit of the
+           range (default 60%), each word --vl-scrub-span. An explicit --vl-scrub-stagger still wins. */
+        :is([vl-scroll~="text-scrub"], [vl-effect~="text-scrub"], [vl-scroll~="ink-scrub"], [vl-effect~="ink-scrub"]) > * {
+            --_scrub-i: calc(sibling-index() - 1);
+            --_scrub-step: var(--vl-scrub-stagger, max(0%, calc((var(--vl-scrub-fit, 60%) - var(--vl-scrub-span, 35%)) / max(sibling-count() - 1, 1))));
+        }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        :is([vl-scroll~="text-scrub"], [vl-effect~="text-scrub"]),
+        :is([vl-scroll~="text-scrub"], [vl-effect~="text-scrub"]) > * {
+            animation: none;
+            font-weight: var(--vl-scrub-rest, var(--vl-scrub-to, 800));
+        }
+    }
+
+    @keyframes vl-ink-fill {
+        from { color: var(--vl-ink-from, color-mix(in oklch, currentColor 30%, transparent)); }
+        to { color: var(--vl-ink-to, currentColor); }
+    }
+
+    :is([vl-scroll~="ink-scrub"], [vl-effect~="ink-scrub"]) {
+        color: var(--vl-ink-rest, var(--vl-ink-to, currentColor));
+    }
+
+    :is([vl-scroll~="ink-scrub"], [vl-effect~="ink-scrub"]) > * {
+        color: var(--vl-ink-rest, var(--vl-ink-to, currentColor));
+    }
+
+    @supports (animation-timeline: view()) {
+        :is([vl-scroll~="ink-scrub"], [vl-effect~="ink-scrub"]) {
+            view-timeline: --vl-ink-t block;
+        }
+
+        :is([vl-scroll~="ink-scrub"], [vl-effect~="ink-scrub"]) > * {
+            animation: vl-ink-fill linear both;
+            animation-timeline: --vl-ink-t;
+            animation-range:
+                var(--vl-scrub-phase, cover) calc(var(--_scrub-i, 0) * var(--_scrub-step, var(--vl-scrub-stagger, 3%)))
+                var(--vl-scrub-phase, cover) calc(var(--_scrub-i, 0) * var(--_scrub-step, var(--vl-scrub-stagger, 3%)) + var(--vl-scrub-span, 35%));
+        }
+
+        /* No word wrappers: the element fills as one. Needs :has(); without it only wrapped words fill. */
+        @supports selector(:has(*)) {
+            :is([vl-scroll~="ink-scrub"], [vl-effect~="ink-scrub"]):not(:has(> *)) {
+                --vl-scroll-name: vl-ink-fill;
+                --vl-scroll-timeline: view(block);
+                --vl-scroll-range: var(--vl-range, cover 0% cover 40%);
+            }
+
+            [vl-effect~="ink-scrub"]:not([vl-scroll]):not(:has(> *)) {
+                animation: vl-ink-fill linear both;
+                animation-timeline: view(block);
+                animation-range: var(--vl-range, cover 0% cover 40%);
+            }
+        }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        :is([vl-scroll~="ink-scrub"], [vl-effect~="ink-scrub"]),
+        :is([vl-scroll~="ink-scrub"], [vl-effect~="ink-scrub"]) > * {
+            animation: none;
+            color: var(--vl-ink-rest, var(--vl-ink-to, currentColor));
+        }
+    }
+
+    /* The scroller contract. A marker or button strip needs a horizontal scroll container with snap points, so the core
+       declares it at zero specificity: any author rule (including display: flex rows) replaces it without a fight.
+       Every vl-scroll-markers gets overflow-x, scroll-snap-type and a snap point per child. "buttons" also lays the
+       children out as one row of columns (--vl-scroll-item, default 100% of the scroller; --vl-scroll-gap) and gets the
+       focus ring a keyboard-focusable scroller needs. Smooth scrolling only when the user has not asked for less motion. */
+    :where([vl-scroll-markers]) {
+        overflow-x: auto;
+        overscroll-behavior-inline: contain;
+        scroll-snap-type: x mandatory;
+    }
+
+    :where([vl-scroll-markers]) > * {
+        scroll-snap-align: var(--vl-scroll-snap-align, start);
+    }
+
+    :where([vl-scroll-markers~="buttons"]) {
+        display: grid;
+        grid-auto-flow: column;
+        grid-auto-columns: var(--vl-scroll-item, 100%);
+        gap: var(--vl-scroll-gap, 0px);
+        scroll-behavior: auto;
+    }
+
+    @media (prefers-reduced-motion: no-preference) {
+        :where([vl-scroll-markers~="buttons"]) {
+            scroll-behavior: smooth;
+        }
+    }
+
+    :where([vl-scroll-markers~="buttons"]):focus-visible {
+        outline: 2px solid var(--vl-color-primary, currentColor);
+        outline-offset: 3px;
+    }
+
+    /* ::scroll-button() sits in the scroller, so it is placed against the scroller with anchor positioning. */
+    @supports (selector(::scroll-button(inline-start)) and (anchor-name: --vl-a)) {
+        [vl-scroll-markers~="buttons"] {
+            anchor-name: --vl-sbtn-scroller;
+            anchor-scope: --vl-sbtn-scroller;
+            /* The buttons replace the scrollbar as the pointer affordance, so it can go; where they do not exist it stays. */
+            scrollbar-width: none;
+        }
+
+        [vl-scroll-markers~="buttons"]::scroll-button(inline-start),
+        [vl-scroll-markers~="buttons"]::scroll-button(inline-end) {
+            position: fixed;
+            position-anchor: --vl-sbtn-scroller;
+            inset-block-start: anchor(center);
+            translate: 0 -50%;
+            inline-size: var(--vl-sbtn-size, 2.5rem);
+            block-size: var(--vl-sbtn-size, 2.5rem);
+            display: grid;
+            place-items: center;
+            padding: 0;
+            border: 1px solid color-mix(in oklch, var(--vl-color-primary, currentColor) 45%, transparent);
+            border-radius: 999px;
+            background: color-mix(in oklch, var(--vl-bg-surface, transparent) 88%, transparent);
+            color: var(--vl-color-primary, currentColor);
+            font: inherit;
+            font-size: calc(var(--vl-sbtn-size, 2.5rem) * 0.6);
+            line-height: 1;
+            cursor: pointer;
+            transition:
+                background var(--vl-duration-fast, 150ms) var(--vl-ease-out-soft),
+                opacity var(--vl-duration-fast, 150ms) var(--vl-ease-out-soft);
+        }
+
+        [vl-scroll-markers~="buttons"]::scroll-button(inline-start) {
+            inset-inline-start: calc(anchor(start) + var(--vl-sbtn-inset, 0.5rem));
+            content: "\2039" / var(--vl-sbtn-prev, "Previous");
+        }
+
+        [vl-scroll-markers~="buttons"]::scroll-button(inline-end) {
+            inset-inline-end: calc(anchor(end) + var(--vl-sbtn-inset, 0.5rem));
+            content: "\203A" / var(--vl-sbtn-next, "Next");
+        }
+
+        [vl-scroll-markers~="buttons"]::scroll-button(inline-start):is(:hover, :focus-visible),
+        [vl-scroll-markers~="buttons"]::scroll-button(inline-end):is(:hover, :focus-visible) {
+            background: var(--vl-color-primary, currentColor);
+            color: var(--vl-bg-surface, Canvas);
+        }
+
+        [vl-scroll-markers~="buttons"]::scroll-button(inline-start):focus-visible,
+        [vl-scroll-markers~="buttons"]::scroll-button(inline-end):focus-visible {
+            outline: 2px solid var(--vl-color-primary, currentColor);
+            outline-offset: 3px;
+        }
+
+        [vl-scroll-markers~="buttons"]::scroll-button(inline-start):disabled,
+        [vl-scroll-markers~="buttons"]::scroll-button(inline-end):disabled {
+            opacity: 0.3;
+            cursor: default;
+        }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        [vl-scroll-markers~="buttons"]::scroll-button(inline-start),
+        [vl-scroll-markers~="buttons"]::scroll-button(inline-end) {
+            transition: none;
+        }
+    }
+
+    /* ---------------------------------------------------------------------
+     * Section: vl-scroll="letterbox" | "defocus" | "refocus"  (Experimental)
+     *   letterbox  clip-path inset opens from --vl-letterbox-from (default 12.8%) to 0.
+     *   defocus    filter blur 0 -> --vl-blur-from (default 12px).
+     *   refocus    filter blur --vl-blur-from -> 0.
+     * Pair defocus on one element with refocus on another over the same --vl-scroll-timeline
+     * and --vl-range for a rack focus. Only declared under scroll-driven animation support, so
+     * an unsupported engine never ends on a blurred or cropped frame. Reduced motion: none.
+     * ------------------------------------------------------------------- */
+    @keyframes vl-letterbox {
+        from { clip-path: inset(var(--vl-letterbox-from, 12.8%) 0); }
+        to { clip-path: inset(0 0); }
+    }
+
+    @keyframes vl-defocus {
+        from { filter: blur(0); }
+        to { filter: blur(var(--vl-blur-from, 12px)); }
+    }
+
+    @keyframes vl-refocus {
+        from { filter: blur(var(--vl-blur-from, 12px)); }
+        to { filter: blur(0); }
+    }
+
+    @supports (animation-timeline: view()) {
+        :is([vl-scroll~="letterbox"], [vl-scroll~="defocus"], [vl-scroll~="refocus"]) {
+            --vl-scroll-range: var(--vl-range, cover 20% cover 80%);
+        }
+
+        [vl-scroll~="letterbox"] { --vl-scroll-name: vl-letterbox; }
+        [vl-scroll~="defocus"] { --vl-scroll-name: vl-defocus; }
+        [vl-scroll~="refocus"] { --vl-scroll-name: vl-refocus; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        :is([vl-scroll~="letterbox"], [vl-scroll~="defocus"], [vl-scroll~="refocus"]) {
+            animation: none;
+            clip-path: none;
+            filter: none;
+        }
+    }
+
+}

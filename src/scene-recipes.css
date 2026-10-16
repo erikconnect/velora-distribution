@@ -266,8 +266,8 @@
         inset: -50em;
         background-image:
             radial-gradient(circle at center, transparent 0%, color-mix(in oklch, black 92%, var(--vl-bg-main)) 52%),
-            repeating-linear-gradient(45deg, color-mix(in oklch, white 12%, transparent), color-mix(in oklch, black 16%, transparent), color-mix(in oklch, white 12%, transparent) 2em),
-            repeating-linear-gradient(-45deg, color-mix(in oklch, white 10%, transparent), color-mix(in oklch, black 14%, transparent), color-mix(in oklch, white 10%, transparent) 2em);
+            repeating-linear-gradient(calc(45deg + var(--vl-cut-angle)), color-mix(in oklch, white 12%, transparent), color-mix(in oklch, black 16%, transparent), color-mix(in oklch, white 12%, transparent) calc(var(--vl-cut-pitch) * 2)),
+            repeating-linear-gradient(calc(-45deg + var(--vl-cut-angle)), color-mix(in oklch, white 10%, transparent), color-mix(in oklch, black 14%, transparent), color-mix(in oklch, white 10%, transparent) calc(var(--vl-cut-pitch) * 2));
         background-color: color-mix(in oklch, var(--vl-bg-main) 58%, var(--vl-bg-surface-elevated));
         transform: rotateX(90deg) translateZ(calc((var(--vl-cube-unit) * -6.4) - 1px));
     }
@@ -332,8 +332,8 @@
         height: calc(var(--vl-cube-unit) * 5);
         background-color: color-mix(in oklch, var(--vl-cube-tone, var(--vl-color-primary)) 68%, transparent);
         background-image:
-            repeating-linear-gradient(45deg, color-mix(in oklch, white 14%, transparent), color-mix(in oklch, black 14%, transparent), color-mix(in oklch, white 14%, transparent) 1em),
-            repeating-linear-gradient(-45deg, color-mix(in oklch, white 14%, transparent), color-mix(in oklch, black 14%, transparent), color-mix(in oklch, white 14%, transparent) 1em);
+            repeating-linear-gradient(calc(45deg + var(--vl-cut-angle)), color-mix(in oklch, white 14%, transparent), color-mix(in oklch, black 14%, transparent), color-mix(in oklch, white 14%, transparent) var(--vl-cut-pitch)),
+            repeating-linear-gradient(calc(-45deg + var(--vl-cut-angle)), color-mix(in oklch, white 14%, transparent), color-mix(in oklch, black 14%, transparent), color-mix(in oklch, white 14%, transparent) var(--vl-cut-pitch));
         box-shadow: 0 0 1em color-mix(in oklch, black 55%, var(--vl-cube-tone, var(--vl-color-primary))) inset;
     }
 

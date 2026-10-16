@@ -1,0 +1,176 @@
+/**
+ * Velora Skin (RFC #114, work packages A3 and A9).
+ * The product skin: warm paper / ink, olive accent, the 18.4deg cut as geometry.
+ * Retokens the existing design-system contract only; it adds no behavior and no JavaScript.
+ *
+ * Controlled by html[data-editorial-theme="velora"].
+ *
+ * Light and dark members share one palette written once: the --velora-*-light / -dark
+ * concrete tokens per state; color-scheme (set below) keeps native controls and scrollbars in step.
+ *   - system preference by default (color-scheme: light dark);
+ *   - data-theme="light" | "dark" on <html>, or a checked radio
+ *     <input type="radio" name="vl-theme" value="auto | light | dark"> anywhere in the page.
+ * Accent alternates (alt-1, alt-2) are selected by 01e-skin-select.css.
+ * No script is required for any of it.
+ */
+
+html[data-editorial-theme="velora"] {
+  /* Palette: one value per member. Nothing below repeats these literals. */
+  --velora-paper-light: #e3e3cd;
+  --velora-paper-dark: #0c0c0b;
+  --velora-ink-light: #0a0a09;
+  --velora-ink-dark: #eaead9;
+  --velora-muted-light: #55554a;
+  --velora-muted-dark: #9b9b88;
+  --velora-surface-light: #ececdb;
+  --velora-surface-dark: #151513;
+  --velora-line-light: rgba(10, 10, 9, 0.22);
+  --velora-line-dark: rgba(234, 234, 217, 0.22);
+  /* Accents: olive is the primary; vermilion and cobalt are the alternates. All pass AA on paper. */
+  --velora-accent-light: var(--vl-brand-deep);
+  --velora-accent-dark: var(--vl-brand-olive);
+  --velora-accent-1-light: #b23a10;
+  --velora-accent-1-dark: #ff7a50;
+  --velora-accent-2-light: #3046c8;
+  --velora-accent-2-dark: #8c9cff;
+
+  --vl-bg-main: var(--lib-velora-paper);
+  --vl-bg-surface: var(--lib-velora-surface);
+  --vl-bg-surface-elevated: var(--lib-velora-surface);
+  --vl-bg-surface-bright: var(--lib-velora-surface);
+  --vl-bg-inset: var(--lib-velora-surface);
+  --vl-bg-overlay: color-mix(in oklab, var(--vl-bg-main) 70%, transparent);
+  --vl-text-primary: var(--lib-velora-ink);
+  --vl-text-secondary: var(--lib-velora-muted);
+  --vl-text-muted: var(--lib-velora-muted);
+  --vl-text-inverse: var(--vl-bg-main);
+  --vl-border-subtle: var(--lib-velora-line);
+  --vl-border-strong: color-mix(in oklab, var(--lib-velora-ink) 45%, transparent);
+  --vl-color-secondary: var(--lib-velora-muted);
+  --vl-focus-ring-width: 2px;
+  --vl-footer-mark: url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 218.79 54.05%22%3E%3Cg%3E %3Cpath d=%22M78.18,39.66h7.54c-3.36,9.89-13.29,15.76-23.66,14.12-4.7-.74-8.95-3.02-12.29-6.47-2.82-2.92-5.01-6.47-5.58-10.57-.25-1.81-.14-3.75-.05-5.57.53-11.27,9.69-19.81,20.89-19.82,13.37,0,22.14,11.34,21.1,24.44h-33.56c.79,3.6,2.8,6.77,5.96,8.63,6.68,3.95,15.35,1.89,19.66-4.77h0ZM77.49,29.64c-1.13-6.02-6.28-10.33-12.36-10.32s-11.11,4.11-12.43,10.3l24.79.02Z%22/%3E %3Cpath d=%22M144.01,32.16l.02,1.14c3.54-5.56,7.11-10.98,11.23-16.19l4.11-4.65c.44-.5,1.49-.62,2.18-.57l-1.57,1.48c-5.67,6.49-10.65,13.35-15.22,20.65-.67,1.08-1.34,1.97-1.46,3.29l7.15-10.98c3.09-4.75,6.67-9.04,10.36-13.27.83-.95,1.98-1.43,3.07-1.2l-4.15,4.3c-4.81,5.76-9.21,11.62-13.22,17.97l-6.29,9.96c-5.47,8.67-15.74,12.2-25.27,8.51-10.29-3.98-15.62-15.25-12.67-25.66s13.36-17.11,24.3-15.29c5.3.88,9.94,3.64,13.16,7.93,2.22,2.95,3.62,6.09,4.07,9.75l3.88-6.7c2.11-3.64,4.35-8.26,8.49-9.89l-2.2,2.59c-3.65,4.3-6.58,9.03-9.73,13.73-.37.56-.61.93-.21,1.65l4.56-7.17c2.25-3.53,4.67-6.8,7.41-9.94.84-.96,1.96-1.5,3.21-1.71l-1.47,1.57c-3.85,4.11-7.01,8.64-10.13,13.33l-3.61,5.35v.02ZM133.48,40.04c4.43-7.02,1.85-16.65-5.55-19.71-4.02-1.66-7.96-1.22-11.4.75-3.99,2.28-6.43,6.56-6.67,10.94-.24,4.38,1.8,9.01,5.54,11.64,6.01,4.23,14.12,2.67,18.09-3.61h0Z%22/%3E %3Cpath d=%22M214.5,53.11c-.15.29-1.01.3-1.21.08l-8.46-22.1,3.45,10.68,4.16,11.54h-1.16l-7.64-19.62c1.86,6.76,4.48,12.93,6.77,19.64h-5.07l-2.12-5.45c-6,6.74-15.93,7.8-23.48,3.93-11.41-5.84-15.15-20.38-7.98-30.92,5.88-8.66,17.14-11.96,26.71-7.58,4.5,2.06,7.93,5.66,9.63,10.35l10.69,29.59-1.19.07-6.05-16.44-3.92-9.75c2.67,8.94,5.9,17.33,9.05,26.12l-1.19.07-5.26-14.2-4.25-10.57c2.46,8.38,5.55,16.22,8.54,24.58l-.02-.02ZM202.71,32.63c0-7.27-5.9-13.17-13.17-13.17s-13.17,5.9-13.17,13.17,5.9,13.17,13.17,13.17,13.17-5.9,13.17-13.17Z%22/%3E %3Cpath d=%22M45.32.08l-3.5,8.6-12.04,29c-.42,1.02-.69,1.86.23,2.66L46.85.1c.4-.05.87-.04,1.29,0l-3.55,8.57-14.05,33.48c.16.58.36,1.11.66,1.53L49.61.28c.39-.25,1-.3,1.38-.16l-12.4,29.28-10.19,23.96-6.52-.03L0,.04l14.04-.04,11.94,30.39L38.24.17c.42-.11.82-.14,1.33-.09l-12.45,30.76c-.42,1.03-.41,1.88.27,2.95L41.17.1l1.29.03-4.5,11.04-10.01,24.37.74,1.55,8.97-21.53L44.03.07l1.28.03v-.02Z%22/%3E %3Crect x=%2290.08%22 y=%22.37%22 width=%228.5%22 height=%2252.97%22/%3E %3Cpath d=%22M155.03,53.31l-8.56.05-.03-18.27,9.43-13.38,4.91-6.16c1.68-1.8,3.32-4.21,5.52-3.63l-2.21,2.03-5.12,6.4c-2.35,1.35-3.59,3.65-3.95,6.42v26.54h0Z%22/%3E %3Cpath d=%22M166.61,19.96l-1.88-.13c1.89-2.53,3.7-4.76,5.89-6.87.9-.87,1.88-1.44,3.16-1.01-2.8,2.26-4.93,4.89-7.17,8.02h0Z%22/%3E %3Cpath d=%22M161.91,19.71l-2.19.33c1.81-2.52,3.77-4.94,6.06-7.21.84-.84,1.85-1.18,3.04-.94-2.67,2.26-4.75,4.77-6.92,7.82h.01Z%22/%3E %3Cpath d=%22M164.14,19.8l-1.88.06c1.96-2.64,3.82-5.03,6.2-7.19.81-.74,1.86-1,2.75-.73l-2.64,2.46-4.42,5.4h0Z%22/%3E %3Cpath d=%22M169.05,19.81l-1.86.05c1.94-2.66,3.82-5.03,6.21-7.18.84-.76,1.85-1.13,3.01-.76-1.82,1.33-3.43,2.78-4.81,4.57l-2.55,3.31h0Z%22/%3E %3C/g%3E%3C/svg%3E");
+  --vl-font-family: "Manrope", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --vl-font-family-body: "Manrope", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --vl-font-family-display: "Outfit", "Avenir Next", "Segoe UI", system-ui, sans-serif;
+  --vl-font-family-mono: "JetBrains Mono", "SF Mono", ui-monospace, Menlo, Consolas, monospace;
+  --vl-font-weight-normal: 400;
+  --vl-font-weight-semibold: 600;
+  --vl-font-weight-bold: 700;
+  --vl-radius-sm: 0;
+  --vl-radius-md: 0;
+  --vl-radius-lg: 0;
+  --vl-radius-xl: 0;
+  --vl-radius-2xl: 0;
+  --vl-shadow-sm: none;
+  --vl-shadow-md: none;
+  --vl-shadow-lg: 0 14px 34px rgba(0, 0, 0, 0.18);
+  --vl-shadow-float: 0 18px 40px rgba(0, 0, 0, 0.24);
+  --vl-shadow-glow: none;
+  --vl-backdrop-blur: 0px;
+  --vl-glass-bg: color-mix(in oklch, var(--vl-bg-surface) 92%, transparent);
+  --vl-duration-fast: 160ms;
+  --vl-duration-normal: 240ms;
+  --vl-duration-slow: 420ms;
+  --vl-duration-slower: 800ms;
+  --vl-ease-cinematic: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --vl-ease-out-soft: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --vl-motion-distance: 1.25rem;
+  --vl-state-distance: 0.6rem;
+  --vl-skin-content-max: 84rem;
+  --vl-skin-grid-columns: 12;
+  --vl-skin-grid-gap: 1.5rem;
+  --vl-skin-density: 1;
+  --vl-skin-border-width: 1px;
+  --vl-skin-media-ratio: 16 / 10;
+  --vl-skin-media-filter: contrast(1.04) saturate(0.82);
+  --vl-skin-surface-alpha: 92%;
+  --showcase-home-container-gutter: clamp(1rem, 4vw, 3rem);
+
+  /* Structure (A1): the Velora geometry. */
+  --vl-cut-angle: 18.4deg;
+  --vl-cut-pitch: 9px;
+  --vl-corner-style: cut;
+  --vl-motion-signature: fade-up; /* becomes cut-reveal when A2 (#120) lands */
+
+  color-scheme: light dark;
+}
+
+/* Tokens derived from the accent are declared here so they re-resolve wherever the accent
+   changes: on <html> and on any [data-skin-accent] descendant (01e-skin-select.css). */
+html[data-editorial-theme="velora"],
+html[data-editorial-theme="velora"] [data-skin-accent] {
+  --vl-color-accent: var(--vl-skin-accent-choice, var(--vl-color-accent-primary));
+  --vl-color-primary: var(--vl-color-accent);
+  --vl-color-primary-soft: color-mix(in oklab, var(--vl-color-accent) 22%, transparent);
+  --vl-border-focus: var(--vl-color-accent);
+  --vl-focus-ring-color: var(--vl-color-accent);
+}
+
+/* One palette, two members, written as concrete values per state (no light-dark()).
+   light-dark() inside a custom property resolves against the color-scheme of the element that USES the token, so any
+   host or ancestor that pins color-scheme on a descendant (body, an iframe wrapper) would freeze the colours while
+   the scrollbar still follows <html>. Concrete tokens on <html> cannot be overridden that way.
+   Order: base (light) -> system preference -> explicit choice (data-theme or the vl-theme radio). */
+html[data-editorial-theme="velora"] {
+  --lib-velora-paper: var(--velora-paper-light);
+  --lib-velora-ink: var(--velora-ink-light);
+  --lib-velora-muted: var(--velora-muted-light);
+  --lib-velora-surface: var(--velora-surface-light);
+  --lib-velora-line: var(--velora-line-light);
+  --vl-color-accent-primary: var(--velora-accent-light);
+  --vl-color-accent-alt-1: var(--velora-accent-1-light);
+  --vl-color-accent-alt-2: var(--velora-accent-2-light);
+}
+
+@media (prefers-color-scheme: dark) {
+  html[data-editorial-theme="velora"] {
+    --lib-velora-paper: var(--velora-paper-dark);
+    --lib-velora-ink: var(--velora-ink-dark);
+    --lib-velora-muted: var(--velora-muted-dark);
+    --lib-velora-surface: var(--velora-surface-dark);
+    --lib-velora-line: var(--velora-line-dark);
+    --vl-color-accent-primary: var(--velora-accent-dark);
+    --vl-color-accent-alt-1: var(--velora-accent-1-dark);
+    --vl-color-accent-alt-2: var(--velora-accent-2-dark);
+  }
+}
+
+html[data-editorial-theme="velora"][data-theme="light"],
+html[data-editorial-theme="velora"]:has(input[name="vl-theme"][value="light"]:checked) {
+  --lib-velora-paper: var(--velora-paper-light);
+  --lib-velora-ink: var(--velora-ink-light);
+  --lib-velora-muted: var(--velora-muted-light);
+  --lib-velora-surface: var(--velora-surface-light);
+  --lib-velora-line: var(--velora-line-light);
+  --vl-color-accent-primary: var(--velora-accent-light);
+  --vl-color-accent-alt-1: var(--velora-accent-1-light);
+  --vl-color-accent-alt-2: var(--velora-accent-2-light);
+}
+
+html[data-editorial-theme="velora"][data-theme="dark"],
+html[data-editorial-theme="velora"]:has(input[name="vl-theme"][value="dark"]:checked) {
+  --lib-velora-paper: var(--velora-paper-dark);
+  --lib-velora-ink: var(--velora-ink-dark);
+  --lib-velora-muted: var(--velora-muted-dark);
+  --lib-velora-surface: var(--velora-surface-dark);
+  --lib-velora-line: var(--velora-line-dark);
+  --vl-color-accent-primary: var(--velora-accent-dark);
+  --vl-color-accent-alt-1: var(--velora-accent-1-dark);
+  --vl-color-accent-alt-2: var(--velora-accent-2-dark);
+}
+
+/* Member selection. Default is the system preference; an explicit choice pins it. */
+html[data-editorial-theme="velora"][data-theme="light"],
+html[data-editorial-theme="velora"]:has(input[name="vl-theme"][value="light"]:checked) {
+  color-scheme: light;
+}
+
+html[data-editorial-theme="velora"][data-theme="dark"],
+html[data-editorial-theme="velora"]:has(input[name="vl-theme"][value="dark"]:checked) {
+  color-scheme: dark;
+}
+
+/* Native controls and scrollbars follow the same member as the tokens, even if a host pins color-scheme on body. */
+html[data-editorial-theme="velora"] body {
+  color-scheme: inherit;
+}
